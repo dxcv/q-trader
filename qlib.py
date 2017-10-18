@@ -19,17 +19,16 @@ import os
 #np.random.seed(12345) # Set random seed so that results are reproducible
 p_train = True
 p_reload = True  # Reload price data or use existing
-p_save_q = True
 p_charts = True
 p_stats = True
-p_epochs = 50 # Number of iterations for training (best 50)
+p_epochs = 100 # Number of iterations for training (best 50)
 p_features = 4 # Number of features in state for Q table
 p_feature_bins = 3 # Number of bins for feature (more bins tend to overfit)
+p_version = 1 
 p_train_pct = 1 # % of data used for training
 p_test_pct = 1 # % of data used for testing
 p_confidence = 1 # Best: 1
-p_sma_period = 50
-p_sma1_period = 20
+p_sma_period = 50 # Best: 20
 p_adr_period = 20 # Average Daily Return period
 p_hhll_period = 50 # Window for Highest High and Lowest Low (best: 20 - 50)
 p_rsi_period = 14
@@ -46,6 +45,7 @@ p_gamma = 0.9
 p_epsilon = 0.5
 p_start_balance = 1.0
 p_currency = 'USD'
+p_max_r = 0 # Best result achieved for Q model
 
 # Define Actions
 actions = pd.DataFrame(np.linspace(-1 if p_short else 0, 1, p_actions))
@@ -60,7 +60,6 @@ def init_q():
     else: 
         print("Loading Q from "+p_q)
         qt = pickle.load(open(p_q, "rb" ))
-#        qt = pd.read_csv(p_q, index_col=0)
     
     return qt
 
@@ -85,7 +84,6 @@ def load_data():
     df = df.assign(date=pd.to_datetime(df['time'],unit='s'))
     os.makedirs(os.path.dirname(p_file), exist_ok=True)
     pickle.dump(df, open(p_file, "wb" ))
-#    df.to_csv(p_file)
     print(str(len(df))+' records loaded from '+p_exchange+' to '+p_file)
 
 # Separate feature values to bins (numbers)
@@ -100,45 +98,48 @@ def bin_feature(feature, test=False):
         pickle.dump(b, open(binfile, "wb" )) # Save bin config
     return d
 
-# Read Data from CSV and add features
+# Read Price Data and add features
 def get_dataset(test=False, train_pct=p_train_pct, test_pct=p_test_pct):
     df = pickle.load(open(p_file, "rb" ))
-#    df = pd.read_csv(p_file, parse_dates=True, usecols=['date', 'open', 'close', 'high', 'low'])
 
     # Add features to dataframe
     # Typical Features: close/sma, bollinger band, holding stock, return since entry
     df = df.assign(dr=df.close/df.close.shift(1)-1) # daily return
     df = df.assign(adr=ta.SMA(df, price='dr', timeperiod=p_adr_period))
-#    df = df.assign(sma=ta.SMA(df, timeperiod=p_sma_period))
-#    df = df.assign(sma1=ta.SMA(df, timeperiod=p_sma1_period))
-#    df = df.assign(dsma=df.sma/df.sma.shift(1)-1)
-#    df = df.assign(rsma=df.sma/df.sma1)
-    df = df.assign(rsi=ta.RSI(df, timeperiod=p_rsi_period))
+    df = df.assign(sma=ta.SMA(df, price='close', timeperiod=p_sma_period))
+    df = df.assign(dsma=df.sma/df.sma.shift(1)-1)
+    df = df.assign(rsma=df.close/df.sma)
+    df = df.assign(rsi=ta.RSI(df, price='close', timeperiod=p_rsi_period))
     df = df.assign(hh=df.high/ta.MAX(df, price='high', timeperiod=p_hhll_period))
     df = df.assign(ll=df.low/ta.MIN(df, price='low', timeperiod=p_hhll_period))
+    df = df.assign(hhll=(df.high+df.low)/(df.high/df.hh+df.low/df.ll))
     df = df.dropna()
     # Map features to bins
-    df = df.assign(binhh=bin_feature(df.hh, test))
-    df = df.assign(binll=bin_feature(df.ll, test))
-    df = df.assign(binadr=bin_feature(df.adr, test))
     df = df.assign(binrsi=bin_feature(df.rsi, test))
-#    df = df.assign(bindsma=bin_feature(df.dsma))
-#    df = df.assign(binrsma=bin_feature(df.rsma))
+    if p_version == 1:
+        df = df.assign(binadr=bin_feature(df.adr, test))
+        df = df.assign(binhh=bin_feature(df.hh, test))
+        df = df.assign(binll=bin_feature(df.ll, test))
+    elif p_version == 2:
+        df = df.assign(bindsma=bin_feature(df.dsma, test))
+        df = df.assign(binrsma=bin_feature(df.rsma, test))
+        df = df.assign(binhhll=bin_feature(df.hhll, test))
 
     # Separate Train / Test Datasets using train_pct number of rows
     if test:
         rows = int(len(df)*test_pct)
-#        print("Get Test Dataset rows %s" % rows)
         return df.tail(rows).reset_index(drop=True)
     else:
         rows = int(len(df)*train_pct)
-#        print("Get Train Dataset rows: %s" % rows)
         return df.head(rows).reset_index(drop=True)
     
 # Calculate Discretised State based on features
 def get_state(row):
     bins = p_feature_bins
-    state = int(bins**3*row.binrsi+bins**2*row.binadr+bins*row.binhh+row.binll)
+    if p_version == 1:
+        state = int(bins**3*row.binrsi+bins**2*row.binadr+bins*row.binhh+row.binll)
+    elif p_version == 2:
+        state = int(bins**3*row.binrsma+bins**2*row.bindsma+bins*row.binrsi+row.binhhll)
     visits = qt.at[state, 'visits']
     conf = qt.at[state, 'conf']
     return state, visits, conf
@@ -272,8 +273,10 @@ def run_model(df, test=False):
     if not test: qt = qt.assign(conf=bin_feature(qt.ratio))
     return df
 
+# Sharpe Ratio Calculation
+# See also: https://www.quantstart.com/articles/Sharpe-Ratio-for-Algorithmic-Trading-Performance-Measurement
 def get_sr(df):
-    return df.mean()/df.std()
+    return df.mean()/(df.std()+0.000000000000001) # Add small number to avoid division by 0
 
 def get_ret(df):
     return df.iloc[-1]/p_start_balance
@@ -296,9 +299,13 @@ def show_result(df, title):
         plt.ylabel('Return')
         plt.legend(loc='best')
         plt.show()
-    print("QL R: %s" % (get_ret(df.total)))
-    print("QL/BH SR: %s" % (get_sr(df.pnl)/get_sr(df.dr)))
-    print("QL/BH R:  %s" % (get_ret(df.total)/get_ret(df.nclose)))
+    
+    qlr = get_ret(df.total)
+    qlsr = get_sr(df.pnl)
+    bhr = get_ret(df.nclose)
+    bhsr = get_sr(df.dr)
+    print("SR: %s QL/BH SR: %s" % (qlsr, qlsr/bhsr))
+    print("R: %s QL/BH R: %s" % (qlr, qlr/bhr))
     print("Confidence: %s" % df.conf.mean())
 
 def print_forecast(tdf):
@@ -321,25 +328,27 @@ def print_forecast(tdf):
 
 def train_model(df, tdf):
     global qt
-    print("*** Training Model using "+p_ticker+" data ***") 
-    print("Epochs: %s" % p_epochs) 
+    print("*** Training Model using "+p_ticker+" data. Epochs: %s ***" % p_epochs) 
 
     max_r = 0
+    max_q = qt
     for ii in range(p_epochs):
         # Train Model
         df = run_model(df)
         # Test Model   
         tdf = run_model(tdf, test=True)
-        r = get_ret(tdf.total)
-#        r = get_sr(tdf.pnl)
+#        r = get_ret(tdf.total)
+        r = get_sr(tdf.pnl)
         if r > max_r:
             max_r = r
             max_q = qt.copy()
-            print("Epoch: %s Max R: %s" % (ii, max_r))
+            print("Epoch: %s Max SR: %s" % (ii, max_r))
+    
     qt = max_q
-    # Save Model
-    if p_save_q:
-        pickle.dump(qt, open('data/'+p_conf+'/q'+str(int(max_r))+'.pkl', "wb" ))
+    if max_r > p_max_r:
+        print("*** New Best Model Found! Best SR: %s" % (max_r))
+        # Save Model
+        pickle.dump(qt, open('data/'+p_conf+'/q'+str(int(1000*max_r))+'.pkl', "wb" ))
 
 def run_forecast(conf):
     global tdf
@@ -349,10 +358,10 @@ def run_forecast(conf):
     load_config(conf)
     
     if p_reload: load_data() # Load Historical Price Data   
+    # This needs to run before test dataset as it generates bin config
+    if p_train: df = get_dataset() # Read Train data. 
     tdf = get_dataset(test=True) # Read Test data
-    if p_train: 
-        df = get_dataset() # Read Train data
-        train_model(df, tdf)
+    if p_train: train_model(df, tdf)
     
     tdf = run_model(tdf, test=True)
     if p_stats: show_result(tdf, "Test") # Test Result
@@ -371,63 +380,68 @@ def load_config(conf):
     global p_cfgdir
     global p_charts
     global p_stats
+    global p_version
+    global p_max_r
+    global p_confidence
     
+    p_version = 2
     p_conf = conf
     p_train = False
 #    p_reload = False
-#    p_charts = False
+    p_charts = False
 #    p_stats = False
     p_cfgdir = 'data/'+conf
     p_file = p_cfgdir+'/price.pkl'
     p_exchange = 'CCCAGG' # Average price from all exchanges
     p_q = p_cfgdir+'/q.pkl'
 
-    if conf == 'AVGETHUSD': # 1616
+    if conf == 'AVGETHUSD': # 2281
+        p_max_r = 0.184
         p_ticker = 'ETH'
         p_spread = 0.03 # eToro weekend spread
-    if conf == 'BTFETHUSD': # 459
+    if conf == 'BTFETHUSD': # 465
+        p_version = 1
+        p_max_r = 0.228
         p_exchange = 'Bitfinex'
         p_ticker = 'ETH'
         p_spread = 0
-    elif conf == 'AVGBTCUSD': # 468734
+    elif conf == 'AVGBTCUSD': # 1761898
+        p_max_r = 0.139
         p_ticker = 'BTC'
         p_spread = 0.01 # eToro weekend spread
-    elif conf == 'AVGXRPUSD': # 431
+    elif conf == 'AVGXRPUSD': # 492
+        p_confidence = 2
+        p_max_r = 0.099
         p_ticker = 'XRP'
         p_spread = 0.04 # eToro weekend spread
-    elif conf == 'AVGLTCUSD': # 3.67 
+    elif conf == 'AVGLTCUSD': # 18
+        p_confidence = 2
+        p_max_r = 0.066
         p_ticker = 'LTC'
         p_spread = 0.04 # eToro weekend spread
-    elif conf == 'TEST': 
-        p_ticker = 'LTC'
-        p_spread = 0.04 # eToro weekend spread
+    elif conf == 'TEST':
+        p_ticker = 'ETH'
+        p_spread = 0.03 # eToro weekend spread
 
     qt = init_q() # Initialise Model
 
-#run_forecast('BTFETHUSD')
-#run_forecast('AVGETHUSD')
-#run_forecast('AVGBTCUSD')
+run_forecast('BTFETHUSD')
+run_forecast('AVGETHUSD')
+run_forecast('AVGBTCUSD')
 run_forecast('AVGLTCUSD')
 #run_forecast('AVGXRPUSD')
 
+#run_forecast('TEST')
 
 # TODO:
-# Install GIT / use GitHub
-
-# Simple Trading System: Close/200MA, 200MA DR 
-
 # Store bin config with Q
 
 # Training: Load best Q and try to improve it. Save Q if improved
 
 # Optimize loops. See https://www.datascience.com/blog/straightening-loops-how-to-vectorize-data-aggregation-with-pandas-and-numpy/
 
-# Add Ratio: Price/200MA. See: https://cointelegraph.com/news/ultra-rich-investor-trace-mayer-predicts-bitcoin-price-will-reach-27395-in-just-four-months
-
 # Store execution history in csv
 # Load best Q based on execution history
-
-# Binary features allow more features to be used
 
 # Add Volume to features
 
