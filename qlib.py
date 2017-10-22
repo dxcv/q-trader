@@ -16,40 +16,6 @@ import requests
 import pickle
 import os
 
-#np.random.seed(12345) # Set random seed so that results are reproducible
-p_train = True
-p_reload = True  # Reload price data or use existing
-p_charts = True
-p_stats = True
-p_epochs = 100 # Number of iterations for training (best 50)
-p_features = 4 # Number of features in state for Q table
-p_feature_bins = 3 # Number of bins for feature (more bins tend to overfit)
-p_version = 1 
-p_train_pct = 1 # % of data used for training
-p_test_pct = 1 # % of data used for testing
-p_confidence = 1 # Best: 1
-p_sma_period = 50 # Best: 20
-p_adr_period = 20 # Average Daily Return period
-p_hhll_period = 50 # Window for Highest High and Lowest Low (best: 20 - 50)
-p_rsi_period = 14
-# Number of actions (% of stock holdings) 2 for long only, 3 to add short
-p_actions = 2
-p_short = False
-p_random_scale=0.00001 # Defines standard deviation for random Q values 
-# α ∈ [0, 1] (alpha) is the learning rate used to vary the weight given to new experiences compared with past Q-values.
-p_alpha = 0.2
-# γ ∈ [0, 1] (gamma) is the discount factor used to progressively reduce the value of future rewards. Best: 0.9
-p_gamma = 0.9
-# Probability to chose random action instead of best action from Q Table
-# Best values: 0.2 - 0.5
-p_epsilon = 0.5
-p_start_balance = 1.0
-p_currency = 'USD'
-p_max_r = 0 # Best result achieved for Q model
-
-# Define Actions
-actions = pd.DataFrame(np.linspace(-1 if p_short else 0, 1, p_actions))
-
 # Init Q table with small random values
 def init_q():
     if p_train:
@@ -88,19 +54,21 @@ def load_data():
 
 # Separate feature values to bins (numbers)
 # Each bin has same number of feature values
-def bin_feature(feature, test=False):
+def bin_feature(feature, test=False, bins=p_feature_bins):
     binfile = 'data/'+p_conf+'/bin'+feature.name+'.pkl'
     if test:
         b = pickle.load(open(binfile, "rb" )) # Load bin config
         d = pd.cut(feature, bins=b, labels=False, include_lowest=True)
     else:
-        d, b = pd.qcut(feature, p_feature_bins, duplicates='drop', labels=False, retbins=True)
+        d, b = pd.qcut(feature, bins, duplicates='drop', labels=False, retbins=True)
         pickle.dump(b, open(binfile, "wb" )) # Save bin config
     return d
 
 # Read Price Data and add features
 def get_dataset(test=False, train_pct=p_train_pct, test_pct=p_test_pct):
     df = pickle.load(open(p_file, "rb" ))
+    
+#    df.iloc[-1, df.columns.get_loc('close')] = test_price
 
     # Add features to dataframe
     # Typical Features: close/sma, bollinger band, holding stock, return since entry
@@ -270,7 +238,7 @@ def run_model(df, test=False):
         df.at[i, 'cash'] = pf.cash
         df.at[i, 'total'] = pf.total
     
-    if not test: qt = qt.assign(conf=bin_feature(qt.ratio))
+    if not test: qt = qt.assign(conf=bin_feature(qt.ratio, bins=3))
     return df
 
 # Sharpe Ratio Calculation
@@ -284,6 +252,30 @@ def get_ret(df):
 def normalize(df):
     return df/df.at[0]
 
+def train_model(df, tdf):
+    global qt
+    print("*** Training Model using "+p_ticker+" data. Epochs: %s ***" % p_epochs) 
+
+    max_r = 0
+    max_q = qt
+    for ii in range(p_epochs):
+        # Train Model
+        df = run_model(df)
+        # Test Model   
+        tdf = run_model(tdf, test=True)
+#        r = get_ret(tdf.total)
+        r = get_sr(tdf.pnl)
+        if r > max_r:
+            max_r = r
+            max_q = qt.copy()
+            print("Epoch: %s Max SR: %s" % (ii, max_r))
+    
+    qt = max_q
+    if max_r > p_max_r:
+        print("*** New Best Model Found! Best SR: %s" % (max_r))
+        # Save Model
+        pickle.dump(qt, open('data/'+p_conf+'/q'+str(int(1000*max_r))+'.pkl', "wb" ))
+
 def show_result(df, title):
     # Thanks to: http://benalexkeen.com/bar-charts-in-matplotlib/
     df = df.assign(nclose=df.close/df.close.at[0]) # Normalise Price
@@ -291,7 +283,7 @@ def show_result(df, title):
         d = df.set_index('date')
         fig, ax = plt.subplots()
         ax.plot(d.nclose, label='Buy and Hold')
-        ax.plot(d.total, label='QL')
+        ax.plot(d.total, label='QL', color='red')
 #        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
 #        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
         fig.autofmt_xdate()
@@ -326,29 +318,6 @@ def print_forecast(tdf):
         action = 'BUY' if next_action > 0 else 'SELL'
     print('Tomorrow estimate: '+action)
 
-def train_model(df, tdf):
-    global qt
-    print("*** Training Model using "+p_ticker+" data. Epochs: %s ***" % p_epochs) 
-
-    max_r = 0
-    max_q = qt
-    for ii in range(p_epochs):
-        # Train Model
-        df = run_model(df)
-        # Test Model   
-        tdf = run_model(tdf, test=True)
-#        r = get_ret(tdf.total)
-        r = get_sr(tdf.pnl)
-        if r > max_r:
-            max_r = r
-            max_q = qt.copy()
-            print("Epoch: %s Max SR: %s" % (ii, max_r))
-    
-    qt = max_q
-    if max_r > p_max_r:
-        print("*** New Best Model Found! Best SR: %s" % (max_r))
-        # Save Model
-        pickle.dump(qt, open('data/'+p_conf+'/q'+str(int(1000*max_r))+'.pkl', "wb" ))
 
 def run_forecast(conf):
     global tdf
@@ -367,33 +336,107 @@ def run_forecast(conf):
     if p_stats: show_result(tdf, "Test") # Test Result
     print_forecast(tdf) # Print Forecast
 
+def predict_dr(conf):
+    tdf = get_dataset(test=True)
+    tdf = tdf.assign(nextdr=tdf.dr.shift(-1))
+    tdf = tdf.dropna()
+
+#    x = tdf[['dr', 'rsi', 'dsma', 'rsma', 'hhll']].values
+    x = tdf[['rsi']].values
+    y = tdf['nextdr'].values
+
+    from sklearn.model_selection import train_test_split
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+
+    # Fitting Multiple Linear Regression to the Training set
+    from sklearn.linear_model import LinearRegression
+    regressor = LinearRegression()
+    regressor.fit(x_train, y_train)
+    
+    # Building the optimal model using Backward Elimination
+    import statsmodels.formula.api as sm
+    x = np.append(arr = np.ones((len(x), 1)).astype(int), values=x, axis=1)
+    x_opt = x[:, [2]]
+    regressor_OLS = sm.OLS(endog = y, exog = x_opt).fit()
+    regressor_OLS.summary()
+
+    # Predicting the Test set results
+    tdf = tdf.assign(preddr=regressor.predict(x))
+    tdf = tdf.assign(preddelta=tdf.preddr-tdf.nextdr)
+    return tdf
+
 def load_config(conf):
     global p_ticker
     global p_q # File for Q table
     global p_file # File for price data 
     global p_spread # Spread percentage
-    global qt
     global p_exchange
     global p_conf
-    global p_train
-    global p_reload
+    global p_train # Train model
+    global p_reload # Reload price data or use existing
     global p_cfgdir
-    global p_charts
-    global p_stats
+    global p_charts # Plot charts
+    global p_stats # Show model stats
     global p_version
     global p_max_r
-    global p_confidence
+    global p_confidence # Best: 1
+    global p_epochs # Number of iterations for training (best 50)
+    global p_features # Number of features in state for Q table
+    global p_feature_bins # Number of bins for feature (more bins tend to overfit)
+    global p_actions  # Number of actions (% of stock holdings) 2 for long only, 3 to add short
+    global p_train_pct # % of data used for training
+    global p_test_pct # % of data used for testing
+    global p_sma_period # Best: 50
+    global p_adr_period # Average Daily Return period
+    global p_hhll_period # Window for Highest High and Lowest Low (best: 20 - 50)
+    global p_rsi_period
+    global p_short
+    global p_random_scale # Defines standard deviation for random Q values
+    global p_alpha # α ∈ [0, 1] (alpha) is the learning rate used to vary the weight given to new experiences compared with past Q-values.
+    global p_gamma # γ ∈ [0, 1] (gamma) is the discount factor used to progressively reduce the value of future rewards. Best: 0.9
+    global p_epsilon # Probability to chose random action instead of best action from Q Table. Best values: 0.2 - 0.5
+    global p_start_balance
+    global p_currency
+    global p_max_r # Best result achieved for Q model
+    global qt
+    global actions
+
+    #np.random.seed(12345) # Set random seed so that results are reproducible
+    p_random_scale=0.00001  
+    p_start_balance = 1.0
+    p_currency = 'USD'
+    p_max_r = 0
+    p_short = False # Short calculation is currently incorrect hense disabled
+    p_actions = 2
+    actions = pd.DataFrame(np.linspace(-1 if p_short else 0, 1, p_actions))
+    p_alpha = 0.2
+    p_gamma = 0.9
+    p_epsilon = 0.5
+    p_train = True 
+    p_reload = True   
+    p_charts = True 
+    p_stats = True 
+    p_epochs = 50 
+    p_features = 4 
+    p_feature_bins = 3 
+    p_version = 2 
+    p_train_pct = 1 
+    p_test_pct = 1 
+    p_confidence = 1 
+    p_sma_period = 50 
+    p_adr_period = 20 
+    p_hhll_period = 50 
+    p_rsi_period = 14
     
-    p_version = 2
     p_conf = conf
-    p_train = False
-#    p_reload = False
-    p_charts = False
-#    p_stats = False
     p_cfgdir = 'data/'+conf
     p_file = p_cfgdir+'/price.pkl'
     p_exchange = 'CCCAGG' # Average price from all exchanges
     p_q = p_cfgdir+'/q.pkl'
+    p_train = False
+#    p_reload = False
+    p_charts = False
+#    p_stats = False
 
     if conf == 'AVGETHUSD': # 2281
         p_max_r = 0.184
@@ -409,32 +452,42 @@ def load_config(conf):
         p_max_r = 0.139
         p_ticker = 'BTC'
         p_spread = 0.01 # eToro weekend spread
-    elif conf == 'AVGXRPUSD': # 492
+    elif conf == 'AVGXRPUSD': # 1379
         p_confidence = 2
-        p_max_r = 0.099
+        p_max_r = 0.107
         p_ticker = 'XRP'
         p_spread = 0.04 # eToro weekend spread
-    elif conf == 'AVGLTCUSD': # 18
+        p_rsi_period = 50
+    elif conf == 'AVGLTCUSD': # 20
         p_confidence = 2
-        p_max_r = 0.066
+        p_max_r = 0.067
         p_ticker = 'LTC'
         p_spread = 0.04 # eToro weekend spread
+        p_rsi_period = 50
     elif conf == 'TEST':
-        p_ticker = 'ETH'
-        p_spread = 0.03 # eToro weekend spread
+        p_q = 'data/AVGXRPUSD/q107.pkl'
+        p_confidence = 2
+        p_max_r = 0.105
+        p_ticker = 'XRP'
+        p_spread = 0.04 # eToro weekend spread
+        p_rsi_period = 50
 
     qt = init_q() # Initialise Model
 
 run_forecast('BTFETHUSD')
 run_forecast('AVGETHUSD')
 run_forecast('AVGBTCUSD')
-run_forecast('AVGLTCUSD')
-#run_forecast('AVGXRPUSD')
-
+run_forecast('AVGXRPUSD')
+#run_forecast('AVGLTCUSD')
 #run_forecast('TEST')
+
 
 # TODO:
 # Store bin config with Q
+
+# Print number % of active states for Q
+
+# Test price change scenario
 
 # Training: Load best Q and try to improve it. Save Q if improved
 
