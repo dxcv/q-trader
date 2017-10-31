@@ -48,6 +48,7 @@ def load_data():
     r = requests.get('https://min-api.cryptocompare.com/data/'+period+'?fsym='+p_ticker+'&tsym='+p_currency+'&allData=true&e='+p_exchange)
     df = pd.DataFrame(r.json()['Data'])
     df = df.assign(date=pd.to_datetime(df['time'],unit='s'))
+    df.drop(['time', 'volumefrom', 'volumeto'], axis=1, inplace=True)
     os.makedirs(os.path.dirname(p_file), exist_ok=True)
     pickle.dump(df, open(p_file, "wb" ))
     print(str(len(df))+' records loaded from '+p_exchange+' to '+p_file)
@@ -247,7 +248,7 @@ def get_sr(df):
     return df.mean()/(df.std()+0.000000000000001) # Add small number to avoid division by 0
 
 def get_ret(df):
-    return df.iloc[-1]/p_start_balance
+    return df.iloc[-1]/df.iloc[0]
 
 def normalize(df):
     return df/df.at[0]
@@ -278,7 +279,7 @@ def train_model(df, tdf):
 
 def show_result(df, title):
     # Thanks to: http://benalexkeen.com/bar-charts-in-matplotlib/
-    df = df.assign(nclose=df.close/df.close.at[0]) # Normalise Price
+    df = df.assign(nclose=normalize(df.close)) # Normalise Price
     if p_charts:
         d = df.set_index('date')
         fig, ax = plt.subplots()
@@ -296,19 +297,20 @@ def show_result(df, title):
     qlsr = get_sr(df.pnl)
     bhr = get_ret(df.nclose)
     bhsr = get_sr(df.dr)
-    print("SR: %s QL/BH SR: %s" % (qlsr, qlsr/bhsr))
-    print("R: %s QL/BH R: %s" % (qlr, qlr/bhr))
-    print("Confidence: %s" % df.conf.mean())
+    print("R: %.2f SR: %.3f QL/BH R: %.2f QL/BH SR: %.2f" % (qlr, qlsr, qlr/bhr, qlsr/bhsr))
+    print("AVG Confidence: %.2f" % df.conf.mean())
+    print('QT States: %s Valid: %s Confident: %s' % 
+          (len(qt), len(qt[qt.visits > 0]), len(qt[qt.conf >= p_confidence])))
 
 def print_forecast(tdf):
     print()
-    position = 'CASH' if tdf.cash.iloc[-1] > 0 else 'EQUITY'
+    position = p_currency if tdf.cash.iloc[-1] > 0 else p_ticker
     print('Current position: '+position)
     
     action = 'No action'
     if tdf.action.iloc[-1] != tdf.action.iloc[-2]:
         action = 'BUY' if tdf.action.iloc[-1] > 0 else 'SELL'
-    print('Today action: '+action)
+    print('Today: '+action)
 
     state = tdf.state.iloc[-1]
     next_action, reward = get_action(state)
@@ -316,7 +318,7 @@ def print_forecast(tdf):
     action = 'No action'
     if next_action != tdf.action.iloc[-1] and conf >= p_confidence:
         action = 'BUY' if next_action > 0 else 'SELL'
-    print('Tomorrow estimate: '+action)
+    print('Tomorrow: '+action)
 
 
 def run_forecast(conf):
@@ -408,14 +410,13 @@ def load_config(conf):
     p_max_r = 0
     p_short = False # Short calculation is currently incorrect hense disabled
     p_actions = 2
-    actions = pd.DataFrame(np.linspace(-1 if p_short else 0, 1, p_actions))
     p_alpha = 0.2
     p_gamma = 0.9
     p_epsilon = 0.5
-    p_train = True 
-    p_reload = True   
-    p_charts = True 
-    p_stats = True 
+    p_train = False 
+    p_reload = False   
+    p_charts = False
+    p_stats = False 
     p_epochs = 50 
     p_features = 4 
     p_feature_bins = 3 
@@ -433,59 +434,71 @@ def load_config(conf):
     p_file = p_cfgdir+'/price.pkl'
     p_exchange = 'CCCAGG' # Average price from all exchanges
     p_q = p_cfgdir+'/q.pkl'
-    p_train = False
-#    p_reload = False
-    p_charts = False
-#    p_stats = False
+#    p_train = True
+    p_reload = True
+#    p_charts = True
+#    p_stats = True
 
-    if conf == 'AVGETHUSD': # 2281
-        p_max_r = 0.184
+    if conf == 'AVGETHUSD': 
+        p_max_r = 0.184 # 2281
         p_ticker = 'ETH'
         p_spread = 0.03 # eToro weekend spread
-    if conf == 'BTFETHUSD': # 465
+    if conf == 'BTFETHUSD': 
         p_version = 1
-        p_max_r = 0.228
+        p_max_r = 0.228 # 465
         p_exchange = 'Bitfinex'
         p_ticker = 'ETH'
         p_spread = 0
-    elif conf == 'AVGBTCUSD': # 1761898
-        p_max_r = 0.139
+    elif conf == 'AVGBTCUSD': 
+        p_max_r = 0.139 # 1761898
         p_ticker = 'BTC'
         p_spread = 0.01 # eToro weekend spread
-    elif conf == 'AVGXRPUSD': # 1379
+    elif conf == 'AVGXRPUSD': 
         p_confidence = 2
-        p_max_r = 0.107
+        p_max_r = 0.107 # 1379
         p_ticker = 'XRP'
         p_spread = 0.04 # eToro weekend spread
         p_rsi_period = 50
-    elif conf == 'AVGLTCUSD': # 20
+    elif conf == 'AVGLTCUSD': 
         p_confidence = 2
-        p_max_r = 0.067
+        p_max_r = 0.067 # 20
         p_ticker = 'LTC'
         p_spread = 0.04 # eToro weekend spread
         p_rsi_period = 50
-    elif conf == 'TEST':
-        p_q = 'data/AVGXRPUSD/q107.pkl'
-        p_confidence = 2
-        p_max_r = 0.105
-        p_ticker = 'XRP'
-        p_spread = 0.04 # eToro weekend spread
+    elif conf == 'AVGETHBTC':
+        p_version = 1
+        p_currency = 'BTC'
+        p_ticker = 'ETH'
+        p_max_r = 0.164 # 716
+        p_spread = 0.01 # Exodus spread
         p_rsi_period = 50
+    elif conf == 'TEST':
+        p_version = 1
+        p_currency = 'BTC'
+        p_ticker = 'ETH'
+        p_max_r = 0.158 # 541
+        p_spread = 0.01 # Exodus spread
+        p_rsi_period = 50
+        p_epochs = 100 
 
+    actions = pd.DataFrame(np.linspace(-1 if p_short else 0, 1, p_actions))
     qt = init_q() # Initialise Model
 
 run_forecast('BTFETHUSD')
 run_forecast('AVGETHUSD')
 run_forecast('AVGBTCUSD')
 run_forecast('AVGXRPUSD')
+run_forecast('AVGETHBTC')
+
 #run_forecast('AVGLTCUSD')
 #run_forecast('TEST')
 
 
 # TODO:
-# Store bin config with Q
+# !!! Test Partial equity buy 
+# Add new action: NA (no action)/ test with confidence = 0 
 
-# Print number % of active states for Q
+# Store bin config with Q
 
 # Test price change scenario
 
@@ -504,8 +517,6 @@ run_forecast('AVGXRPUSD')
 
 # Test model with train or test data?
 
-# Reduce number of bins
-
 # Fix short sell profit calculation. See: https://sixfigureinvesting.com/2014/03/short-selling-securities-selling-short/
 
 # Implement Dyna Q
@@ -513,6 +524,8 @@ run_forecast('AVGXRPUSD')
 # Predict DR based on State (use R table)
 
 # Implement Parameterised Feature List
+# Use function list: https://realpython.com/blog/python/primer-on-python-decorators/
+# Lambda, map, reduce: https://www.python-course.eu/lambda.php
 
 # Automatic Data Reload (based on file date)
 
