@@ -11,7 +11,6 @@ import numpy as np
 import time
 import talib.abstract as ta
 import matplotlib.pyplot as plt
-#import matplotlib.dates as mdates
 import requests
 import pickle
 import os
@@ -26,7 +25,6 @@ def init_q():
     else: 
         print("Loading Q from "+p_q)
         qt = pickle.load(open(p_q, "rb" ))
-    
     return qt
 
 # Load Historical Price Data from Poloniex (currently not used)
@@ -55,7 +53,8 @@ def load_data():
 
 # Separate feature values to bins (numbers)
 # Each bin has same number of feature values
-def bin_feature(feature, test=False, bins=p_feature_bins):
+def bin_feature(feature, test=False, bins=None):
+    if bins is None: bins = p_feature_bins
     binfile = 'data/'+p_conf+'/bin'+feature.name+'.pkl'
     if test:
         b = pickle.load(open(binfile, "rb" )) # Load bin config
@@ -66,7 +65,7 @@ def bin_feature(feature, test=False, bins=p_feature_bins):
     return d
 
 # Read Price Data and add features
-def get_dataset(test=False, train_pct=p_train_pct, test_pct=p_test_pct):
+def get_dataset(test=False):
     df = pickle.load(open(p_file, "rb" ))
     
 #    df.iloc[-1, df.columns.get_loc('close')] = test_price
@@ -96,10 +95,10 @@ def get_dataset(test=False, train_pct=p_train_pct, test_pct=p_test_pct):
 
     # Separate Train / Test Datasets using train_pct number of rows
     if test:
-        rows = int(len(df)*test_pct)
+        rows = int(len(df)*p_test_pct)
         return df.tail(rows).reset_index(drop=True)
     else:
-        rows = int(len(df)*train_pct)
+        rows = int(len(df)*p_train_pct)
         return df.head(rows).reset_index(drop=True)
     
 # Calculate Discretised State based on features
@@ -126,10 +125,11 @@ def get_action(state, test=True):
     return max_action, max_reward
 
 class Portfolio:
-    cash = p_start_balance
-    equity = 0.0
-    short = 0.0
-    total = cash
+    def __init__(self, balance):
+          self.cash = balance
+          self.equity = 0.0
+          self.short = 0.0
+          self.total = balance    
     
     def upd_total(self):
         self.total = self.cash+self.equity+self.short
@@ -191,10 +191,10 @@ def take_action(pf, action, dr):
 # argmaxa'(Q[s', a']) is the action that maximizes the Q-value among all possible actions a' from s', and,
 # α ∈ [0, 1] (alpha) is the learning rate used to vary the weight given to new experiences compared with past Q-values.
 #
-def update_q(s, a, s1, r, alpha=p_alpha, gamma=p_gamma):
+def update_q(s, a, s1, r):
     action, reward = get_action(s1)
     q0 = qt.iloc[s, a]
-    q1 = (1 - alpha)*q0 + alpha*(r + gamma*reward)
+    q1 = (1 - p_alpha)*q0 + p_alpha*(r + p_gamma*reward)
     qt.iloc[s, a] = q1
     qt.at[s1, 'visits'] += 1
 
@@ -212,7 +212,7 @@ def update_q(s, a, s1, r, alpha=p_alpha, gamma=p_gamma):
 def run_model(df, test=False):
     global qt
     df = df.assign(state=-1, visits=1, conf=0, action=0, equity=0.0, cash=0.0, total=0.0, pnl=0.0)
-    pf = Portfolio()
+    pf = Portfolio(p_start_balance)
     
     for i, row in df.iterrows():
         if i == 0:            
@@ -239,7 +239,11 @@ def run_model(df, test=False):
         df.at[i, 'cash'] = pf.cash
         df.at[i, 'total'] = pf.total
     
-    if not test: qt = qt.assign(conf=bin_feature(qt.ratio, bins=3))
+    if not test:
+        # If ratio is > 0 then use it to define confidence level
+        if p_ratio > 0: qt['conf'] = qt['ratio'].apply(lambda x: 0 if x < p_ratio else 1)
+        else: qt = qt.assign(conf=bin_feature(qt.ratio, bins=3))
+             
     return df
 
 # Sharpe Ratio Calculation
@@ -382,6 +386,7 @@ def load_config(conf):
     global p_version
     global p_max_r
     global p_confidence # Best: 1
+    global p_ratio # Fine tuning for confidence level. Default is 0 which is no tuning
     global p_epochs # Number of iterations for training (best 50)
     global p_features # Number of features in state for Q table
     global p_feature_bins # Number of bins for feature (more bins tend to overfit)
@@ -423,7 +428,8 @@ def load_config(conf):
     p_version = 2 
     p_train_pct = 1 
     p_test_pct = 1 
-    p_confidence = 1 
+    p_confidence = 1
+    p_ratio = 0
     p_sma_period = 50 
     p_adr_period = 20 
     p_hhll_period = 50 
@@ -472,6 +478,7 @@ def load_config(conf):
         p_max_r = 0.164 # 716
         p_spread = 0.01 # Exodus spread
         p_rsi_period = 50
+#        p_ratio = 0.04
     elif conf == 'TEST':
         p_version = 1
         p_currency = 'BTC'
@@ -484,13 +491,13 @@ def load_config(conf):
     actions = pd.DataFrame(np.linspace(-1 if p_short else 0, 1, p_actions))
     qt = init_q() # Initialise Model
 
-run_forecast('BTFETHUSD')
 run_forecast('AVGETHUSD')
 run_forecast('AVGBTCUSD')
 run_forecast('AVGXRPUSD')
 run_forecast('AVGETHBTC')
 
 #run_forecast('AVGLTCUSD')
+#run_forecast('BTFETHUSD')
 #run_forecast('TEST')
 
 
