@@ -546,9 +546,9 @@ def load_config(conf):
         tl = TradeLog()
 
 
-run_forecast('BTCUSD') #+ Bitcoin 
+#run_forecast('BTCUSD') #+ Bitcoin 
 run_forecast('ETHUSD') #- Ethereum 
-run_forecast('BCHUSD') #+ Bitcoin Cash
+#run_forecast('BCHUSD') #+ Bitcoin Cash
 
 
 # TODO:
