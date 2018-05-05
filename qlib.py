@@ -481,10 +481,15 @@ def load_config(conf):
     p.train_goal = 'SR'
 
 
-    if conf == 'BTCUSD': # R: 87.99 SR: 0.138 QL/BH R: 2.79 QL/BH SR: 1.32
-        p.max_r = 87
+    if conf == 'BTCUSD': # R: 126.33 SR: 0.174 QL/BH R: 3.35 QL/BH SR: 1.60
+        p.max_r = 0
         p.spread = 0.004 # Bitfinex fee
         p.train_goal = 'R'
+        p.hh_period = 200 # Window for Highest High (best: 20 - 50)
+        p.ll_period = 200 # Window for Lowest Low (best: 20 - 50)
+        p.sma_period = 200
+        p.rsi_period = 14
+#        p.train = True
     elif conf == 'XRPUSD': # R: 6087.29 SR: 0.124 QL/BH R: 58.89 QL/BH SR: 1.43
         p.max_r = 0.133
         p.spread = 0.004 # Bitfinex fee
@@ -546,9 +551,11 @@ def load_config(conf):
         tl = TradeLog()
 
 
-#run_forecast('BTCUSD') #+ Bitcoin 
-run_forecast('ETHUSD') #- Ethereum 
-#run_forecast('BCHUSD') #+ Bitcoin Cash
+#run_forecast('ETHBTC')
+ 
+run_forecast('BTCUSD') # Bitcoin 
+#run_forecast('BCHUSD') # Bitcoin Cash
+#run_forecast('ETHUSD') # Ethereum 
 
 
 # TODO:
