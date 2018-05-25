@@ -478,29 +478,20 @@ def load_config(conf):
     p.min_equity = 0.001
     p.bar_period = 'day' # Price bar period: day or hour
     p.max_bars = 1000 # Number of bars to use for training
-    p.train_goal = 'SR'
+    p.train_goal = 'R' # Maximize Return
+    p.spread = 0.004 # Bitfinex fee
 
 
-    if conf == 'BTCUSD': # R: 126.33 SR: 0.174 QL/BH R: 3.35 QL/BH SR: 1.60
-        p.max_r = 0
-        p.spread = 0.004 # Bitfinex fee
-        p.train_goal = 'R'
-        p.hh_period = 200 # Window for Highest High (best: 20 - 50)
-        p.ll_period = 200 # Window for Lowest Low (best: 20 - 50)
-        p.sma_period = 200
-        p.rsi_period = 14
-#        p.train = True
-    elif conf == 'XRPUSD': # R: 6087.29 SR: 0.124 QL/BH R: 58.89 QL/BH SR: 1.43
-        p.max_r = 0.133
-        p.spread = 0.004 # Bitfinex fee
+    if conf == 'BTCUSD': # R: 164.68 SR: 0.170 QL/BH R: 4.70 QL/BH SR: 1.58
+        p.max_r = 164
+        p.version = 1
+    elif conf == 'XRPUSD': # R: 7148.31 SR: 0.127 QL/BH R: 96.54 QL/BH SR: 1.50
+        p.max_r = 7148
     elif conf == 'LTCUSD': # R: 249.76 SR: 0.123 QL/BH R: 7.89 QL/BH SR: 1.49
         p.max_r = 0
-        p.train_goal = 'R'
-        p.spread = 0.004 # Bitfinex fee
-    elif conf == 'ETHBTC': # R: 513.67 SR: 0.143 QL/BH R: 22.75 QL/BH SR: 1.75
+    elif conf == 'ETHBTC': # R: 1230.74 SR: 0.153 QL/BH R: 50.66 QL/BH SR: 1.86
         p.version = 1
-        p.max_r = 0.143
-        p.spread = 0.006 # GDAX fee
+        p.max_r = 1230
     elif conf == 'ETHEUR': # R: 14986.59 SR: 0.207 QL/BH R: 12.79 QL/BH SR: 1.34
         p.max_r = 0.207
         p.spread = 0.006 # GDAX fee
@@ -516,25 +507,10 @@ def load_config(conf):
         p.rsi_period = 15
     elif conf == 'ETHUSD': # R: 12696.20 SR: 0.179 QL/BH R: 13.79 QL/BH SR: 1.33
         p.max_r = 0.179
-        p.spread = 0.004 # Bitfinex fee
-    elif conf == 'BCHUSD': # R: 11.06 SR: 0.217 QL/BH R: 4.01 QL/BH SR: 2.46
-        p.max_r = 0.217
-        p.spread = 0.004 # Bitfinex fee
-    elif conf == 'EOSUSD': # R: 28.75 SR: 0.199 QL/BH R: 2.87 QL/BH SR: 1.50
-        p.max_r = 0.199
-        p.spread = 0.004 # Bitfinex fee
-    elif conf == 'ADAUSD': # R: 3.27 SR: 0.310 QL/BH R: 3.48 QL/BH SR: 42.55
-        p.max_r = 0.288
-        p.spread = 0.001 # Binance fee
+    elif conf == 'BCHUSD': # R: 24.62 SR: 0.241 QL/BH R: 7.20 QL/BH SR: 2.54
+        p.max_r = 24
 #        p.train = True
-    elif conf == 'XLMUSD': # R: 804.73 SR: 0.179 QL/BH R: 3.47 QL/BH SR: 1.17
-        p.max_r = 0.179
-        p.spread = 0.004 # Bitfinex fee
-    elif conf == 'XMRUSD': # R: 11639.06 SR: 0.151 QL/BH R: 20.89 QL/BH SR: 1.42
-        p.max_r = 0.151
-        p.spread = 0.004 # Bitfinex fee
         
-
     if p.train:
         p.charts = True
         p.stats = True
@@ -551,11 +527,10 @@ def load_config(conf):
         tl = TradeLog()
 
 
-#run_forecast('ETHBTC')
- 
-run_forecast('BTCUSD') # Bitcoin 
-#run_forecast('BCHUSD') # Bitcoin Cash
-#run_forecast('ETHUSD') # Ethereum 
+run_forecast('ETHBTC')
+
+#run_forecast('BTCUSD') # Bitcoin 
+run_forecast('ETHUSD') # Ethereum 
 
 
 # TODO:
