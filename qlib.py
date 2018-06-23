@@ -498,6 +498,7 @@ def load_config(conf):
     elif conf == 'BTCEUR': # R: 94.74 SR: 0.160 QL/BH R: 1.69 QL/BH SR: 1.25
         p.max_r = 0.160
         p.spread = 0.005 # GDAX fee
+        p.train = True
     elif conf == 'LTCEUR': # R: 2036.09 SR: 0.147 QL/BH R: 17.81 QL/BH SR: 1.46
         p.max_r = 0.147
         p.spread = 0.006 # GDAX fee
@@ -505,11 +506,10 @@ def load_config(conf):
         p.hh_period = 30
         p.ll_period = 30
         p.rsi_period = 15
-    elif conf == 'ETHUSD': # R: 12696.20 SR: 0.179 QL/BH R: 13.79 QL/BH SR: 1.33
-        p.max_r = 0.179
+    elif conf == 'ETHUSD': # R: 16697.09 SR: 0.181 QL/BH R: 22.14 QL/BH SR: 1.41
+        p.max_r = 16697
     elif conf == 'BCHUSD': # R: 24.62 SR: 0.241 QL/BH R: 7.20 QL/BH SR: 2.54
         p.max_r = 24
-#        p.train = True
         
     if p.train:
         p.charts = True
@@ -528,9 +528,10 @@ def load_config(conf):
 
 
 run_forecast('ETHBTC')
-
-#run_forecast('BTCUSD') # Bitcoin 
+run_forecast('BTCUSD') # Bitcoin 
 run_forecast('ETHUSD') # Ethereum 
+
+#run_forecast('BTCEUR')
 
 
 # TODO:
