@@ -300,7 +300,7 @@ def train_model(df, tdf):
     
     qt = max_q
     if max_r > p.max_r:
-        print("*** New Best Model Found! Best SR: %s" % (max_r))
+        print("*** New Best Model Found! Best R: %s" % (max_r))
         # Save Model
         pickle.dump(qt, open(p.cfgdir+'/q'+str(int(1000*max_r))+'.pkl', "wb" ))
 
@@ -489,9 +489,9 @@ def load_config(conf):
         p.max_r = 7148
     elif conf == 'LTCUSD': # R: 249.76 SR: 0.123 QL/BH R: 7.89 QL/BH SR: 1.49
         p.max_r = 0
-    elif conf == 'ETHBTC': # R: 1230.74 SR: 0.153 QL/BH R: 50.66 QL/BH SR: 1.86
+    elif conf == 'ETHBTC': # R: 1473.13 SR: 0.163 QL/BH R: 59.48 QL/BH SR: 2.06
         p.version = 1
-        p.max_r = 1230
+        p.max_r = 1473
     elif conf == 'ETHEUR': # R: 14986.59 SR: 0.207 QL/BH R: 12.79 QL/BH SR: 1.34
         p.max_r = 0.207
         p.spread = 0.006 # GDAX fee
@@ -531,10 +531,9 @@ run_forecast('ETHBTC')
 run_forecast('BTCUSD') # Bitcoin 
 run_forecast('ETHUSD') # Ethereum 
 
-#run_forecast('BTCEUR')
-
-
 # TODO:
+# Implement multi-threading
+
 # Store bin config with Q
 
 # Trade with daily averege price: split order in small chunks and execute during day
