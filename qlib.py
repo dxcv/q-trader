@@ -19,14 +19,9 @@ import pickle
 import os
 import params as p
 import exchange as ex
-import dill
 import datetime as dt
-
-def save_session():
-    dill.dump_session(p.cfgdir+'/dill.pkl')
-    
-def load_session():
-    dill.load_session(p.cfgdir+'/dill.pkl')    
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 # Init Q table with small random values
 def init_q():
@@ -70,20 +65,25 @@ def load_data():
     pickle.dump(df, open(p.file, "wb" ))
     print('Prices Loaded. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
 
-# Separate feature values to bins (numbers)
+# Map feature values to bins (numbers)
 # Each bin has same number of feature values
-# Load/Store bins in file
-def bin_feature(feature, test=False, bins=None):
+def bin_feature(feature, bins=None, cum=True):
     if bins is None: bins = p.feature_bins
-    binfile = p.cfgdir+'/bin'+feature.name+'.pkl'
-    if test:
-        b = pickle.load(open(binfile, "rb" )) # Load bin config
-        d = pd.cut(feature, bins=b, labels=False, include_lowest=True)
+    l = lambda x: int(x[x < x[-1]].size/(x.size/bins))
+    if cum:
+        return feature.expanding().apply(l, raw = True)
     else:
-        d, b = pd.qcut(feature, bins, duplicates='drop', labels=False, retbins=True)
-#        d, b = pd.qcut(feature.rank(method='first'), bins, labels=False, retbins=True)
-        pickle.dump(b, open(binfile, "wb" )) # Save bin config
-    return d
+        return ((feature.rank()-1)/(feature.size/bins)).astype('int')
+
+#    binfile = p.cfgdir+'/bin'+feature.name+'.pkl'
+#    if test:
+#        b = pickle.load(open(binfile, "rb" )) # Load bin config
+#        d = pd.cut(feature, bins=b, labels=False, include_lowest=True)
+#    else:
+#        d, b = pd.qcut(feature, bins, duplicates='drop', labels=False, retbins=True)
+##        d, b = pd.qcut(feature.rank(method='first'), bins, labels=False, retbins=True)
+#        pickle.dump(b, open(binfile, "wb" )) # Save bin config
+#    return d
 
 # Read Price Data and add features
 def get_dataset(test=False):
@@ -102,15 +102,15 @@ def get_dataset(test=False):
     df['hhll'] = (df.high+df.low)/(df.high/df.hh+df.low/df.ll)
     df = df.dropna()
     # Map features to bins
-    df = df.assign(binrsi=bin_feature(df.rsi, test))
+    df = df.assign(binrsi=bin_feature(df.rsi))
     if p.version == 1:
-        df = df.assign(binadr=bin_feature(df.adr, test))
-        df = df.assign(binhh=bin_feature(df.hh, test))
-        df = df.assign(binll=bin_feature(df.ll, test))
+        df = df.assign(binadr=bin_feature(df.adr))
+        df = df.assign(binhh=bin_feature(df.hh))
+        df = df.assign(binll=bin_feature(df.ll))
     elif p.version == 2:
-        df = df.assign(bindsma=bin_feature(df.dsma, test))
-        df = df.assign(binrsma=bin_feature(df.rsma, test))
-        df = df.assign(binhhll=bin_feature(df.hhll, test))
+        df = df.assign(bindsma=bin_feature(df.dsma))
+        df = df.assign(binrsma=bin_feature(df.rsma))
+        df = df.assign(binhhll=bin_feature(df.hhll))
     
     if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
     # Separate Train / Test Datasets using train_pct number of rows
@@ -179,13 +179,13 @@ def take_action(pf, action, dr):
     if target >= 0: # Long
         if pf.short > 0: sell_lot(pf, pf.short, True) # Close short positions first
         diff = target - pf.equity
-        if diff >= 0: buy_lot(pf, diff) 
-        else: sell_lot(pf, -diff)
+        if diff > 0: buy_lot(pf, diff) 
+        elif diff < 0: sell_lot(pf, -diff)
     else: # Short
         if pf.equity > 0: sell_lot(pf, pf.equity) # Close long positions first
         diff = -target - pf.short
-        if diff >= 0: buy_lot(pf, diff, True) 
-        else: sell_lot(pf, -diff, True)
+        if diff > 0: buy_lot(pf, diff, True) 
+        elif diff < 0: sell_lot(pf, -diff, True)
 
     # Calculate reward as a ratio to maximum daily return
     # reward = 1 - (1 + abs(dr))/(1 + dr*(equity-cash)/total)
@@ -262,7 +262,7 @@ def run_model(df, test=False):
     if not test:
         # If ratio is > 0 then use it to define confidence level
         if p.ratio > 0: qt['conf'] = qt['ratio'].apply(lambda x: 0 if x < p.ratio else 1)
-        else: qt = qt.assign(conf=bin_feature(qt.ratio))
+        else: qt = qt.assign(conf=bin_feature(qt.ratio, cum = False))
              
     return df
 
@@ -385,9 +385,11 @@ def execute_action():
     tl.log_trade(action, cash, equity) # Update trade log
     pickle.dump(tl, open(p.tl, "wb" ))
 
-def run_forecast(conf):
+def run_forecast(conf, seed = None):
     global tdf
     global df
+    
+    if seed is not None: np.random.seed(seed)
     print('')
     print('**************** Running model for '+conf+' ****************')
     load_config(conf)
@@ -435,7 +437,7 @@ def load_config(conf):
     global actions
     global tl
 
-    #np.random.seed(12345) # Set random seed so that results are reproducible
+#    np.random.seed(12345) # Set random seed so that results are reproducible
     p.random_scale = 0.00001 # Defines standard deviation for random Q values 
     p.start_balance = 1.0
     p.short = False # Short calculation is currently incorrect hense disabled
@@ -482,34 +484,14 @@ def load_config(conf):
     p.spread = 0.004 # Bitfinex fee
 
 
-    if conf == 'BTCUSD': # R: 164.68 SR: 0.170 QL/BH R: 4.70 QL/BH SR: 1.58
-        p.max_r = 164
+    if conf == 'BTCUSD': # R: 183.09 SR: 0.187 QL/BH R: 6.92 QL/BH SR: 1.88
+        p.max_r = 183
         p.version = 1
-    elif conf == 'XRPUSD': # R: 7148.31 SR: 0.127 QL/BH R: 96.54 QL/BH SR: 1.50
-        p.max_r = 7148
-    elif conf == 'LTCUSD': # R: 249.76 SR: 0.123 QL/BH R: 7.89 QL/BH SR: 1.49
-        p.max_r = 0
-    elif conf == 'ETHBTC': # R: 1473.13 SR: 0.163 QL/BH R: 59.48 QL/BH SR: 2.06
+    elif conf == 'ETHUSD': # R: 4256.85 SR: 0.164 QL/BH R: 6.11 QL/BH SR: 1.31
+        p.max_r = 4256
+    elif conf == 'ETHBTC': # R: 1080.01 SR: 0.149 QL/BH R: 39.91 QL/BH SR: 1.85 27517 USD
         p.version = 1
-        p.max_r = 1473
-    elif conf == 'ETHEUR': # R: 14986.59 SR: 0.207 QL/BH R: 12.79 QL/BH SR: 1.34
-        p.max_r = 0.207
-        p.spread = 0.006 # GDAX fee
-    elif conf == 'BTCEUR': # R: 94.74 SR: 0.160 QL/BH R: 1.69 QL/BH SR: 1.25
-        p.max_r = 0.160
-        p.spread = 0.005 # GDAX fee
-        p.train = True
-    elif conf == 'LTCEUR': # R: 2036.09 SR: 0.147 QL/BH R: 17.81 QL/BH SR: 1.46
-        p.max_r = 0.147
-        p.spread = 0.006 # GDAX fee
-        p.sma_period = 15
-        p.hh_period = 30
-        p.ll_period = 30
-        p.rsi_period = 15
-    elif conf == 'ETHUSD': # R: 16697.09 SR: 0.181 QL/BH R: 22.14 QL/BH SR: 1.41
-        p.max_r = 16697
-    elif conf == 'BCHUSD': # R: 24.62 SR: 0.241 QL/BH R: 7.20 QL/BH SR: 2.54
-        p.max_r = 24
+        p.max_r = 1080
         
     if p.train:
         p.charts = True
@@ -527,14 +509,28 @@ def load_config(conf):
         tl = TradeLog()
 
 
-run_forecast('ETHBTC')
-run_forecast('BTCUSD') # Bitcoin 
-run_forecast('ETHUSD') # Ethereum 
+def run_batch(conf, instances = 1):
+    if instances == 1:
+        run_forecast(conf)
+        return
+    ts = time.time()
+    run_forecast_a = partial(run_forecast, conf) # Returning a function of a single argument
+    with ProcessPoolExecutor() as executor: # Run multiple processes
+        executor.map(run_forecast_a, range(instances))
+         
+    print('Took %s', time.time() - ts)
+
+
+run_batch('BTCUSD') # Bitcoin 
+run_batch('ETHUSD') # Ethereum
+run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
 
 # TODO:
-# Implement multi-threading
+# Test Bin function
 
-# Store bin config with Q
+# Separate train_model and run_model procedures
+
+# Calculate R in USD
 
 # Trade with daily averege price: split order in small chunks and execute during day
 
@@ -550,9 +546,6 @@ run_forecast('ETHUSD') # Ethereum
 # Ensemble strategy: avg of best Q tables
 
 # Add month/day to state
-
-# Fix bin logic so that bins are equally populated.
-# If duplicate values found include them in same bin
 
 # Test price change scenario
 
