@@ -218,14 +218,6 @@ def update_q(s, a, s1, r):
     qt.iloc[s, a] = q1
     qt.at[s1, 'visits'] += 1
 
-    max_action = int(qt.iloc[s,0:p.actions].idxmax(axis=1))
-    min_action = int(qt.iloc[s,0:p.actions].idxmin(axis=1))
-    max_reward = qt.iloc[s, max_action]
-    min_reward = qt.iloc[s, min_action]
-    ratio = max_reward - min_reward
-    qt.at[s, 'ratio'] = ratio
-
-    return ratio
 
 # Iterate over data => Produce experience tuples: (s, a, s', r) => Update Q table
 # In test mode do not update Q Table and no random actions (epsilon = 0)
@@ -240,9 +232,11 @@ def run_model(df, test=False):
             action = 0 # Do not take any action in first day
         else:
             old_state = state
-            if not (test and conf < min(p.confidence, qt.conf.max())): # Use same action if confidence is low 
+            if test and conf == 0: # Use same action if confidence is low 
+                action = action
+            else:
                 # Find Best Action based on previous state
-                action, expr = get_action(old_state, test)    
+                action, _ = get_action(old_state, test)
             # Take an Action and get Reward
             reward = take_action(pf, action, row.dr)
             # Observe New State
@@ -260,9 +254,9 @@ def run_model(df, test=False):
         df.at[i, 'total'] = pf.total
     
     if not test:
-        # If ratio is > 0 then use it to define confidence level
-        if p.ratio > 0: qt['conf'] = qt['ratio'].apply(lambda x: 0 if x < p.ratio else 1)
-        else: qt = qt.assign(conf=bin_feature(qt.ratio, cum = False))
+        qt['r'] = qt.visits * (qt.iloc[:,:p.actions].max(axis=1) - qt.iloc[:,:p.actions].min(axis=1))
+        qt['ratio'] = qt.r / qt.r.sum()
+        qt['conf'] = (qt['ratio'] > p.ratio).astype('int')
              
     return df
 
@@ -292,7 +286,7 @@ def train_model(df, tdf):
             r = get_ret(tdf.total)
         else:
             r = get_sr(tdf.pnl)
-        print("Epoch: %s %s: %s" % (ii, p.train_goal, r))
+#        print("Epoch: %s %s: %s" % (ii, p.train_goal, r))
         if r > max_r:
             max_r = r
             max_q = qt.copy()
@@ -337,8 +331,7 @@ def show_result(df, title):
     print("R: %.2f SR: %.3f QL/BH R: %.2f QL/BH SR: %.2f" % (qlr, qlsr, qlr/bhr, qlsr/bhsr))
     print("AVG Confidence: %.2f" % df.conf.mean())
     print('QT States: %s Valid: %s Confident: %s' % 
-          (len(qt), len(qt[qt.visits > 0]), 
-           len(qt[qt.conf >= min(p.confidence, qt.conf.max())])))
+          (len(qt), len(qt[qt.visits > 0]), len(qt[qt.conf >= 1])))
 
 def get_today_action(tdf):
     action = 'HOLD'
@@ -356,7 +349,7 @@ def print_forecast(tdf):
     next_action, reward = get_action(state)
     conf = qt.conf.iloc[state]
     action = 'HOLD'
-    if next_action != tdf.action.iloc[-1] and conf >= min(p.confidence, qt.conf.max()):
+    if next_action != tdf.action.iloc[-1] and conf >= 1:
         action = 'BUY' if next_action > 0 else 'SELL'
     print('Tomorrow: '+action)
 
@@ -452,7 +445,7 @@ def load_config(conf):
     p.reload = True # Reload price data or use existing  
     p.charts = False # Plot charts
     p.stats = True # Show model stats
-    p.epochs = 50 # Number of iterations for training (best 50)
+    p.epochs = 100 # Number of iterations for training (best 50)
     p.features = 4 # Number of features in state for Q table
     p.feature_bins = 3 # Number of bins for feature (more bins tend to overfit)
     p.train_pct = 1 # % of data used for training
@@ -464,8 +457,6 @@ def load_config(conf):
     p.currency = p.conf[3:6]
     p.cfgdir = 'data/'+p.conf
     p.version = 2 # Model version
-    p.confidence = 1 # Used to limit actions based on state confidence. Best: 1
-    p.ratio = 0 # Fine tuning for confidence level. Default is 0 which is no tuning
     p.sma_period = 50 # Best: 50
     p.adr_period = 20 # Average Daily Return period
     p.hh_period = 50 # Window for Highest High (best: 20 - 50)
@@ -482,16 +473,20 @@ def load_config(conf):
     p.max_bars = 1000 # Number of bars to use for training
     p.train_goal = 'R' # Maximize Return
     p.spread = 0.004 # Bitfinex fee
+    p.ratio = 0 # Min ratio for Q table to take an action
 
 
-    if conf == 'BTCUSD': # R: 183.09 SR: 0.187 QL/BH R: 6.92 QL/BH SR: 1.88
-        p.max_r = 183
+    if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
+        p.max_r = 180
         p.version = 1
-    elif conf == 'ETHUSD': # R: 4256.85 SR: 0.164 QL/BH R: 6.11 QL/BH SR: 1.31
-        p.max_r = 4256
-    elif conf == 'ETHBTC': # R: 1080.01 SR: 0.149 QL/BH R: 39.91 QL/BH SR: 1.85 27517 USD
+#        p.train = True
+#        p.reload = False
+#        p.epochs = 300
+    elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
+        p.max_r = 6984
+    elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
         p.version = 1
-        p.max_r = 1080
+        p.max_r = 1020
         
     if p.train:
         p.charts = True
@@ -522,12 +517,10 @@ def run_batch(conf, instances = 1):
 
 
 run_batch('BTCUSD') # Bitcoin 
-run_batch('ETHUSD') # Ethereum
-run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
+#run_batch('ETHUSD') # Ethereum
+#run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
 
 # TODO:
-# Test Bin function
-
 # Separate train_model and run_model procedures
 
 # Calculate R in USD
