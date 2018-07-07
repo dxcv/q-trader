@@ -479,9 +479,6 @@ def load_config(conf):
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
         p.max_r = 180
         p.version = 1
-#        p.train = True
-#        p.reload = False
-#        p.epochs = 300
     elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
         p.max_r = 6984
     elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
@@ -517,8 +514,8 @@ def run_batch(conf, instances = 1):
 
 
 run_batch('BTCUSD') # Bitcoin 
-#run_batch('ETHUSD') # Ethereum
-#run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
+run_batch('ETHUSD') # Ethereum
+run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
 
 # TODO:
 # Separate train_model and run_model procedures
