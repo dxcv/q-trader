@@ -8,11 +8,16 @@
 # Crypto Analysis: https://blog.patricktriest.com/analyzing-cryptocurrencies-python/
 
 # pip install ccxt
+#conda install theano
+#conda install tensorflow
+#conda install keras
+#pip install -U numpy
  
 import pandas as pd
 import numpy as np
 import time
 import talib.abstract as ta
+import talib
 import matplotlib.pyplot as plt
 import requests
 import pickle
@@ -25,14 +30,14 @@ from functools import partial
 
 # Init Q table with small random values
 def init_q():
+    qt = pd.DataFrame()
     if p.train:
         qt = pd.DataFrame(np.random.normal(scale=p.random_scale, size=(p.feature_bins**p.features,p.actions)))
         qt['visits'] = 0
         qt['conf'] = 0
         qt['ratio'] = 0.0
-    else: 
-#        print("Loading Q from "+p.q)
-        qt = pickle.load(open(p.q, "rb" ))
+    else:
+        if os.path.isfile(p.q): qt = pickle.load(open(p.q, "rb" ))
     return qt
 
 
@@ -51,6 +56,8 @@ def load_data_polo():
 # Load Historical Price Data from Cryptocompare
 # API Guide: https://medium.com/@agalea91/cryptocompare-api-quick-start-guide-ca4430a484d4
 def load_data():
+    if not p.reload: return pickle.load(open(p.file, "rb" ))
+    
     if p.bar_period == 'day':
         period = 'histoday'
     elif p.bar_period == 'hour': 
@@ -64,6 +71,7 @@ def load_data():
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
     print('Prices Loaded. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    return df
 
 # Map feature values to bins (numbers)
 # Each bin has same number of feature values
@@ -141,7 +149,7 @@ def get_action(state, test=True):
         #choose best action from Q(s,a) values
         max_action = int(qt.iloc[state,0:p.actions].idxmax(axis=1))
     
-    max_reward = qt.iloc[state, max_action]
+    max_reward = qt.iat[state, max_action]
     return max_action, max_reward
 
 class Portfolio:
@@ -175,7 +183,7 @@ def sell_lot(pf, lot, short=False):
 # Execute Action: buy or sell
 def take_action(pf, action, dr):
     old_total = pf.total
-    target = pf.total*actions.iloc[action,0] # Target portfolio
+    target = pf.total*actions.iat[action,0] # Target portfolio
     if target >= 0: # Long
         if pf.short > 0: sell_lot(pf, pf.short, True) # Close short positions first
         diff = target - pf.equity
@@ -381,13 +389,13 @@ def execute_action():
 def run_forecast(conf, seed = None):
     global tdf
     global df
-    
+
     if seed is not None: np.random.seed(seed)
     print('')
     print('**************** Running model for '+conf+' ****************')
     load_config(conf)
     
-    if p.reload: load_data() # Load Historical Price Data   
+    load_data() # Load Historical Price Data   
     # This needs to run before test dataset as it generates bin config
     if p.train: df = get_dataset() # Read Train data. 
     tdf = get_dataset(test=True) # Read Test data
@@ -398,38 +406,11 @@ def run_forecast(conf, seed = None):
     print_forecast(tdf) # Print Forecast
     if p.execute: execute_action()
 
-def predict_dr(conf):
-    global tdf
-    load_config(conf)
-    if p.reload: load_data() # Load Historical Price Data   
-    df = get_dataset()
-    df = df.assign(nextdr=df.dr.shift(-1))
-    df = df.dropna()
-
-    columns = ['dr', 'rsi', 'dsma', 'rsma', 'hhll']
-    x = df[columns].values
-    y = df['nextdr'].values
-
-    # Fitting Multiple Linear Regression to the Training set
-    from sklearn.ensemble import RandomForestRegressor
-    regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
-    regressor.fit(x, y)
-    
-    # Predicting the Test set results
-    tdf = get_dataset(test=True)
-    x = tdf[columns].values
-    tdf = tdf.assign(preddr=regressor.predict(x))
-    tdf = tdf.assign(nextdr=tdf.dr.shift(-1))
-    tdf.at[len(tdf)-1, 'nextdr'] = 0
-    tdf = tdf.assign(preddelta=tdf.preddr-tdf.nextdr)
-    print("Mean Error: %s" % tdf.preddelta.abs().mean())
-    print("Predicted DR: %s" % tdf.preddr.iloc[-1])
-
 def load_config(conf):
-    global qt # Q Table
     global actions
     global tl
-
+    global qt # Q Table
+    
 #    np.random.seed(12345) # Set random seed so that results are reproducible
     p.random_scale = 0.00001 # Defines standard deviation for random Q values 
     p.start_balance = 1.0
@@ -475,7 +456,6 @@ def load_config(conf):
     p.spread = 0.004 # Bitfinex fee
     p.ratio = 0 # Min ratio for Q table to take an action
 
-
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
         p.max_r = 180
         p.version = 1
@@ -484,6 +464,24 @@ def load_config(conf):
     elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
         p.version = 1
         p.max_r = 1020
+    elif conf == 'ETHUSDTEST': #
+#        p.train = True
+        p.max_r = 1.7
+#        p.reload = False
+        p.max_bars = 0
+#        p.train_pct = 0.8
+#        p.test_pct = 0.2
+#        p.charts = True
+    elif conf == 'ETHUSDNN':
+        p.max_r = 18228
+#        p.train = True
+        p.max_bars = 0
+        p.train_pct = 0.8
+        p.test_pct = 0.2
+#        p.shuffle = True
+#        p.reload = False
+        p.epochs = 500
+        p.model = p.cfgdir+'/best.nn'
         
     if p.train:
         p.charts = True
@@ -493,13 +491,12 @@ def load_config(conf):
     p.q = p.cfgdir+'/q.pkl'
     p.tl = p.cfgdir+'/tl.pkl'
 
-    actions = pd.DataFrame(np.linspace(-1 if p.short else 0, 1, p.actions))
     qt = init_q() # Initialise Model
+    actions = pd.DataFrame(np.linspace(-1 if p.short else 0, 1, p.actions))
     if os.path.isfile(p.tl):
         tl = pickle.load(open(p.tl, "rb" ))
     else:
         tl = TradeLog()
-
 
 def run_batch(conf, instances = 1):
     if instances == 1:
@@ -512,10 +509,126 @@ def run_batch(conf, instances = 1):
          
     print('Took %s', time.time() - ts)
 
+# Source:
+# https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
+def runNN(conf):
+    global trade_dataset
+    
+    load_config(conf)
+    dataset = load_data()
+    
+    # Calculate Features
+    # Tomorrow Return - this should not be included in training set
+    dataset['TR'] = (dataset['close']/dataset['close'].shift(1)).shift(-1)
+    dataset['H-L'] = dataset['high'] - dataset['low']
+    dataset['O-C'] = dataset['close'] - dataset['open']
+    dataset['3day MA'] = dataset['close'].shift(1).rolling(window = 3).mean()
+    dataset['10day MA'] = dataset['close'].shift(1).rolling(window = 10).mean()
+    dataset['30day MA'] = dataset['close'].shift(1).rolling(window = 30).mean()
+    dataset['Std_dev']= dataset['close'].rolling(5).std()
+    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = 9)
+    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
+    
+    # Predicted value is whether price will rise
+    dataset['Price_Rise'] = np.where(dataset['close'].shift(-1) > dataset['close'], 1, 0)
+    dataset = dataset.dropna()
+    
+    # Shuffle rows in dataset
+    if p.shuffle: dataset = dataset.sample(frac=1).reset_index(drop=True)
+    
+    # Separate input from output
+    X = dataset.iloc[:, -9:-1]
+    y = dataset.iloc[:, -1]
+    
+    # Separate train from test
+    train_split = int(len(dataset)*p.train_pct)
+    test_split = int(len(dataset)*p.test_pct)
+    X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
+    
+    # Feature Scaling
+    from sklearn.preprocessing import StandardScaler
+    sc = StandardScaler()
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+    
+    # Building Neural Network
+    from keras.models import Sequential
+    from keras.layers import Dense
+#    from keras.layers import Dropout
+    #from keras.callbacks import EarlyStopping
+    from keras.callbacks import ModelCheckpoint
+    
+    # Early stopping  
+    #es = EarlyStopping(monitor='val_acc', min_delta=0, patience=100, verbose=1, mode='max')
+    model = p.cfgdir+'/model.nn'
+    cp = ModelCheckpoint(model, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+     
+    classifier = Sequential()
+    classifier.add(Dense(units = 16, kernel_initializer = 'uniform', activation = 'relu', input_dim = X.shape[1]))
+#    classifier.add(Dropout(0.2))
+    classifier.add(Dense(units = 16, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    
+    if p.train:
+        classifier.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
+        history = classifier.fit(X_train, y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, y_test))
+    
+        # Plot model history
+        # Accuracy: % of correct predictions 
+        plt.plot(history.history['acc'], label='Train Accuracy')
+        plt.plot(history.history['val_acc'], label='Test Accuracy')
+        plt.plot(history.history['loss'], label='Train Loss')
+        plt.plot(history.history['val_loss'], label='Test Loss')
+        plt.xlabel('Epoch')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+    else:
+        model = p.model
+    
+    # Load Best Model
+    classifier.load_weights(model)
+    
+    # Compile model (required to make predictions)
+    classifier.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
+    
+    # Predicting The Price
+    y_pred = classifier.predict(X_test)
+    y_pred = (y_pred > 0.5)
+    
+    dataset['y_pred'] = np.NaN
+    dataset.iloc[(len(dataset) - len(y_pred)):,-1:] = y_pred
+    trade_dataset = dataset.dropna().copy()
+    
+    # If price is predicted to drop - sell (no short selling)
+    trade_dataset['SR'] = np.where(trade_dataset['y_pred'] == True, trade_dataset['TR'], 1)
+    trade_dataset['CMR'] = np.cumprod(trade_dataset['TR'])
+    trade_dataset['CSR'] = np.cumprod(trade_dataset['SR'])
+    
+    # Plot the graph
+#    trade_dataset = trade_dataset.set_index('date')
+    fig, ax = plt.subplots()
+    fig.autofmt_xdate()
+    plt.plot(trade_dataset['CMR'], color='r', label='Market Returns')
+    plt.plot(trade_dataset['CSR'], color='g', label='Strategy Returns')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    
+    print('Trade Frequency: '+ str(len(trade_dataset[trade_dataset['y_pred'] != trade_dataset['y_pred'].shift(-1)])/len(trade_dataset)))
 
-run_batch('BTCUSD') # Bitcoin 
-run_batch('ETHUSD') # Ethereum
-run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
+def run():
+    #q.run_batch('BTCUSD') # Bitcoin: Stop trading low profit strategy?
+    #q.run_batch('ETHUSD') # Ethereum
+    #q.run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
+    
+#    run_batch('ETHUSDTEST')    
+    runNN('ETHUSDNN')
+
+run()
+
+
+# TIP: Sell permanently when state 80 is changed to other state
 
 # TODO:
 # Separate train_model and run_model procedures
