@@ -67,7 +67,7 @@ def load_data():
                      +'&allData=true&e='+p.exchange)
     df = pd.DataFrame(r.json()['Data'])
     df['date'] = pd.to_datetime(df['time'],unit='s')
-    df.drop(['time', 'volumefrom', 'volumeto'], axis=1, inplace=True)
+#    df.drop(['time', 'volumefrom', 'volumeto'], axis=1, inplace=True)
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
     print('Prices Loaded. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
@@ -429,8 +429,6 @@ def load_config(conf):
     p.epochs = 100 # Number of iterations for training (best 50)
     p.features = 4 # Number of features in state for Q table
     p.feature_bins = 3 # Number of bins for feature (more bins tend to overfit)
-    p.train_pct = 1 # % of data used for training
-    p.test_pct = 1 # % of data used for testing
     
     p.max_r = 0
     p.conf = conf
@@ -451,37 +449,51 @@ def load_config(conf):
     p.min_cash = 1
     p.min_equity = 0.001
     p.bar_period = 'day' # Price bar period: day or hour
-    p.max_bars = 1000 # Number of bars to use for training
+    p.max_bars = 0 # Number of bars to use for training
     p.train_goal = 'R' # Maximize Return
     p.spread = 0.004 # Bitfinex fee
     p.ratio = 0 # Min ratio for Q table to take an action
+    p.shuffle = False
+    p.units = 16
+    p.train_pct = 1 # % of data used for training
+    p.test_pct = 1 # % of data used for testing
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
         p.max_r = 180
         p.version = 1
     elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
+#        6508 / 1.27
         p.max_r = 6984
     elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
+        # 918 / 1.43
         p.version = 1
         p.max_r = 1020
-    elif conf == 'ETHUSDTEST': #
-#        p.train = True
-        p.max_r = 1.7
-#        p.reload = False
-        p.max_bars = 0
-#        p.train_pct = 0.8
 #        p.test_pct = 0.2
-#        p.charts = True
-    elif conf == 'ETHUSDNN':
-        p.max_r = 18228
+    elif conf == 'ETHUSDNN': # 18062 / 3.17
 #        p.train = True
-        p.max_bars = 0
         p.train_pct = 0.8
         p.test_pct = 0.2
 #        p.shuffle = True
 #        p.reload = False
-        p.epochs = 500
-        p.model = p.cfgdir+'/best.nn'
+        p.epochs = 100
+        p.model = p.cfgdir+'/model317.nn'
+    elif conf == 'BTCUSDNN':
+#        p.train = True
+        p.train_pct = 0.8
+        p.test_pct = 0.2
+#        p.shuffle = True
+#        p.reload = False
+        p.epochs = 300
+        p.model = p.cfgdir+'/model144.nn'
+    elif conf == 'ETHBTCNN': # 6605 / 2.12
+#        p.train = True
+        p.train_pct = 0.8
+        p.test_pct = 0.2
+#        p.shuffle = True
+#        p.reload = False
+        p.epochs = 200
+        p.model = p.cfgdir+'/model6605.nn'
+#        p.model = p.cfgdir+'/model.nn'
         
     if p.train:
         p.charts = True
@@ -513,16 +525,20 @@ def run_batch(conf, instances = 1):
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
 def runNN(conf):
     global trade_dataset
+    global X
     
     load_config(conf)
     dataset = load_data()
     
+#    TODO: Add month
+    
     # Calculate Features
     # Tomorrow Return - this should not be included in training set
     dataset['TR'] = (dataset['close']/dataset['close'].shift(1)).shift(-1)
-    dataset['H-L'] = dataset['high'] - dataset['low']
-    dataset['O-C'] = dataset['close'] - dataset['open']
-    dataset['3day MA'] = dataset['close'].shift(1).rolling(window = 3).mean()
+    dataset['VOL'] = dataset['volumeto'] - dataset['volumefrom']
+    dataset['HH'] = dataset['high'].rolling(window = 5).max() 
+    dataset['LL'] = dataset['low'].rolling(window = 5).min()
+    dataset['DR'] = dataset['close']/dataset['close'].shift(1)
     dataset['10day MA'] = dataset['close'].shift(1).rolling(window = 10).mean()
     dataset['30day MA'] = dataset['close'].shift(1).rolling(window = 30).mean()
     dataset['Std_dev']= dataset['close'].rolling(5).std()
@@ -531,13 +547,15 @@ def runNN(conf):
     
     # Predicted value is whether price will rise
     dataset['Price_Rise'] = np.where(dataset['close'].shift(-1) > dataset['close'], 1, 0)
+
+    if p.max_bars > 0: dataset = dataset.tail(p.max_bars).reset_index(drop=True)
     dataset = dataset.dropna()
     
     # Shuffle rows in dataset
     if p.shuffle: dataset = dataset.sample(frac=1).reset_index(drop=True)
     
     # Separate input from output
-    X = dataset.iloc[:, -9:-1]
+    X = dataset.iloc[:, -10:-1]
     y = dataset.iloc[:, -1]
     
     # Separate train from test
@@ -561,17 +579,18 @@ def runNN(conf):
     # Early stopping  
     #es = EarlyStopping(monitor='val_acc', min_delta=0, patience=100, verbose=1, mode='max')
     model = p.cfgdir+'/model.nn'
-    cp = ModelCheckpoint(model, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+    cp = ModelCheckpoint(model, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
      
+    print('Using NN with '+str(p.units)+' units per layer')
     classifier = Sequential()
-    classifier.add(Dense(units = 16, kernel_initializer = 'uniform', activation = 'relu', input_dim = X.shape[1]))
+    classifier.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim = X.shape[1]))
 #    classifier.add(Dropout(0.2))
-    classifier.add(Dense(units = 16, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
     classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
     
     if p.train:
         classifier.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
-        history = classifier.fit(X_train, y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, y_test))
+        history = classifier.fit(X_train, y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, y_test), verbose=0)
     
         # Plot model history
         # Accuracy: % of correct predictions 
@@ -588,6 +607,7 @@ def runNN(conf):
     
     # Load Best Model
     classifier.load_weights(model)
+    print('Loaded Best Model From: '+model)
     
     # Compile model (required to make predictions)
     classifier.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
@@ -608,24 +628,26 @@ def runNN(conf):
     # Plot the graph
 #    trade_dataset = trade_dataset.set_index('date')
     fig, ax = plt.subplots()
-    fig.autofmt_xdate()
-    plt.plot(trade_dataset['CMR'], color='r', label='Market Returns')
-    plt.plot(trade_dataset['CSR'], color='g', label='Strategy Returns')
+#    fig.autofmt_xdate()
+    ax.plot(trade_dataset['CSR'], color='g', label='Strategy Returns')
+    ax.plot(trade_dataset['CMR'], color='r', label='Market Returns')
     plt.legend()
     plt.grid(True)
+    plt.title(model)
     plt.show()
     
     print('Trade Frequency: '+ str(len(trade_dataset[trade_dataset['y_pred'] != trade_dataset['y_pred'].shift(-1)])/len(trade_dataset)))
+    print('Strategy Return: '+ str(round(trade_dataset.CSR.iloc[-1], 2)))
+#   TODO: Add Signal, Accuracy, Sharpe Ratio, Market Return
 
-def run():
-    #q.run_batch('BTCUSD') # Bitcoin: Stop trading low profit strategy?
-    #q.run_batch('ETHUSD') # Ethereum
-    #q.run_batch('ETHBTC') # Better than ETHUSD if counted in USD terms
-    
-#    run_batch('ETHUSDTEST')    
-    runNN('ETHUSDNN')
+#run_batch('BTCUSD') # Bitcoin: Stop trading low profit strategy?
 
-run()
+#run_batch('ETHUSD') 
+#run_batch('ETHBTC')
+
+runNN('ETHUSDNN')
+runNN('ETHBTCNN')
+
 
 
 # TIP: Sell permanently when state 80 is changed to other state
