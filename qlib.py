@@ -13,6 +13,7 @@
 #conda install keras
 #pip install -U numpy
  
+import math
 import pandas as pd
 import numpy as np
 import time
@@ -27,6 +28,13 @@ import exchange as ex
 import datetime as dt
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+import stats as st
+from keras.models import Sequential
+from keras.layers import Dense
+#from keras.layers import Dropout
+#from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
+from sklearn.preprocessing import StandardScaler
 
 # Init Q table with small random values
 def init_q():
@@ -391,8 +399,6 @@ def run_forecast(conf, seed = None):
     global df
 
     if seed is not None: np.random.seed(seed)
-    print('')
-    print('**************** Running model for '+conf+' ****************')
     load_config(conf)
     
     load_data() # Load Historical Price Data   
@@ -411,6 +417,8 @@ def load_config(conf):
     global tl
     global qt # Q Table
     
+    print('')
+    print('**************** Running model for '+conf+' ****************')
 #    np.random.seed(12345) # Set random seed so that results are reproducible
     p.random_scale = 0.00001 # Defines standard deviation for random Q values 
     p.start_balance = 1.0
@@ -455,44 +463,32 @@ def load_config(conf):
     p.ratio = 0 # Min ratio for Q table to take an action
     p.shuffle = False
     p.units = 16
-    p.train_pct = 1 # % of data used for training
-    p.test_pct = 1 # % of data used for testing
+    p.train_pct = 0.8 # % of data used for training
+    p.test_pct = 0.2 # % of data used for testing
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
         p.max_r = 180
         p.version = 1
     elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
-#        6508 / 1.27
+#        6508 / 1.25
         p.max_r = 6984
     elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
-        # 918 / 1.43
+        # 918 / 1.29
         p.version = 1
         p.max_r = 1020
-#        p.test_pct = 0.2
-    elif conf == 'ETHUSDNN': # 18062 / 3.17
+    elif conf == 'ETHUSDNN': # 26955 / 2.20
 #        p.train = True
-        p.train_pct = 0.8
-        p.test_pct = 0.2
-#        p.shuffle = True
 #        p.reload = False
-        p.epochs = 100
-        p.model = p.cfgdir+'/model317.nn'
+        p.model = p.cfgdir+'/model60.nn'
+#        p.model = p.cfgdir+'/model.nn'
+#        p.test_pct = 1
     elif conf == 'BTCUSDNN':
 #        p.train = True
-        p.train_pct = 0.8
-        p.test_pct = 0.2
-#        p.shuffle = True
-#        p.reload = False
-        p.epochs = 300
         p.model = p.cfgdir+'/model144.nn'
-    elif conf == 'ETHBTCNN': # 6605 / 2.12
+    elif conf == 'ETHBTCNN': # 847 / 2.26
 #        p.train = True
-        p.train_pct = 0.8
-        p.test_pct = 0.2
-#        p.shuffle = True
-#        p.reload = False
-        p.epochs = 200
-        p.model = p.cfgdir+'/model6605.nn'
+#        p.test_pct = 1
+        p.model = p.cfgdir+'/model61.nn'
 #        p.model = p.cfgdir+'/model.nn'
         
     if p.train:
@@ -521,32 +517,152 @@ def run_batch(conf, instances = 1):
          
     print('Took %s', time.time() - ts)
 
+# Source: https://machinelearningmastery.com/regression-tutorial-keras-deep-learning-library-python/
+from keras.wrappers.scikit_learn import KerasRegressor
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import KFold
+from sklearn.pipeline import Pipeline
+
+# define base model
+def baseline_model():
+    model = Sequential()
+    p.units = 16
+    model.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim=X.shape[1]))
+    model.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
+    model.add(Dense(1, kernel_initializer='uniform'))
+    # Compile model
+    model.compile(loss='mse', optimizer='adam')
+    return model
+
+def runNNReg(conf):
+    global dataset
+    global X
+
+    load_config(conf)
+    dataset = load_data()
+
+    # Calculate Features
+    dataset['DR'] = dataset['close']/dataset['close'].shift(1)
+    dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
+    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = 30).max() 
+    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = 30).min()
+    dataset['MA10'] = dataset['close']/dataset['close'].rolling(window = 10).mean()
+    dataset['MA30'] = dataset['close']/dataset['close'].rolling(window = 30).mean()
+    dataset['Std_dev']= dataset['close'].rolling(5).std()/dataset['close']
+    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = 5)
+    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
+    # Tomorrow Return
+    dataset['TR'] = dataset['DR'].shift(-1)
+
+    if p.max_bars > 0: dataset = dataset.tail(p.max_bars).reset_index(drop=True)
+    dataset = dataset.dropna()
+
+    # Separate input from output
+    X = dataset.iloc[:, -10:-1]
+    Y = pd.DataFrame(dataset.iloc[:, -1])
+    Y['TR'] = round(Y.TR, 2)
+
+    # Separate train from test
+    train_split = int(len(dataset)*p.train_pct)
+    test_split = int(len(dataset)*p.test_pct)
+    X_train, X_test, Y_train, Y_test = X[:train_split], X[-test_split:], Y[:train_split], Y[-test_split:]
+    
+    # Feature Scaling
+    sc = StandardScaler()
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+    
+#    Y_train = sc.fit_transform(Y_train)
+#    Y_test = sc.transform(Y_test)
+
+    modelf = p.cfgdir+'/model.nn'
+    model = baseline_model()
+    cp = ModelCheckpoint(modelf, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    history = model.fit(X_train, Y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, Y_test), verbose=0)
+    
+#    plt.plot(history.history['acc'], label='Train Accuracy')
+#    plt.plot(history.history['val_acc'], label='Test Accuracy')
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.plot(history.history['val_loss'], label='Test Loss')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    # Load Best Model
+    model.load_weights(modelf)
+    print('Loaded Best Model From: '+modelf)
+    
+    # Compile model (required to make predictions)
+    model.compile(optimizer = 'adam', loss = 'mse', metrics = ['accuracy'])
+    
+    # Predicting The Price
+    y_pred = model.predict(X_test)
+    dataset['y_pred'] = np.NaN
+    dataset.iloc[(len(dataset) - len(y_pred)):,-1:] = y_pred
+    td = dataset.dropna().copy()
+    
+    print("AVG Error: %.4f" % (abs(td.y_pred - td.TR).sum()/len(td)))
+    
+    # If price is predicted to drop - sell (no short selling)
+    td['SR'] = np.where(td['y_pred'] > 1, td['TR'], 1)
+    td['CMR'] = np.cumprod(td['TR'])
+    td['CSR'] = np.cumprod(td['SR'])
+    
+    # Plot the graph
+#    td = td.set_index('date')
+    fig, ax = plt.subplots()
+#    fig.autofmt_xdate()
+    ax.plot(td['CSR'], color='g', label='Strategy Returns')
+    ax.plot(td['CMR'], color='r', label='Market Returns')
+    plt.legend()
+    plt.grid(True)
+    plt.title(modelf)
+    plt.show()
+
+    print('Signal: ' + ('Buy' if td.y_pred.iloc[-1] else 'Sell'))
+#   Calculate Stats
+    print('Trade Frequency: %.2f' % (len(td[td['y_pred'] != td['y_pred'].shift(-1)])/len(td)))
+    print('Market Return: %.2f'   % td.CMR.iloc[-1])
+    print('Strategy Return: %.2f' % td.CSR.iloc[-1])
+ 
+    r = td.SR - 1 # Strategy Returns
+    m = td.DR - 1 # Market Returns
+    e = np.mean(r) # Avg Strategy Daily Return
+    f = np.mean(m) # Avg Market Daily Return
+    print('Average Daily Return: %.3f' % e)
+    print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
+
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
 def runNN(conf):
-    global trade_dataset
+    global td
+    global dataset
     global X
     
     load_config(conf)
     dataset = load_data()
     
 #    TODO: Add month
+#    Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     
     # Calculate Features
     # Tomorrow Return - this should not be included in training set
     dataset['TR'] = (dataset['close']/dataset['close'].shift(1)).shift(-1)
-    dataset['VOL'] = dataset['volumeto'] - dataset['volumefrom']
-    dataset['HH'] = dataset['high'].rolling(window = 5).max() 
-    dataset['LL'] = dataset['low'].rolling(window = 5).min()
+    dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
+    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = 30).max() 
+    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = 30).min()
     dataset['DR'] = dataset['close']/dataset['close'].shift(1)
-    dataset['10day MA'] = dataset['close'].shift(1).rolling(window = 10).mean()
-    dataset['30day MA'] = dataset['close'].shift(1).rolling(window = 30).mean()
-    dataset['Std_dev']= dataset['close'].rolling(5).std()
-    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = 9)
+    dataset['MA10'] = dataset['close']/dataset['close'].rolling(window = 10).mean()
+    dataset['MA30'] = dataset['close']/dataset['close'].rolling(window = 30).mean()
+    dataset['Std_dev']= dataset['close'].rolling(5).std()/dataset['close']
+    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = 5)
     dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
     
     # Predicted value is whether price will rise
-    dataset['Price_Rise'] = np.where(dataset['close'].shift(-1) > dataset['close'], 1, 0)
+    # Adjust Price Rise so low price rise is ignored
+    dataset['Price_Rise'] = np.where(dataset['close'].shift(-1)/dataset['close'] - 1 > p.spread, 1, 0)
 
     if p.max_bars > 0: dataset = dataset.tail(p.max_bars).reset_index(drop=True)
     dataset = dataset.dropna()
@@ -564,22 +680,16 @@ def runNN(conf):
     X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
     
     # Feature Scaling
-    from sklearn.preprocessing import StandardScaler
     sc = StandardScaler()
     X_train = sc.fit_transform(X_train)
     X_test = sc.transform(X_test)
     
     # Building Neural Network
-    from keras.models import Sequential
-    from keras.layers import Dense
-#    from keras.layers import Dropout
-    #from keras.callbacks import EarlyStopping
-    from keras.callbacks import ModelCheckpoint
     
     # Early stopping  
     #es = EarlyStopping(monitor='val_acc', min_delta=0, patience=100, verbose=1, mode='max')
     model = p.cfgdir+'/model.nn'
-    cp = ModelCheckpoint(model, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    cp = ModelCheckpoint(model, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
      
     print('Using NN with '+str(p.units)+' units per layer')
     classifier = Sequential()
@@ -618,39 +728,69 @@ def runNN(conf):
     
     dataset['y_pred'] = np.NaN
     dataset.iloc[(len(dataset) - len(y_pred)):,-1:] = y_pred
-    trade_dataset = dataset.dropna().copy()
+    td = dataset.dropna().copy()
     
     # If price is predicted to drop - sell (no short selling)
-    trade_dataset['SR'] = np.where(trade_dataset['y_pred'] == True, trade_dataset['TR'], 1)
-    trade_dataset['CMR'] = np.cumprod(trade_dataset['TR'])
-    trade_dataset['CSR'] = np.cumprod(trade_dataset['SR'])
+    td['SR'] = np.where(td['y_pred'] == True, td['TR'], 1)
+    td['CMR'] = np.cumprod(td['TR'])
+    td['CSR'] = np.cumprod(td['SR'])
     
     # Plot the graph
-#    trade_dataset = trade_dataset.set_index('date')
+#    td = td.set_index('date')
     fig, ax = plt.subplots()
 #    fig.autofmt_xdate()
-    ax.plot(trade_dataset['CSR'], color='g', label='Strategy Returns')
-    ax.plot(trade_dataset['CMR'], color='r', label='Market Returns')
+    ax.plot(td['CSR'], color='g', label='Strategy Returns')
+    ax.plot(td['CMR'], color='r', label='Market Returns')
     plt.legend()
     plt.grid(True)
     plt.title(model)
     plt.show()
     
-    print('Trade Frequency: '+ str(len(trade_dataset[trade_dataset['y_pred'] != trade_dataset['y_pred'].shift(-1)])/len(trade_dataset)))
-    print('Strategy Return: '+ str(round(trade_dataset.CSR.iloc[-1], 2)))
-#   TODO: Add Signal, Accuracy, Sharpe Ratio, Market Return
+    print('Signal: ' + ('Buy' if td.y_pred.iloc[-1] else 'Sell'))
+#   Calculate Stats
+    print('Trade Frequency: %.2f' % (len(td[td['y_pred'] != td['y_pred'].shift(-1)])/len(td)))
+    print('Market Return: %.2f'   % td.CMR.iloc[-1])
+    print('Strategy Return: %.2f' % td.CSR.iloc[-1])
+    print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
+ 
+    r = td.SR - 1 # Strategy Returns
+    m = td.DR - 1 # Market Returns
+    e = np.mean(r) # Avg Strategy Daily Return
+    f = np.mean(m) # Avg Market Daily Return
+    print('Average Daily Return: %.3f' % e)
+    print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
 
 #run_batch('BTCUSD') # Bitcoin: Stop trading low profit strategy?
 
-#run_batch('ETHUSD') 
-#run_batch('ETHBTC')
+run_batch('ETHUSD') 
 
+#Trade Frequency: 0.26
+#Market Return: 0.63
+#Strategy Return: 2.20
+#Accuracy: 0.60
+#Average Daily Return: 0.005
+#Sortino Ratio: 0.20
 runNN('ETHUSDNN')
+
+run_batch('ETHBTC')
+
+#Trade Frequency: 0.09
+#Market Return: 1.15
+#Strategy Return: 2.26
+#Accuracy: 0.61
+#Average Daily Return: 0.004
+#Sortino Ratio: 0.22
 runNN('ETHBTCNN')
 
+#Regression does not work on small datasets
+#runNNReg('BTCUSDNN')
 
+# TODO: Predict DR and 
+# TODO: Adjust strategy to HOLD when DR is less that exchange fee
 
-# TIP: Sell permanently when state 80 is changed to other state
+# See: https://www.vantagepointsoftware.com/mendelsohn/preprocessing-data-neural-networks/
+
+# Exit strategy: Sell permanently when state 80 is changed to other state
 
 # TODO:
 # Separate train_model and run_model procedures
