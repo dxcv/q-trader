@@ -13,7 +13,6 @@
 #conda install keras
 #pip install -U numpy
  
-import math
 import pandas as pd
 import numpy as np
 import time
@@ -484,7 +483,8 @@ def load_config(conf):
 #        p.test_pct = 1
     elif conf == 'BTCUSDNN':
 #        p.train = True
-        p.model = p.cfgdir+'/model144.nn'
+        p.train_pct = 0.9
+        p.model = p.cfgdir+'/model57.nn'
     elif conf == 'ETHBTCNN': # 847 / 2.26
 #        p.train = True
 #        p.test_pct = 1
@@ -760,27 +760,38 @@ def runNN(conf):
     print('Average Daily Return: %.3f' % e)
     print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
 
-#run_batch('BTCUSD') # Bitcoin: Stop trading low profit strategy?
 
-run_batch('ETHUSD') 
+def run():
+#    run_batch('BTCUSD') # Low profit strategy
+    run_batch('ETHUSD') 
+    run_batch('ETHBTC')
 
-#Trade Frequency: 0.26
-#Market Return: 0.63
-#Strategy Return: 2.20
-#Accuracy: 0.60
-#Average Daily Return: 0.005
-#Sortino Ratio: 0.20
-runNN('ETHUSDNN')
+    #Trade Frequency: 0.26
+    #Market Return: 0.63
+    #Strategy Return: 2.20
+    #Accuracy: 0.60
+    #Average Daily Return: 0.005
+    #Sortino Ratio: 0.20
+    runNN('ETHUSDNN')
 
-run_batch('ETHBTC')
+    #Trade Frequency: 0.09
+    #Market Return: 1.15
+    #Strategy Return: 2.26
+    #Accuracy: 0.61
+    #Average Daily Return: 0.004
+    #Sortino Ratio: 0.22
+    runNN('ETHBTCNN')
 
-#Trade Frequency: 0.09
-#Market Return: 1.15
-#Strategy Return: 2.26
-#Accuracy: 0.61
-#Average Daily Return: 0.004
-#Sortino Ratio: 0.22
-runNN('ETHBTCNN')
+def train():
+    #Trade Frequency: 0.13
+    #Market Return: 7.82
+    #Strategy Return: 15.19
+    #Accuracy: 0.57
+    #Average Daily Return: 0.005
+    #Sortino Ratio: 0.02    
+    runNN('BTCUSDNN')
+
+train()
 
 #Regression does not work on small datasets
 #runNNReg('BTCUSDNN')
