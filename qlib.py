@@ -478,18 +478,23 @@ def load_config(conf):
     elif conf == 'ETHUSDNN': # 26955 / 2.20
 #        p.train = True
 #        p.reload = False
-        p.model = p.cfgdir+'/model60.nn'
-#        p.model = p.cfgdir+'/model.nn'
-#        p.test_pct = 1
+        p.model = p.cfgdir+'/model65.nn'
     elif conf == 'BTCUSDNN':
 #        p.train = True
-        p.train_pct = 0.9
+        p.units = 32
+        p.sma_period = 15
+        p.hh_period = 7
+        p.ll_period = 7
+        p.rsi_period = 14
         p.model = p.cfgdir+'/model57.nn'
     elif conf == 'ETHBTCNN': # 847 / 2.26
 #        p.train = True
-#        p.test_pct = 1
-        p.model = p.cfgdir+'/model61.nn'
-#        p.model = p.cfgdir+'/model.nn'
+        p.units = 10
+        p.sma_period = 15
+        p.hh_period = 20
+        p.ll_period = 20
+        p.rsi_period = 15
+        p.model = p.cfgdir+'/model62.nn'
         
     if p.train:
         p.charts = True
@@ -545,13 +550,12 @@ def runNNReg(conf):
     # Calculate Features
     dataset['DR'] = dataset['close']/dataset['close'].shift(1)
     dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
-    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = 30).max() 
-    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = 30).min()
-    dataset['MA10'] = dataset['close']/dataset['close'].rolling(window = 10).mean()
-    dataset['MA30'] = dataset['close']/dataset['close'].rolling(window = 30).mean()
-    dataset['Std_dev']= dataset['close'].rolling(5).std()/dataset['close']
-    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = 5)
-    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
+    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = p.hh_period).max() 
+    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = p.ll_period).min()
+    dataset['MA'] = dataset['close']/dataset['close'].rolling(window = p.sma_period).mean()
+    dataset['Std_dev']= dataset['close'].rolling(30).std()/dataset['close']
+    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = p.rsi_period)
+    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 30)
     # Tomorrow Return
     dataset['TR'] = dataset['DR'].shift(-1)
 
@@ -559,7 +563,7 @@ def runNNReg(conf):
     dataset = dataset.dropna()
 
     # Separate input from output
-    X = dataset.iloc[:, -10:-1]
+    X = dataset.iloc[:, -9:-1]
     Y = pd.DataFrame(dataset.iloc[:, -1])
     Y['TR'] = round(Y.TR, 2)
 
@@ -651,13 +655,13 @@ def runNN(conf):
     # Tomorrow Return - this should not be included in training set
     dataset['TR'] = (dataset['close']/dataset['close'].shift(1)).shift(-1)
     dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
-    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = 30).max() 
-    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = 30).min()
+    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = p.hh_period).max() 
+    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = p.ll_period).min()
     dataset['DR'] = dataset['close']/dataset['close'].shift(1)
-    dataset['MA10'] = dataset['close']/dataset['close'].rolling(window = 10).mean()
-    dataset['MA30'] = dataset['close']/dataset['close'].rolling(window = 30).mean()
-    dataset['Std_dev']= dataset['close'].rolling(5).std()/dataset['close']
-    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = 5)
+    dataset['MA'] = dataset['close']/dataset['close'].rolling(window = p.sma_period).mean()
+    dataset['MA2'] = dataset['close']/dataset['close'].rolling(window = 2*p.sma_period).mean()
+    dataset['Std_dev']= dataset['close'].rolling(7).std()/dataset['close']
+    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = p.rsi_period)
     dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
     
     # Predicted value is whether price will rise
@@ -766,29 +770,31 @@ def run():
     run_batch('ETHUSD') 
     run_batch('ETHBTC')
 
-    #Trade Frequency: 0.26
-    #Market Return: 0.63
-    #Strategy Return: 2.20
-    #Accuracy: 0.60
-    #Average Daily Return: 0.005
-    #Sortino Ratio: 0.20
+    #Trade Frequency: 0.28
+    #Market Return: 7.81
+    #Strategy Return: 17.71
+    #Accuracy: 0.57
+    #Average Daily Return: 0.006
+    #Sortino Ratio: 0.04    
+    runNN('BTCUSDNN')
+
+    #Trade Frequency: 0.31
+    #Market Return: 0.39
+    #Strategy Return: 2.21
+    #Accuracy: 0.65
+    #Average Daily Return: 0.004
+    #Sortino Ratio: 0.51
     runNN('ETHUSDNN')
 
-    #Trade Frequency: 0.09
-    #Market Return: 1.15
-    #Strategy Return: 2.26
-    #Accuracy: 0.61
+    #Trade Frequency: 0.10
+    #Market Return: 0.93
+    #Strategy Return: 2.02
+    #Accuracy: 0.62
     #Average Daily Return: 0.004
-    #Sortino Ratio: 0.22
+    #Sortino Ratio: 0.29
     runNN('ETHBTCNN')
 
 def train():
-    #Trade Frequency: 0.13
-    #Market Return: 7.82
-    #Strategy Return: 15.19
-    #Accuracy: 0.57
-    #Average Daily Return: 0.005
-    #Sortino Ratio: 0.02    
     runNN('BTCUSDNN')
 
 train()
