@@ -393,12 +393,26 @@ def execute_action():
     tl.log_trade(action, cash, equity) # Update trade log
     pickle.dump(tl, open(p.tl, "wb" ))
 
+def init(conf):
+    global actions
+    global tl
+    global qt
+    
+    p.load_config(conf)
+
+    qt = init_q() # Initialise Model
+    actions = pd.DataFrame(np.linspace(-1 if p.short else 0, 1, p.actions))
+    if os.path.isfile(p.tl):
+        tl = pickle.load(open(p.tl, "rb" ))
+    else:
+        tl = TradeLog()
+
 def run_forecast(conf, seed = None):
     global tdf
     global df
 
     if seed is not None: np.random.seed(seed)
-    load_config(conf)
+    init(conf)
     
     load_data() # Load Historical Price Data   
     # This needs to run before test dataset as it generates bin config
@@ -411,106 +425,6 @@ def run_forecast(conf, seed = None):
     print_forecast(tdf) # Print Forecast
     if p.execute: execute_action()
 
-def load_config(conf):
-    global actions
-    global tl
-    global qt # Q Table
-    
-    print('')
-    print('**************** Running model for '+conf+' ****************')
-#    np.random.seed(12345) # Set random seed so that results are reproducible
-    p.random_scale = 0.00001 # Defines standard deviation for random Q values 
-    p.start_balance = 1.0
-    p.short = False # Short calculation is currently incorrect hense disabled
-    p.actions = 2 # Number of actions (% of stock holdings) 2 for long only, 3 to add short
-    # α ∈ [0, 1] (alpha) is the learning rate used to vary the weight given to new experiences compared with past Q-values.
-    p.alpha = 0.2
-    # γ ∈ [0, 1] (gamma) is the discount factor used to progressively reduce the value of future rewards. Best: 0.9
-    p.gamma = 0.9
-    # Probability to chose random action instead of best action from Q Table. Best values: 0.2 - 0.5
-    p.epsilon = 0.5
-    p.train = False # Train model
-    p.reload = True # Reload price data or use existing  
-    p.charts = False # Plot charts
-    p.stats = True # Show model stats
-    p.epochs = 100 # Number of iterations for training (best 50)
-    p.features = 4 # Number of features in state for Q table
-    p.feature_bins = 3 # Number of bins for feature (more bins tend to overfit)
-    
-    p.max_r = 0
-    p.conf = conf
-    p.ticker = p.conf[0:3]
-    p.currency = p.conf[3:6]
-    p.cfgdir = 'data/'+p.conf
-    p.version = 2 # Model version
-    p.sma_period = 50 # Best: 50
-    p.adr_period = 20 # Average Daily Return period
-    p.hh_period = 50 # Window for Highest High (best: 20 - 50)
-    p.ll_period = 50 # Window for Lowest Low (best: 20 - 50)
-    p.rsi_period = 50
-    p.exchange = 'CCCAGG' # Average price from all exchanges
-    p.execute = False
-    p.order_size = 0 # Maximum order size in equity
-    p.result_size = 0
-    p.order_wait = 10
-    p.min_cash = 1
-    p.min_equity = 0.001
-    p.bar_period = 'day' # Price bar period: day or hour
-    p.max_bars = 0 # Number of bars to use for training
-    p.train_goal = 'R' # Maximize Return
-    p.spread = 0.004 # Bitfinex fee
-    p.ratio = 0 # Min ratio for Q table to take an action
-    p.shuffle = False
-    p.units = 16
-    p.train_pct = 0.8 # % of data used for training
-    p.test_pct = 0.2 # % of data used for testing
-
-    if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
-        p.max_r = 180
-        p.version = 1
-    elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
-#        6508 / 1.25
-        p.max_r = 6984
-    elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
-        # 918 / 1.29
-        p.version = 1
-        p.max_r = 1020
-    elif conf == 'ETHUSDNN': # 26955 / 2.20
-#        p.train = True
-#        p.reload = False
-        p.model = p.cfgdir+'/model65.nn'
-    elif conf == 'BTCUSDNN':
-#        p.train = True
-        p.units = 32
-        p.sma_period = 15
-        p.hh_period = 7
-        p.ll_period = 7
-        p.rsi_period = 14
-        p.model = p.cfgdir+'/model57.nn'
-    elif conf == 'ETHBTCNN': # 847 / 2.26
-#        p.train = True
-        p.units = 10
-        p.sma_period = 15
-        p.hh_period = 20
-        p.ll_period = 20
-        p.rsi_period = 15
-        p.model = p.cfgdir+'/model62.nn'
-        
-    if p.train:
-        p.charts = True
-        p.stats = True
-        
-    p.file = p.cfgdir+'/price.pkl'
-    p.q = p.cfgdir+'/q.pkl'
-    p.tl = p.cfgdir+'/tl.pkl'
-
-    qt = init_q() # Initialise Model
-    actions = pd.DataFrame(np.linspace(-1 if p.short else 0, 1, p.actions))
-    if os.path.isfile(p.tl):
-        tl = pickle.load(open(p.tl, "rb" ))
-    else:
-        tl = TradeLog()
-
 def run_batch(conf, instances = 1):
     if instances == 1:
         run_forecast(conf)
@@ -522,122 +436,6 @@ def run_batch(conf, instances = 1):
          
     print('Took %s', time.time() - ts)
 
-# Source: https://machinelearningmastery.com/regression-tutorial-keras-deep-learning-library-python/
-from keras.wrappers.scikit_learn import KerasRegressor
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import cross_val_predict
-from sklearn.model_selection import KFold
-from sklearn.pipeline import Pipeline
-
-# define base model
-def baseline_model():
-    model = Sequential()
-    p.units = 16
-    model.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim=X.shape[1]))
-    model.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
-    model.add(Dense(1, kernel_initializer='uniform'))
-    # Compile model
-    model.compile(loss='mse', optimizer='adam')
-    return model
-
-def runNNReg(conf):
-    global dataset
-    global X
-
-    load_config(conf)
-    dataset = load_data()
-
-    # Calculate Features
-    dataset['DR'] = dataset['close']/dataset['close'].shift(1)
-    dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
-    dataset['HH'] = dataset['high']/dataset['high'].rolling(window = p.hh_period).max() 
-    dataset['LL'] = dataset['low']/dataset['low'].rolling(window = p.ll_period).min()
-    dataset['MA'] = dataset['close']/dataset['close'].rolling(window = p.sma_period).mean()
-    dataset['Std_dev']= dataset['close'].rolling(30).std()/dataset['close']
-    dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = p.rsi_period)
-    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 30)
-    # Tomorrow Return
-    dataset['TR'] = dataset['DR'].shift(-1)
-
-    if p.max_bars > 0: dataset = dataset.tail(p.max_bars).reset_index(drop=True)
-    dataset = dataset.dropna()
-
-    # Separate input from output
-    X = dataset.iloc[:, -9:-1]
-    Y = pd.DataFrame(dataset.iloc[:, -1])
-    Y['TR'] = round(Y.TR, 2)
-
-    # Separate train from test
-    train_split = int(len(dataset)*p.train_pct)
-    test_split = int(len(dataset)*p.test_pct)
-    X_train, X_test, Y_train, Y_test = X[:train_split], X[-test_split:], Y[:train_split], Y[-test_split:]
-    
-    # Feature Scaling
-    sc = StandardScaler()
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.transform(X_test)
-    
-#    Y_train = sc.fit_transform(Y_train)
-#    Y_test = sc.transform(Y_test)
-
-    modelf = p.cfgdir+'/model.nn'
-    model = baseline_model()
-    cp = ModelCheckpoint(modelf, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-    history = model.fit(X_train, Y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, Y_test), verbose=0)
-    
-#    plt.plot(history.history['acc'], label='Train Accuracy')
-#    plt.plot(history.history['val_acc'], label='Test Accuracy')
-    plt.plot(history.history['loss'], label='Train Loss')
-    plt.plot(history.history['val_loss'], label='Test Loss')
-    plt.xlabel('Epoch')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-    # Load Best Model
-    model.load_weights(modelf)
-    print('Loaded Best Model From: '+modelf)
-    
-    # Compile model (required to make predictions)
-    model.compile(optimizer = 'adam', loss = 'mse', metrics = ['accuracy'])
-    
-    # Predicting The Price
-    y_pred = model.predict(X_test)
-    dataset['y_pred'] = np.NaN
-    dataset.iloc[(len(dataset) - len(y_pred)):,-1:] = y_pred
-    td = dataset.dropna().copy()
-    
-    print("AVG Error: %.4f" % (abs(td.y_pred - td.TR).sum()/len(td)))
-    
-    # If price is predicted to drop - sell (no short selling)
-    td['SR'] = np.where(td['y_pred'] > 1, td['TR'], 1)
-    td['CMR'] = np.cumprod(td['TR'])
-    td['CSR'] = np.cumprod(td['SR'])
-    
-    # Plot the graph
-#    td = td.set_index('date')
-    fig, ax = plt.subplots()
-#    fig.autofmt_xdate()
-    ax.plot(td['CSR'], color='g', label='Strategy Returns')
-    ax.plot(td['CMR'], color='r', label='Market Returns')
-    plt.legend()
-    plt.grid(True)
-    plt.title(modelf)
-    plt.show()
-
-    print('Signal: ' + ('Buy' if td.y_pred.iloc[-1] else 'Sell'))
-#   Calculate Stats
-    print('Trade Frequency: %.2f' % (len(td[td['y_pred'] != td['y_pred'].shift(-1)])/len(td)))
-    print('Market Return: %.2f'   % td.CMR.iloc[-1])
-    print('Strategy Return: %.2f' % td.CSR.iloc[-1])
- 
-    r = td.SR - 1 # Strategy Returns
-    m = td.DR - 1 # Market Returns
-    e = np.mean(r) # Avg Strategy Daily Return
-    f = np.mean(m) # Avg Market Daily Return
-    print('Average Daily Return: %.3f' % e)
-    print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
-
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
 def runNN(conf):
@@ -645,7 +443,7 @@ def runNN(conf):
     global dataset
     global X
     
-    load_config(conf)
+    init(conf)
     dataset = load_data()
     
 #    TODO: Add month
@@ -766,13 +564,14 @@ def runNN(conf):
 
 
 def run():
-#    run_batch('BTCUSD') # Low profit strategy
-    run_batch('ETHUSD') 
-    run_batch('ETHBTC')
+#    run_batch('ETHUSD') 
+#    run_batch('ETHBTC')
 
-    #Trade Frequency: 0.28
-    #Market Return: 7.81
-    #Strategy Return: 17.71
+    run_batch('BTCUSD') # R: 59.10 SR: 0.203 QL/BH R: 8.27 QL/BH SR: 2.15
+
+    #Trade Frequency: 0.15
+    #Market Return: 7.60
+    #Strategy Return: 18.39
     #Accuracy: 0.57
     #Average Daily Return: 0.006
     #Sortino Ratio: 0.04    
@@ -795,12 +594,13 @@ def run():
     runNN('ETHBTCNN')
 
 def train():
-    runNN('BTCUSDNN')
+    run_batch('BTCUSD')
 
 train()
 
-#Regression does not work on small datasets
-#runNNReg('BTCUSDNN')
+
+#TODO: Implement Random Forest
+#TODO: https://medium.com/@huangkh19951228/predicting-cryptocurrency-price-with-tensorflow-and-keras-e1674b0dc58a
 
 # TODO: Predict DR and 
 # TODO: Adjust strategy to HOLD when DR is less that exchange fee
