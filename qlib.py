@@ -593,8 +593,16 @@ def run():
     #Sortino Ratio: 0.29
     runNN('ETHBTCNN')
 
+    #Trade Frequency: 0.22
+    #Market Return: 0.87
+    #Strategy Return: 1.15
+    #Accuracy: 0.70
+    #Average Daily Return: 0.006
+    #Sortino Ratio: 17456759543054.91
+    runNN('DIGBTCNN')
+
 def train():
-    run_batch('BTCUSD')
+    runNN('DIGBTCNN')
 
 train()
 

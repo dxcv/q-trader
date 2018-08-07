@@ -172,7 +172,7 @@ def omega_ratio(er, returns, rf, target=0):
 
 
 def sortino_ratio(er, returns, rf, target=0):
-    return (er - rf) / math.sqrt(lpm(returns, target, 2))
+    return (er - rf) / (math.sqrt(lpm(returns, target, 2)) + 0.000000000000001) # Add small number to avoid division by 0
 
 
 def kappa_three_ratio(er, returns, rf, target=0):

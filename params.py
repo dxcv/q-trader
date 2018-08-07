@@ -102,8 +102,7 @@ def load_config(config):
     model = ''
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
-        train = True
-        epochs = 10
+#        train = True
         max_r = 18
         version = 1
     elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
@@ -131,6 +130,15 @@ def load_config(config):
         ll_period = 20
         rsi_period = 15
         model = cfgdir+'/model62.nn'
+    elif conf == 'DIGBTCNN':
+#        train = True
+#        test_pct = 1
+        units = 10
+        sma_period = 15
+        hh_period = 20
+        ll_period = 20
+        rsi_period = 15
+        model = cfgdir+'/model70.nn'
         
     if train:
         charts = True
