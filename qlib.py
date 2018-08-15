@@ -450,8 +450,6 @@ def runNN(conf):
 #    Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     
     # Calculate Features
-    # Tomorrow Return - this should not be included in training set
-    dataset['TR'] = (dataset['close']/dataset['close'].shift(1)).shift(-1)
     dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
     dataset['HH'] = dataset['high']/dataset['high'].rolling(window = p.hh_period).max() 
     dataset['LL'] = dataset['low']/dataset['low'].rolling(window = p.ll_period).min()
@@ -462,9 +460,10 @@ def runNN(conf):
     dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = p.rsi_period)
     dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
     
+    # Tomorrow Return - this should not be included in training set
+    dataset['TR'] = dataset['DR'].shift(-1)
     # Predicted value is whether price will rise
-    # Adjust Price Rise so low price rise is ignored
-    dataset['Price_Rise'] = np.where(dataset['close'].shift(-1)/dataset['close'] - 1 > p.spread, 1, 0)
+    dataset['Price_Rise'] = np.where(dataset['TR'] > 1, 1, 0)
 
     if p.max_bars > 0: dataset = dataset.tail(p.max_bars).reset_index(drop=True)
     dataset = dataset.dropna()
@@ -473,7 +472,7 @@ def runNN(conf):
     if p.shuffle: dataset = dataset.sample(frac=1).reset_index(drop=True)
     
     # Separate input from output
-    X = dataset.iloc[:, -10:-1]
+    X = dataset.iloc[:, -11:-2]
     y = dataset.iloc[:, -1]
     
     # Separate train from test
@@ -533,7 +532,7 @@ def runNN(conf):
     td = dataset.dropna().copy()
     
     # If price is predicted to drop - sell (no short selling)
-    td['SR'] = np.where(td['y_pred'] == True, td['TR'], 1)
+    td['SR'] = np.where(td['y_pred'] == True, td['TR'], (2 - td['TR']) if p.short else 1)
     td['CMR'] = np.cumprod(td['TR'])
     td['CSR'] = np.cumprod(td['SR'])
     
@@ -566,24 +565,23 @@ def runNN(conf):
 def run():
 #    run_batch('ETHUSD') 
 #    run_batch('ETHBTC')
-
-    run_batch('BTCUSD') # R: 59.10 SR: 0.203 QL/BH R: 8.27 QL/BH SR: 2.15
+#    run_batch('BTCUSD') # R: 59.10 SR: 0.203 QL/BH R: 8.27 QL/BH SR: 2.15
 
     #Trade Frequency: 0.15
-    #Market Return: 7.60
-    #Strategy Return: 18.39
-    #Accuracy: 0.57
-    #Average Daily Return: 0.006
-    #Sortino Ratio: 0.04    
+    #Market Return: 7.14
+    #Strategy Return: 23.56
+    #Accuracy: 0.55
+    #Average Daily Return: 0.007
+    #Sortino Ratio: 0.07  
     runNN('BTCUSDNN')
 
     #Trade Frequency: 0.31
-    #Market Return: 0.39
-    #Strategy Return: 2.21
-    #Accuracy: 0.65
-    #Average Daily Return: 0.004
-    #Sortino Ratio: 0.51
-    runNN('ETHUSDNN')
+    #Market Return: 0.27
+    #Strategy Return: 9.28
+    #Accuracy: 0.60
+    #Average Daily Return: 0.012
+    #Sortino Ratio: 0.58
+    runNN('ETHUSDNN') # Best Strategy!
 
     #Trade Frequency: 0.10
     #Market Return: 0.93
@@ -591,21 +589,23 @@ def run():
     #Accuracy: 0.62
     #Average Daily Return: 0.004
     #Sortino Ratio: 0.29
-    runNN('ETHBTCNN')
-
-    #Trade Frequency: 0.22
-    #Market Return: 0.87
-    #Strategy Return: 1.15
-    #Accuracy: 0.70
-    #Average Daily Return: 0.006
-    #Sortino Ratio: 17456759543054.91
-    runNN('DIGBTCNN')
+#    runNN('ETHBTCNN') # -- Stop Trading?
+    
+    #Trade Frequency: 0.28
+    #Market Return: 1.65
+    #Strategy Return: 9.42
+    #Accuracy: 0.68
+    #Average Daily Return: 0.022
+    #Sortino Ratio: 0.42
+#    runNN('DIGBTCNN') # -- Stop Trading?
 
 def train():
-    runNN('DIGBTCNN')
+    runNN('ETHUSDNN')
 
 train()
 
+
+#TODO: Predict next several days
 
 #TODO: Implement Random Forest
 #TODO: https://medium.com/@huangkh19951228/predicting-cryptocurrency-price-with-tensorflow-and-keras-e1674b0dc58a
