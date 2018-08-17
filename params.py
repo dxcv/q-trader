@@ -114,6 +114,7 @@ def load_config(config):
         max_r = 1020
     elif conf == 'ETHUSDNN': # 26955 / 2.20
 #        train = True
+        test_pct = 1
         short = True
         model = cfgdir+'/model65.nn'
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
@@ -133,15 +134,11 @@ def load_config(config):
         ll_period = 20
         rsi_period = 15
         model = cfgdir+'/model62.nn'
-    elif conf == 'DIGBTCNN':
+    elif conf == 'DIGUSDNN':
 #        train = True
         test_pct = 1
         units = 10
-        sma_period = 7
-        hh_period = 7
-        ll_period = 7
-        rsi_period = 7
-        model = cfgdir+'/model68.nn'
+        model = cfgdir+'/model77.nn'
         
     if train:
         charts = True

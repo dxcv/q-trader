@@ -442,11 +442,11 @@ def runNN(conf):
     global td
     global dataset
     global X
+    global stats
     
     init(conf)
     dataset = load_data()
     
-#    TODO: Add month
 #    Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     
     # Calculate Features
@@ -524,13 +524,13 @@ def runNN(conf):
     classifier.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
     
     # Predicting The Price
-    y_pred = classifier.predict(X_test)
-    y_pred = (y_pred > 0.5)
-    
-    dataset['y_pred'] = np.NaN
-    dataset.iloc[(len(dataset) - len(y_pred)):,-1:] = y_pred
+    y_pred_val = classifier.predict(X_test)
+
+    dataset['y_pred_val'] = np.NaN
+    dataset.iloc[(len(dataset) - len(y_pred_val)):,-1:] = y_pred_val
+    dataset['y_pred'] = (dataset['y_pred_val'] > 0.5)
+
     td = dataset.dropna().copy()
-    
     # If price is predicted to drop - sell (no short selling)
     td['SR'] = np.where(td['y_pred'] == True, td['TR'], (2 - td['TR']) if p.short else 1)
     td['CMR'] = np.cumprod(td['TR'])
@@ -561,6 +561,22 @@ def runNN(conf):
     print('Average Daily Return: %.3f' % e)
     print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
 
+    def my_agg(x):
+        names = {
+            'TR Min': x['TR'].min(),
+            'TR Max': x['TR'].max(),
+            'TR Avg': x['TR'].median(),
+            'SR Min': x['SR'].min(),
+            'SR Max': x['SR'].max(),
+            'SR Avg': x['SR'].median(),
+            'Price_Rise Avg': x['Price_Rise'].mean(),
+            'Count': x['TR'].count()
+        }
+    
+        return pd.Series(names)
+
+    stats = td.groupby(np.trunc(td['y_pred_val'] * 10)).apply(my_agg)
+
 
 def run():
 #    run_batch('ETHUSD') 
@@ -573,7 +589,7 @@ def run():
     #Accuracy: 0.55
     #Average Daily Return: 0.007
     #Sortino Ratio: 0.07  
-    runNN('BTCUSDNN')
+#    runNN('BTCUSDNN')
 
     #Trade Frequency: 0.31
     #Market Return: 0.27
@@ -591,21 +607,16 @@ def run():
     #Sortino Ratio: 0.29
 #    runNN('ETHBTCNN') # -- Stop Trading?
     
-    #Trade Frequency: 0.28
-    #Market Return: 1.65
-    #Strategy Return: 9.42
-    #Accuracy: 0.68
-    #Average Daily Return: 0.022
-    #Sortino Ratio: 0.42
-#    runNN('DIGBTCNN') # -- Stop Trading?
+    #Trade Frequency: 0.39
+    #Market Return: 0.75
+    #Strategy Return: 3.06
+    #Accuracy: 0.78
+    #Average Daily Return: 0.023
+    #Sortino Ratio: 1.23
+#    runNN('DIGUSDNN') # -- No trading - test only
 
-def train():
-    runNN('ETHUSDNN')
-
-train()
-
-
-#TODO: Predict next several days
+run()
+    
 
 #TODO: Implement Random Forest
 #TODO: https://medium.com/@huangkh19951228/predicting-cryptocurrency-price-with-tensorflow-and-keras-e1674b0dc58a
