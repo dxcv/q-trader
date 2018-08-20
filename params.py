@@ -29,7 +29,7 @@ def load_config(config):
     global train
     train = False # Train model
     global reload
-    reload = True # Reload price data or use existing  
+    reload = False # Force to reload price data  
     global charts
     charts = False # Plot charts
     global stats
@@ -100,6 +100,10 @@ def load_config(config):
     test_pct = 0.2 # % of data used for testing
     global model
     model = ''
+    global plot_bars # Number of bars to plot. 0 means plot all
+    plot_bars = 30
+    global adj_strategy # Use adjusted strategy - with Cash signal
+    adj_strategy = True
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -114,7 +118,9 @@ def load_config(config):
         max_r = 1020
     elif conf == 'ETHUSDNN': # 26955 / 2.20
 #        train = True
-        test_pct = 1
+#        plot_bars = 200
+        stats = True
+        charts = True
         short = True
         model = cfgdir+'/model65.nn'
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
@@ -136,13 +142,14 @@ def load_config(config):
         model = cfgdir+'/model62.nn'
     elif conf == 'DIGUSDNN':
 #        train = True
-        test_pct = 1
         units = 10
         model = cfgdir+'/model77.nn'
         
     if train:
         charts = True
         stats = True
+    else:
+        test_pct = 1 # This is required for Adjusted Strategy stats calculation
         
     global file
     file = cfgdir+'/price.pkl'
@@ -153,4 +160,4 @@ def load_config(config):
     print('')
     print('**************** Loaded Config for '+conf+' ****************')
 
-load_config('')
+#load_config('')

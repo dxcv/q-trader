@@ -41,12 +41,6 @@ print(exmo.id, exmo.create_limit_buy_order('BTC/EUR', 1, 2500.00))
 exmo.create_market_buy_order('BTC/USD', 1, {'trading_agreement': 'agree'})
 '''
 
-exchange = ccxt.gdax({
-    'apiKey': p.gdax_api,
-    'secret': p.gdax_secret,
-    'password': p.gdax_pass
-})
-
 '''
 Executes Market Order on exchange
 Example: Buy BTC with 100 EUR
@@ -55,6 +49,12 @@ Example: Sell 0.0001 BTC
 order = market_order('sell', 'BTC', 'EUR', 0.0001)
 '''
 def market_order(action, amount, ticker=None, currency=None):
+    exchange = ccxt.gdax({
+        'apiKey': p.gdax_api,
+        'secret': p.gdax_secret,
+        'password': p.gdax_pass
+    })
+
     action = action.lower()
     if not ticker: ticker = p.ticker
     if not currency: currency = p.currency

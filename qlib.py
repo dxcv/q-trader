@@ -63,7 +63,14 @@ def load_data_polo():
 # Load Historical Price Data from Cryptocompare
 # API Guide: https://medium.com/@agalea91/cryptocompare-api-quick-start-guide-ca4430a484d4
 def load_data():
-    if not p.reload: return pickle.load(open(p.file, "rb" ))
+    now = dt.datetime.today().strftime('%Y-%m-%d')
+    df = pd.DataFrame()
+    if (not p.reload) and os.path.isfile(p.file): 
+        df = pickle.load(open(p.file, "rb" ))
+        # Return loaded price data if it is up to date
+        if df.date.iloc[-1].strftime('%Y-%m-%d') == now:
+            print('Using loaded prices for ' + now)
+            return df
     
     if p.bar_period == 'day':
         period = 'histoday'
@@ -77,7 +84,7 @@ def load_data():
 #    df.drop(['time', 'volumefrom', 'volumeto'], axis=1, inplace=True)
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
-    print('Prices Loaded. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    print('Loaded Prices. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
     return df
 
 # Map feature values to bins (numbers)
@@ -443,6 +450,7 @@ def runNN(conf):
     global dataset
     global X
     global stats
+    global stats_mon
     
     init(conf)
     dataset = load_data()
@@ -536,47 +544,81 @@ def runNN(conf):
     td['CMR'] = np.cumprod(td['TR'])
     td['CSR'] = np.cumprod(td['SR'])
     
-    # Plot the graph
-#    td = td.set_index('date')
-    fig, ax = plt.subplots()
-#    fig.autofmt_xdate()
-    ax.plot(td['CSR'], color='g', label='Strategy Returns')
-    ax.plot(td['CMR'], color='r', label='Market Returns')
-    plt.legend()
-    plt.grid(True)
-    plt.title(model)
-    plt.show()
-    
-    print('Signal: ' + ('Buy' if td.y_pred.iloc[-1] else 'Sell'))
-#   Calculate Stats
-    print('Trade Frequency: %.2f' % (len(td[td['y_pred'] != td['y_pred'].shift(-1)])/len(td)))
-    print('Market Return: %.2f'   % td.CMR.iloc[-1])
-    print('Strategy Return: %.2f' % td.CSR.iloc[-1])
-    print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
- 
-    r = td.SR - 1 # Strategy Returns
-    m = td.DR - 1 # Market Returns
-    e = np.mean(r) # Avg Strategy Daily Return
-    f = np.mean(m) # Avg Market Daily Return
-    print('Average Daily Return: %.3f' % e)
-    print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
-
     def my_agg(x):
         names = {
-            'TR Min': x['TR'].min(),
-            'TR Max': x['TR'].max(),
-            'TR Avg': x['TR'].median(),
-            'SR Min': x['SR'].min(),
-            'SR Max': x['SR'].max(),
-            'SR Avg': x['SR'].median(),
-            'Price_Rise Avg': x['Price_Rise'].mean(),
-            'Count': x['TR'].count()
+#            'TRMin': x['TR'].min(),
+#            'TRMax': x['TR'].max(),
+#            'TRAvg': x['TR'].mean(),
+#            'SRMin': x['SR'].min(),
+#            'SRMax': x['SR'].max(),
+            'SRAvg': x['SR'].mean(),
+            'SRTotal': x['SR'].prod(),
+            'Price_Rise_Prob': x['Price_Rise'].mean(),
+            'YPredCount': x['TR'].count()
         }
     
         return pd.Series(names)
 
-    stats = td.groupby(np.trunc(td['y_pred_val'] * 10)).apply(my_agg)
+    td['y_pred_id'] = np.trunc(td['y_pred_val'] * 10)
+    stats = td.groupby(td['y_pred_id']).apply(my_agg)
+    td = td.merge(stats, left_on='y_pred_id', right_index=True, how='left')
 
+    # Calculate Adjusted SR
+    if p.adj_strategy:
+        td['Signal'] = np.where(td['SRTotal'] > 1, td['y_pred'].map({True: 'Buy', False: 'Sell'}), 'Cash')
+    else:
+        td['Signal'] = td['y_pred'].map({True: 'Buy', False: 'Sell'})
+
+    td['SR1'] = np.where(td['Signal'] == 'Cash', 1, td['SR'])
+    td['CSR1'] = np.cumprod(td['SR1'])
+
+    # Calculate Monthly Stats
+    def my_agg(x):
+        names = {
+            'SR': x['SR'].prod(),
+            'SR1': x['SR1'].prod()
+        }
+    
+        return pd.Series(names)
+
+    stats_mon = td.groupby(td['date'].map(lambda x: x.strftime('%Y-%m'))).apply(my_agg)
+    stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
+    stats_mon['CSR1'] = np.cumprod(stats_mon['SR1'])
+    stats_mon['CSRRatio'] = stats_mon['CSR1'] / stats_mon['CSR']
+
+    if p.plot_bars > 0: 
+        td = td.tail(p.plot_bars).reset_index(drop=True)
+        td['CSR'] = normalize(td['CSR'])
+        td['CSR1'] = normalize(td['CSR1'])
+        td['CMR'] = normalize(td['CMR'])
+    
+    if p.charts: # Plot the chart
+        # td = td.set_index('date')
+        fig, ax = plt.subplots()
+        # fig.autofmt_xdate()
+        ax.plot(td['CSR'], color='g', label='Strategy Return')
+        ax.plot(td['CSR1'], color='b', label='Adj Strategy Return')
+        ax.plot(td['CMR'], color='r', label='Market Return')
+        plt.legend()
+        plt.grid(True)
+        plt.title(model)
+        plt.show()
+    
+    print('Signal: ' + td.Signal.iloc[-1])
+
+    if p.stats: # Calculate Chart Stats  
+        print('Adj Trade Frequency: %.2f' % (len(td[td['Signal'] != td['Signal'].shift(-1)])/len(td)))
+        print('Market Return: %.2f'   % td.CMR.iloc[-1])
+        print('Strategy Return: %.2f' % td.CSR.iloc[-1])
+        print('Adj Strategy Return: %.2f' % td.CSR1.iloc[-1])
+        print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
+     
+        r = td.SR - 1 # Strategy Returns
+        m = td.DR - 1 # Market Returns
+        e = np.mean(r) # Avg Strategy Daily Return
+        f = np.mean(m) # Avg Market Daily Return
+        print('Average Daily Return: %.3f' % e)
+        print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
 
 def run():
 #    run_batch('ETHUSD') 
@@ -617,6 +659,7 @@ def run():
 
 run()
     
+#TODO: Calculate Expectancy Ratio: http://www.newtraderu.com/2017/11/27/formula-profitable-trading/
 
 #TODO: Implement Random Forest
 #TODO: https://medium.com/@huangkh19951228/predicting-cryptocurrency-price-with-tensorflow-and-keras-e1674b0dc58a
