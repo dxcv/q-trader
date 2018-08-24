@@ -540,7 +540,7 @@ def runNN(conf):
 
     td = dataset.dropna().copy()
     # If price is predicted to drop - sell (no short selling)
-    td['SR'] = np.where(td['y_pred'] == True, td['TR'], (2 - td['TR']) if p.short else 1)
+    td['SR'] = np.where(td['y_pred'] == True, td['TR'] - p.spread, (2 - td['TR'] - p.spread) if p.short else 1)
     td['CMR'] = np.cumprod(td['TR'])
     td['CSR'] = np.cumprod(td['SR'])
     
@@ -575,6 +575,7 @@ def runNN(conf):
     # Calculate Monthly Stats
     def my_agg(x):
         names = {
+            'MR': x['TR'].prod(),
             'SR': x['SR'].prod(),
             'SR1': x['SR1'].prod()
         }
@@ -582,15 +583,16 @@ def runNN(conf):
         return pd.Series(names)
 
     stats_mon = td.groupby(td['date'].map(lambda x: x.strftime('%Y-%m'))).apply(my_agg)
+    stats_mon['CMR'] = np.cumprod(stats_mon['MR'])
     stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
     stats_mon['CSR1'] = np.cumprod(stats_mon['SR1'])
     stats_mon['CSRRatio'] = stats_mon['CSR1'] / stats_mon['CSR']
 
     if p.plot_bars > 0: 
         td = td.tail(p.plot_bars).reset_index(drop=True)
+        td['CMR'] = normalize(td['CMR'])
         td['CSR'] = normalize(td['CSR'])
         td['CSR1'] = normalize(td['CSR1'])
-        td['CMR'] = normalize(td['CMR'])
     
     if p.charts: # Plot the chart
         # td = td.set_index('date')
@@ -659,7 +661,11 @@ def run():
 
 run()
     
+#TODO: Improve SR / Fee calculation. See: https://sixfigureinvesting.com/2014/03/short-selling-securities-selling-short/
+
 #TODO: Calculate Expectancy Ratio: http://www.newtraderu.com/2017/11/27/formula-profitable-trading/
+
+#TODO: AutoKeras: Build optimal NN architecture: https://towardsdatascience.com/autokeras-the-killer-of-googles-automl-9e84c552a319
 
 #TODO: Implement Random Forest
 #TODO: https://medium.com/@huangkh19951228/predicting-cryptocurrency-price-with-tensorflow-and-keras-e1674b0dc58a
@@ -707,8 +713,6 @@ run()
 # Solve Unknown State Problem: Find similar state
 
 # Test model with train or test data?
-
-# Fix short sell profit calculation. See: https://sixfigureinvesting.com/2014/03/short-selling-securities-selling-short/
 
 # Implement Dyna Q
 

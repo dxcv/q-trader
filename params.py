@@ -99,7 +99,7 @@ def load_config(config):
     global test_pct
     test_pct = 0.2 # % of data used for testing
     global model
-    model = ''
+    model = cfgdir+'/model.nn'
     global plot_bars # Number of bars to plot. 0 means plot all
     plot_bars = 30
     global adj_strategy # Use adjusted strategy - with Cash signal
@@ -118,7 +118,7 @@ def load_config(config):
         max_r = 1020
     elif conf == 'ETHUSDNN': # 26955 / 2.20
 #        train = True
-#        plot_bars = 200
+#        plot_bars = 30
         stats = True
         charts = True
         short = True
