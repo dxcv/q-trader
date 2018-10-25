@@ -47,19 +47,6 @@ def init_q():
         if os.path.isfile(p.q): qt = pickle.load(open(p.q, "rb" ))
     return qt
 
-
-# Load Historical Price Data from Poloniex (currently not used)
-def load_data_polo(): 
-    period = '86400'  # 1 day candle
-    #period = '14400'  # 4h candle
-    start_date = "2010-01-01"
-    end_date = "2100-01-01"
-    dstart = str(int(time.mktime(time.strptime(start_date, "%Y-%m-%d"))))
-    dend = str(int(time.mktime(time.strptime(end_date, "%Y-%m-%d"))))
-    df = pd.read_json('https://poloniex.com/public?command=returnChartData&currencyPair='+p.ticker+'&start='+dstart+'&end='+dend+'&period='+period)
-    df.to_csv(p.file)
-#    print(str(len(df))+" records loaded from Poloniex for to "+p.file)
-
 # Load Historical Price Data from Cryptocompare
 # API Guide: https://medium.com/@agalea91/cryptocompare-api-quick-start-guide-ca4430a484d4
 def load_data():
@@ -80,11 +67,52 @@ def load_data():
                      +'?fsym='+p.ticker+'&tsym='+p.currency
                      +'&allData=true&e='+p.exchange)
     df = pd.DataFrame(r.json()['Data'])
-    df['date'] = pd.to_datetime(df['time'],unit='s')
-#    df.drop(['time', 'volumefrom', 'volumeto'], axis=1, inplace=True)
+    df = df.set_index('time')
+    df['date'] = pd.to_datetime(df.index, unit='s')
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
     print('Loaded Prices. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    return df
+
+def load_prices():
+    """ Loads hourly historical prices and converts them to daily usung p.time_offset
+        Stores hourly prices in price.csv
+        Returns DataFrame with daily price data
+    """
+    has_data = True
+    min_time = 0
+    first_call = True
+    file = p.cfgdir+'/price.csv'
+    if p.reload or not os.path.isfile(file):
+        while has_data:
+            url = ('https://min-api.cryptocompare.com/data/histohour'
+                +'?fsym='+p.ticker+'&tsym='+p.currency
+                +'&e='+p.exchange
+                +'&limit=10000'
+                +('' if first_call else '&toTs='+str(min_time)))
+                             
+            r = requests.get(url)
+            df = pd.DataFrame(r.json()['Data'])
+            if df.close.max() == 0 or len(df) == 0:
+                has_data = False
+            else:
+                min_time = df.time[0] - 1
+                with open(file, 'w' if first_call else 'a') as f: 
+                    df.to_csv(f, header=first_call, index = False)
+            
+            if first_call: first_call = False
+        print('Loaded Hourly Prices in UTC')
+
+    df = pd.read_csv(file)
+    df = df[df.close > 0]  
+    df['date'] = pd.to_datetime(df.time, unit='s')
+    df['date_adj'] = df.date - dt.timedelta(hours=p.time_lag)
+    df = df.set_index('date_adj')
+    print('Price Rows: '+str(len(df))+' Last Timestamp: '+str(df.date.max()))
+    df = df.resample('D').agg({
+            'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 
+            'volumefrom': 'sum', 'volumeto': 'sum'})
+    df['date'] = df.index
     return df
 
 # Map feature values to bins (numbers)
@@ -180,7 +208,7 @@ class Portfolio:
 def buy_lot(pf, lot, short=False):
     if lot > pf.cash: lot = pf.cash
     pf.cash -= lot
-    adj_lot = lot*(1-p.spread/2)
+    adj_lot = lot*(1-p.fee)
     if short: pf.short += adj_lot
     else: pf.equity += adj_lot
     
@@ -192,7 +220,7 @@ def sell_lot(pf, lot, short=False):
         if lot > pf.equity: lot = pf.equity 
         pf.equity -= lot
     
-    pf.cash = pf.cash + lot*(1-p.spread/2)
+    pf.cash = pf.cash + lot*(1-p.fee)
 
 # Execute Action: buy or sell
 def take_action(pf, action, dr):
@@ -451,22 +479,24 @@ def runNN(conf):
     global X
     global stats
     global stats_mon
+    global trades
     
     init(conf)
     dataset = load_data()
+#    dataset = load_prices()
     
 #    Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     
     # Calculate Features
-    dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = 30).mean()
+    dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = p.vol_period).mean()
     dataset['HH'] = dataset['high']/dataset['high'].rolling(window = p.hh_period).max() 
     dataset['LL'] = dataset['low']/dataset['low'].rolling(window = p.ll_period).min()
     dataset['DR'] = dataset['close']/dataset['close'].shift(1)
     dataset['MA'] = dataset['close']/dataset['close'].rolling(window = p.sma_period).mean()
     dataset['MA2'] = dataset['close']/dataset['close'].rolling(window = 2*p.sma_period).mean()
-    dataset['Std_dev']= dataset['close'].rolling(7).std()/dataset['close']
+    dataset['Std_dev']= dataset['close'].rolling(p.std_period).std()/dataset['close']
     dataset['RSI'] = talib.RSI(dataset['close'].values, timeperiod = p.rsi_period)
-    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, 7)
+    dataset['Williams %R'] = talib.WILLR(dataset['high'].values, dataset['low'].values, dataset['close'].values, p.wil_period)
     
     # Tomorrow Return - this should not be included in training set
     dataset['TR'] = dataset['DR'].shift(-1)
@@ -539,18 +569,43 @@ def runNN(conf):
     dataset['y_pred'] = (dataset['y_pred_val'] > 0.5)
 
     td = dataset.dropna().copy()
-    # If price is predicted to drop - sell (no short selling)
-    td['SR'] = np.where(td['y_pred'] == True, td['TR'] - p.spread, (2 - td['TR'] - p.spread) if p.short else 1)
+    td['signal'] = td['y_pred'].map({True: 'Buy', False: 'Sell'})
+    # Generate Trade List
+    td['action'] = td['signal'].shift(1)
+    td['trade_id'] = np.where(td['action'] != td['action'].shift(1), td.index, np.NaN)
+    td['trade_id'] = td.trade_id.fillna(method='ffill')
+
+    def trade_agg(x):
+        time_interval = 1 if p.bar_period == 'day' else 1/24
+        names = {
+            'action': x.action.iloc[0],    
+            'open_ts': x.date.iloc[0],
+            'close_ts': x.date.iloc[-1] + dt.timedelta(days=time_interval),
+            'open_price': x.open.iloc[0],
+            'close_price': x.close.iloc[-1]            
+        }
+    
+        return pd.Series(names)
+
+    trades = td.groupby(td.trade_id).apply(trade_agg)
+    trades['hours'] = (trades.close_ts - trades.open_ts).astype('timedelta64[h]')
+    trades['margin'] = np.where(p.short and trades.action == 'Sell', trades.hours/24 * p.margin, 0)
+    trades['MR'] = trades['close_price']/trades['open_price']
+    trades['SR'] = np.where(trades['action'] == 'Buy', trades['MR'], (2 - trades['MR']) if p.short else 1)
+    # Fee is applied twice: on open and close position
+    trades['SR1'] = trades['SR'] * (1 - p.fee)**2 * (1 - trades.margin)
+    trades['CMR'] = np.cumprod(trades['MR'])
+    trades['CSR'] = np.cumprod(trades['SR1'])
+    
+    td['fee'] = np.where(td['signal'] != td['signal'].shift(1), (1 - p.fee)**2, 1)
+    td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
+    td['SR'] = np.where(td['signal'] == 'Buy', td['TR'], (2 - td['TR']) if p.short else 1)
+    td['SR'] = td['SR'] * td['fee'] * td['margin']
     td['CMR'] = np.cumprod(td['TR'])
     td['CSR'] = np.cumprod(td['SR'])
     
     def my_agg(x):
         names = {
-#            'TRMin': x['TR'].min(),
-#            'TRMax': x['TR'].max(),
-#            'TRAvg': x['TR'].mean(),
-#            'SRMin': x['SR'].min(),
-#            'SRMax': x['SR'].max(),
             'SRAvg': x['SR'].mean(),
             'SRTotal': x['SR'].prod(),
             'Price_Rise_Prob': x['Price_Rise'].mean(),
@@ -563,21 +618,11 @@ def runNN(conf):
     stats = td.groupby(td['y_pred_id']).apply(my_agg)
     td = td.merge(stats, left_on='y_pred_id', right_index=True, how='left')
 
-    # Calculate Adjusted SR
-    if p.adj_strategy:
-        td['Signal'] = np.where(td['SRTotal'] > 1, td['y_pred'].map({True: 'Buy', False: 'Sell'}), 'Cash')
-    else:
-        td['Signal'] = td['y_pred'].map({True: 'Buy', False: 'Sell'})
-
-    td['SR1'] = np.where(td['Signal'] == 'Cash', 1, td['SR'])
-    td['CSR1'] = np.cumprod(td['SR1'])
-
     # Calculate Monthly Stats
     def my_agg(x):
         names = {
             'MR': x['TR'].prod(),
-            'SR': x['SR'].prod(),
-            'SR1': x['SR1'].prod()
+            'SR': x['SR'].prod()
         }
     
         return pd.Series(names)
@@ -585,35 +630,33 @@ def runNN(conf):
     stats_mon = td.groupby(td['date'].map(lambda x: x.strftime('%Y-%m'))).apply(my_agg)
     stats_mon['CMR'] = np.cumprod(stats_mon['MR'])
     stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
-    stats_mon['CSR1'] = np.cumprod(stats_mon['SR1'])
-    stats_mon['CSRRatio'] = stats_mon['CSR1'] / stats_mon['CSR']
 
-    if p.plot_bars > 0: 
+    if p.plot_bars > 0 and not p.train: 
         td = td.tail(p.plot_bars).reset_index(drop=True)
         td['CMR'] = normalize(td['CMR'])
         td['CSR'] = normalize(td['CSR'])
-        td['CSR1'] = normalize(td['CSR1'])
     
     if p.charts: # Plot the chart
         # td = td.set_index('date')
         fig, ax = plt.subplots()
         # fig.autofmt_xdate()
         ax.plot(td['CSR'], color='g', label='Strategy Return')
-        ax.plot(td['CSR1'], color='b', label='Adj Strategy Return')
         ax.plot(td['CMR'], color='r', label='Market Return')
         plt.legend()
         plt.grid(True)
         plt.title(model)
         plt.show()
     
-    print('Signal: ' + td.Signal.iloc[-1])
+    print('Signal: ' + td.signal.iloc[-1])
 
     if p.stats: # Calculate Chart Stats  
-        print('Adj Trade Frequency: %.2f' % (len(td[td['Signal'] != td['Signal'].shift(-1)])/len(td)))
-        print('Market Return: %.2f'   % td.CMR.iloc[-1])
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
-        print('Adj Strategy Return: %.2f' % td.CSR1.iloc[-1])
+        print('Market Return: %.2f'   % td.CMR.iloc[-1])
+        print('Trade Frequency: %.2f' % (len(td[td['signal'] != td['signal'].shift(-1)])/len(td)))
         print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
+        print('Win Ratio: %.2f' % (len(trades[trades.SR1 >= 1]) / len(trades)))
+        print('Avg Win: %.2f' % (trades[trades.SR1 >= 1].SR1.mean()))
+        print('Avg Loss: %.2f' % (trades[trades.SR1 < 1].SR1.mean()))
      
         r = td.SR - 1 # Strategy Returns
         m = td.DR - 1 # Market Returns
@@ -625,43 +668,33 @@ def runNN(conf):
 def run():
 #    run_batch('ETHUSD') 
 #    run_batch('ETHBTC')
-#    run_batch('BTCUSD') # R: 59.10 SR: 0.203 QL/BH R: 8.27 QL/BH SR: 2.15
+#    run_batch('BTCUSD')
 
-    #Trade Frequency: 0.15
-    #Market Return: 7.14
-    #Strategy Return: 23.56
-    #Accuracy: 0.55
-    #Average Daily Return: 0.007
-    #Sortino Ratio: 0.07  
 #    runNN('BTCUSDNN')
 
-    #Trade Frequency: 0.31
-    #Market Return: 0.27
-    #Strategy Return: 9.28
-    #Accuracy: 0.60
-    #Average Daily Return: 0.012
-    #Sortino Ratio: 0.58
-    runNN('ETHUSDNN') # Best Strategy!
+    runNN('ETHUSDNN') # Best Strategy
 
-    #Trade Frequency: 0.10
-    #Market Return: 0.93
-    #Strategy Return: 2.02
-    #Accuracy: 0.62
-    #Average Daily Return: 0.004
-    #Sortino Ratio: 0.29
-#    runNN('ETHBTCNN') # -- Stop Trading?
-    
-    #Trade Frequency: 0.39
-    #Market Return: 0.75
-    #Strategy Return: 3.06
-    #Accuracy: 0.78
-    #Average Daily Return: 0.023
-    #Sortino Ratio: 1.23
-#    runNN('DIGUSDNN') # -- No trading - test only
+#    runNN('ETHEURNN')
 
 run()
-    
-#TODO: Improve SR / Fee calculation. See: https://sixfigureinvesting.com/2014/03/short-selling-securities-selling-short/
+
+#TODO: Improve SR / Fee calculation. 
+# https://support.kraken.com/hc/en-us/articles/201893638-Overview-of-trading-fees-on-Kraken
+
+# XGBOOST: https://www.kaggle.com/shreyams/stock-price-prediction-94-xgboost
+
+# Cloud Based Trading
+# https://www.quantinsti.com/blog/epat-project-automated-trading-maxime-fages-derek-wong/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
+
+# Read: Прогнозирование финансовых временных рядов с MLP в Keras
+# https://habr.com/post/327022/
+
+# Read: Deep Learning – Artificial Neural Network Using TensorFlow In Python 
+# https://www.quantinsti.com/blog/deep-learning-artificial-neural-network-tensorflow-python/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
+
+#TODO: Delete GitHub Repo
+
+#TODO: Calculate daily price with time shift using hourly data
 
 #TODO: Calculate Expectancy Ratio: http://www.newtraderu.com/2017/11/27/formula-profitable-trading/
 
@@ -688,9 +721,6 @@ run()
 
 # Populate Trade Log for train/test mode
 
-# Use hourly data for daily strategy. Any hour can be used for day end
-# Build 24 daily strategies (one for each hour) Ensemble strategy for each hour
-
 # Use Monte Carlo to find best parameters 
 
 # Ensemble strategy: avg of best Q tables
@@ -707,8 +737,6 @@ run()
 
 # Store execution history in csv
 # Load best Q based on execution history
-
-# Add Volume to features
 
 # Solve Unknown State Problem: Find similar state
 

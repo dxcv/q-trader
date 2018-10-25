@@ -31,7 +31,7 @@ def load_config(config):
     global reload
     reload = False # Force to reload price data  
     global charts
-    charts = False # Plot charts
+    charts = True # Plot charts
     global stats
     stats = True # Show model stats
     global epochs
@@ -66,6 +66,12 @@ def load_config(config):
     ll_period = 50 # Window for Lowest Low (best: 20 - 50)
     global rsi_period
     rsi_period = 50
+    global vol_period
+    vol_period = 30
+    global std_period
+    std_period = 7
+    global wil_period
+    wil_period = 7
     global exchange
     exchange = 'CCCAGG' # Average price from all exchanges
     global execute
@@ -86,8 +92,10 @@ def load_config(config):
     max_bars = 0 # Number of bars to use for training
     global train_goal
     train_goal = 'R' # Maximize Return
-    global spread
-    spread = 0.004 # Bitfinex fee
+    global fee # Exchange fee
+    fee = 0.002 # Bitfinex fee 
+    global margin # Daily Margin fee for short positions
+    margin = 0.0012 # Kraken fee
     global ratio
     ratio = 0 # Min ratio for Q table to take an action
     global shuffle
@@ -100,10 +108,10 @@ def load_config(config):
     test_pct = 0.2 # % of data used for testing
     global model
     model = cfgdir+'/model.nn'
-    global plot_bars # Number of bars to plot. 0 means plot all
-    plot_bars = 30
-    global adj_strategy # Use adjusted strategy - with Cash signal
-    adj_strategy = True
+    global plot_bars # Number of bars to plot. 0 means plot all. Ignored in train mode
+    plot_bars = 0
+    global time_lag # Number of hours to offset price data. 0 means no offset
+    time_lag = 0 # best 0: 3.49 4: 2.59 6: 1.6 7: 1.49 8: 2.71 20: 0.87
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -116,15 +124,19 @@ def load_config(config):
         # 918 / 1.29
         version = 1
         max_r = 1020
-    elif conf == 'ETHUSDNN': # 26955 / 2.20
+    elif conf == 'ETHUSDNN':
 #        train = True
-#        plot_bars = 30
-        stats = True
-        charts = True
+        epochs = 300
+#        reload = True
+        fee = 0.0026 # Max Kraken fee
+        margin = 0.0012 # Kraken daily rollover fee
         short = True
-        model = cfgdir+'/model65.nn'
+        plot_bars = 300
+        model = cfgdir+'/model.top'
+#        model = cfgdir+'/model_8.nn' # Adjusted 8 hours using load_prices()
+#        model = cfgdir+'/model.nn'
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
-#        train = True
+        train = True
         short = True
         units = 32
         sma_period = 15
@@ -144,12 +156,19 @@ def load_config(config):
 #        train = True
         units = 10
         model = cfgdir+'/model77.nn'
+    elif conf == 'ETHEURNN':
+#        train = True
+        fee = 0.006
+#        epochs = 300
+#        short = True
+        plot_bars = 300
+        model = cfgdir+'/model.top'
         
     if train:
         charts = True
         stats = True
     else:
-        test_pct = 1 # This is required for Adjusted Strategy stats calculation
+        test_pct = 1
         
     global file
     file = cfgdir+'/price.pkl'

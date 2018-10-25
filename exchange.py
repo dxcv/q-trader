@@ -95,4 +95,5 @@ def market_order(action, amount, ticker=None, currency=None):
     equity_used = equity1 - equity
 
     return cash_used, equity_used
-        
+
+
