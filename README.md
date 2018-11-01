@@ -11,8 +11,9 @@ https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
 # Create Docker Repo on ECR
 aws ecr create-repository --repository-name mia88
 
-# Get ECR login details
-aws ecr get-login --region eu-west-2 --no-include-email
+# Remove unused containers and images
+docker container prune
+docker image prune
 
 # Build Docker Image
 docker build -t q-trader .
@@ -20,11 +21,11 @@ docker build -t q-trader .
 # Run Docker Image
 docker run -it q-trader
 
-# Run Docker with bash
-docker run -it q-trader bash
-
 # Tag Docker Image
 docker tag q-trader:latest 266976398848.dkr.ecr.eu-west-2.amazonaws.com/mia88
+
+# Login to ECR via Docker
+$(aws ecr get-login --no-include-email --region eu-west-2)
 
 # Push Docker Image to ECR
 docker push 266976398848.dkr.ecr.eu-west-2.amazonaws.com/mia88

@@ -55,7 +55,11 @@ def run_bot(conf):
         execute()
         time.sleep(sleep_time) 
 
-run_bot('ETHUSDNN')
+try:
+    run_bot('ETHUSDNN')
+finally:
+    print('I am finished')
+    t.cleanup()
 
 # Fetch Balance
 # balance = ex.fetch_balance()
