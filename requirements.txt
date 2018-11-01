@@ -1,0 +1,9 @@
+pandas
+TA-Lib
+matplotlib
+requests
+ccxt
+keras
+tensorflow
+scikit-learn
+python-telegram-bot

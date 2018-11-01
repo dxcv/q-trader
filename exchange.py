@@ -9,6 +9,8 @@ import ccxt
 import time
 import math
 import params as p
+import secrets as s
+
 
 '''
 hitbtc = ccxt.hitbtc({'verbose': True})
@@ -50,9 +52,9 @@ order = market_order('sell', 'BTC', 'EUR', 0.0001)
 '''
 def market_order(action, amount, ticker=None, currency=None):
     exchange = ccxt.gdax({
-        'apiKey': p.gdax_api,
-        'secret': p.gdax_secret,
-        'password': p.gdax_pass
+        'apiKey': s.exchange_api_key,
+        'secret': s.exchange_sk,
+        'password': s.exchange_pass
     })
 
     action = action.lower()

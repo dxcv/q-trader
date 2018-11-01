@@ -40,12 +40,6 @@ def load_config(config):
     features = 4 # Number of features in state for Q table
     global feature_bins
     feature_bins = 3 # Number of bins for feature (more bins tend to overfit)
-    global gdax_api
-    gdax_api = ''
-    global gdax_secret
-    gdax_secret = ''
-    global gdax_pass
-    gdax_pass = ''
     global max_r
     max_r = 0
     global ticker
@@ -127,7 +121,7 @@ def load_config(config):
     elif conf == 'ETHUSDNN':
 #        train = True
         epochs = 300
-#        reload = True
+        reload = True
         fee = 0.0026 # Max Kraken fee
         margin = 0.0012 # Kraken daily rollover fee
         short = True
