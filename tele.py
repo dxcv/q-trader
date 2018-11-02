@@ -6,13 +6,13 @@ Created on Wed Oct 31 14:34:25 2018
 @author: igor
 """
 
-import secrets as s
 
 from typing import Any, Callable
 from telegram import Bot, Update
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
 import logging
+import secrets as s
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)

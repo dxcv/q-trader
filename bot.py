@@ -23,7 +23,7 @@ ex = ccxt.kraken({
 old_bar = None
 
 def print(msg):
-    t.send_msg(msg)
+    t.send_msg(str(msg))
 
 def execute():
     global old_bar

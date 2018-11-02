@@ -11,24 +11,12 @@ https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
 # Create Docker Repo on ECR
 aws ecr create-repository --repository-name mia88
 
-# Remove unused containers and images
-docker container prune
-docker image prune
+Add below to your .bash_profile:
+export AWS_ECR_URL=Your AWS ECR Repository URL
+export AWS_REGION=You AWS  Region
 
-# Build Docker Image
-docker build -t q-trader .
-
-# Run Docker Image
-docker run -it q-trader
-
-# Tag Docker Image
-docker tag q-trader:latest 266976398848.dkr.ecr.eu-west-2.amazonaws.com/mia88
-
-# Login to ECR via Docker
-$(aws ecr get-login --no-include-email --region eu-west-2)
-
-# Push Docker Image to ECR
-docker push 266976398848.dkr.ecr.eu-west-2.amazonaws.com/mia88
+# Build and deploy Docker image to AWS ECR
+./deploy.sh
 
 # Turning Machine Learning Models into APIs in Python
 https://www.datacamp.com/community/tutorials/machine-learning-models-api-python
