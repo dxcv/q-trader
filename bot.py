@@ -6,31 +6,23 @@ Created on Thu Oct 25 17:47:41 2018
 @author: igor
 """
 
-import ccxt
 import time
 import qlib as q
-import params as p
-import secrets as s
 import tele as t
+import exchange as x
 
-sleep_time = 60*60 # Sleep for 1 hour
-
-ex = ccxt.kraken({
-    'apiKey': s.exchange_api_key,
-    'secret': s.exchange_sk
-})
+sleep_time = 60*15 # Sleep for 15 min
 
 old_bar = None
 
 def print(msg):
     t.send_msg(str(msg))
 
-def execute():
+def execute(conf):
     global old_bar
-    pair = p.ticker + '/' + p.currency
-    # Get latest price data
-    df = q.load_data()
-    new_bar = df.iloc[-2]
+    # Execute model
+    q.runNN(conf)
+    new_bar = q.td.iloc[-1]
     if old_bar is None:
         print('Just started. Waiting for new bar')
     elif new_bar.equals(old_bar):        
@@ -45,14 +37,12 @@ def execute():
         print('New bar found:')
         print(new_bar)
     old_bar = new_bar
-
-    ticker = ex.fetch_ticker(pair)
-    print('Current Price: ' + str(ticker['last']))
+    
+    print('Current Price: ' + str(x.get_price()))
 
 def run_bot(conf):
-    q.init(conf)
     while True:
-        execute()
+        execute(conf)
         time.sleep(sleep_time) 
 
 try:

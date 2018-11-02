@@ -21,6 +21,9 @@ export AWS_REGION=You AWS  Region
 # Turning Machine Learning Models into APIs in Python
 https://www.datacamp.com/community/tutorials/machine-learning-models-api-python
 
+# Securing Docker secrets on AWS
+https://aws.amazon.com/blogs/security/how-to-manage-secrets-for-amazon-ec2-container-service-based-applications-by-using-amazon-s3-and-docker/
+
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
 # https://dzone.com/articles/deploying-docker-containers-to-aws-ecs
 
@@ -43,8 +46,6 @@ https://www.datacamp.com/community/tutorials/machine-learning-models-api-python
 
 # Read: Deep Learning – Artificial Neural Network Using TensorFlow In Python 
 # https://www.quantinsti.com/blog/deep-learning-artificial-neural-network-tensorflow-python/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
-
-#TODO: Delete GitHub Repo
 
 #TODO: Calculate daily price with time shift using hourly data
 

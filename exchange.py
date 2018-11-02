@@ -11,6 +11,11 @@ import math
 import params as p
 import secrets as s
 
+ex = ccxt.kraken({
+    'apiKey': s.exchange_api_key,
+    'secret': s.exchange_sk
+})
+
 
 '''
 hitbtc = ccxt.hitbtc({'verbose': True})
@@ -50,17 +55,16 @@ order = market_order('buy', 'BTC', 'EUR', 100)
 Example: Sell 0.0001 BTC
 order = market_order('sell', 'BTC', 'EUR', 0.0001)
 '''
-def market_order(action, amount, ticker=None, currency=None):
-    exchange = ccxt.gdax({
-        'apiKey': s.exchange_api_key,
-        'secret': s.exchange_sk,
-        'password': s.exchange_pass
-    })
 
+def get_price():
+    ticker = ex.fetch_ticker(p.ticker + '/' + p.currency)
+    return ticker['last']
+
+def market_order(action, amount, ticker=None, currency=None):
     action = action.lower()
     if not ticker: ticker = p.ticker
     if not currency: currency = p.currency
-    balance = exchange.fetch_balance()
+    balance = ex.fetch_balance()
     print('***** Current Balance *****')
     print(balance['free'])
     cash = balance['free'][currency]
@@ -78,17 +82,17 @@ def market_order(action, amount, ticker=None, currency=None):
 
     print('Market Order: action='+action+' symbol='+symbol+' funds='+str(lot))
     if action == 'buy':
-        order = exchange.create_market_buy_order(symbol, 0, params={'funds': str(lot)})
+        order = ex.create_market_buy_order(symbol, 0, params={'funds': str(lot)})
     else:
-        order = exchange.create_market_sell_order(symbol, lot)
+        order = ex.create_market_sell_order(symbol, lot)
 
     print('***** Order Placed *****')
     print(order)
     # Wait till order is executed
-    while len(exchange.fetch_open_orders(symbol=symbol)) > 0: time.sleep(p.order_wait)
+    while len(ex.fetch_open_orders(symbol=symbol)) > 0: time.sleep(p.order_wait)
 
 #   Get new balances
-    balance = exchange.fetch_balance()
+    balance = ex.fetch_balance()
     print('***** New Balance *****')
     print(balance['free'])
     cash1 = balance['free'][currency]

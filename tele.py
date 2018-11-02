@@ -13,6 +13,7 @@ from telegram.ext import Updater
 from telegram.ext import CommandHandler
 import logging
 import secrets as s
+import qlib as q
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,14 +49,16 @@ def authorized_only(command_handler: Callable[[Any, Bot, Update], None]) -> Call
 
 @authorized_only
 def status(bot: Bot, update: Update) -> None:
-    bot.send_message(chat_id=update.message.chat_id, text="I am alive")
+    send_msg('Signal: ' + q.get_signal())
 
-updater = Updater(token=s.telegram_token)
+updater = Updater(token=s.telegram_token, workers=0)
 updater.dispatcher.add_handler(CommandHandler('status', status))
-updater.start_polling()
+updater.start_polling(clean=True, bootstrap_retries=-1, timeout=30, read_latency=60)
 
 def send_msg(msg):
     updater.bot.send_message(chat_id=s.telegram_chat_id, text=msg)
 
 def cleanup():
     updater.stop()
+
+

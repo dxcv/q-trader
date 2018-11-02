@@ -471,6 +471,9 @@ def run_batch(conf, instances = 1):
          
     print('Took %s', time.time() - ts)
 
+def get_signal():
+    return td.signal.iloc[-1]    
+
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
 def runNN(conf):
@@ -647,7 +650,7 @@ def runNN(conf):
         plt.title(model)
         plt.show()
     
-    print('Signal: ' + td.signal.iloc[-1])
+    print('Signal: ' + get_signal())
 
     if p.stats: # Calculate Chart Stats  
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
@@ -676,5 +679,5 @@ def run():
 
 #    runNN('ETHEURNN')
 
-run()
+# run()
 
