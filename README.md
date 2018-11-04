@@ -7,6 +7,7 @@ brew install awscli
 
 # Configure AWS CLI
 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+aws configure
 
 # Create Docker Repo on ECR
 aws ecr create-repository --repository-name mia88

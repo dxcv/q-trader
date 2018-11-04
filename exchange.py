@@ -7,7 +7,6 @@ Created on Mon Dec 25 18:06:07 2017
 """
 import ccxt
 import time
-import math
 import params as p
 import secrets as s
 
@@ -60,46 +59,40 @@ def get_price():
     ticker = ex.fetch_ticker(p.ticker + '/' + p.currency)
     return ticker['last']
 
-def market_order(action, amount, ticker=None, currency=None):
-    action = action.lower()
-    if not ticker: ticker = p.ticker
-    if not currency: currency = p.currency
-    balance = ex.fetch_balance()
+def get_balance():
+    balance = ex.fetch_balance()['free']
     print('***** Current Balance *****')
-    print(balance['free'])
-    cash = balance['free'][currency]
-    equity = balance['free'][ticker]
+    print(balance)
+    return balance
 
-    lot = min(cash, amount) if action == 'buy' else min(equity, amount)  
-    lot = math.trunc(lot*10**7)/10**7 # Leave only 7 decimals
-    if action == 'buy' and lot < p.min_cash:
-        print('No enough cash to place buy order: '+str(lot))
-        return
-    if action == 'sell' and lot < p.min_equity:
-        print('No enough equity to place sell order: '+str(lot))
-        return
-    symbol = ticker+'/'+currency
-
-    print('Market Order: action='+action+' symbol='+symbol+' funds='+str(lot))
-    if action == 'buy':
-        order = ex.create_market_buy_order(symbol, 0, params={'funds': str(lot)})
-    else:
-        order = ex.create_market_sell_order(symbol, lot)
+def market_order(action, leverage=False):
+    b1 = get_balance()
+    pair = p.ticker+'/'+p.currency
+        
+    if action == 'Buy':
+        if leverage:
+            print('Placing Market Buy Order with leverage 2')
+            order = ex.create_market_buy_order(pair, p.order_size, {'leverage': 2})
+        else:
+            print('Placing Market Buy Order')
+            order = ex.create_market_buy_order(pair, p.order_size)
+    elif action == 'Sell':
+        if leverage:
+            print('Placing Market Sell Order with leverage 2')
+            order = ex.create_market_sell_order(pair, p.order_size, {'leverage': 2})
+        else:
+            print('Placing Market Sell Order')
+            order = ex.create_market_sell_order(pair, p.order_size)
 
     print('***** Order Placed *****')
     print(order)
+
     # Wait till order is executed
-    while len(ex.fetch_open_orders(symbol=symbol)) > 0: time.sleep(p.order_wait)
+    while len(ex.fetch_open_orders(symbol=pair)) > 0: time.sleep(p.order_wait)
 
-#   Get new balances
-    balance = ex.fetch_balance()
-    print('***** New Balance *****')
-    print(balance['free'])
-    cash1 = balance['free'][currency]
-    equity1 = balance['free'][ticker]
-    cash_used = cash1 - cash
-    equity_used = equity1 - equity
+    # Get new balances
+    b2 = get_balance()
 
-    return cash_used, equity_used
+    return b1, b2
 
-
+    

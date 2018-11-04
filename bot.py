@@ -6,49 +6,64 @@ Created on Thu Oct 25 17:47:41 2018
 @author: igor
 """
 
-import time
 import qlib as q
 import tele as t
 import exchange as x
+import datetime as dt
+import time
+import params as p
 
-sleep_time = 60*15 # Sleep for 15 min
-
-old_bar = None
-
-def print(msg):
+def send(msg):
+    print(msg)
     t.send_msg(str(msg))
 
-def execute(conf):
-    global old_bar
-    # Execute model
-    q.runNN(conf)
-    new_bar = q.td.iloc[-1]
-    if old_bar is None:
-        print('Just started. Waiting for new bar')
-    elif new_bar.equals(old_bar):        
-        pass # Old bar - no action
-    elif new_bar.date == old_bar.date:
-        print('Warning!!!! Old bar has changed')
-        print('Old Bar:')
-        print(old_bar)
-        print('New Bar:')
-        print(new_bar)
-    else:
-        print('New bar found:')
-        print(new_bar)
-    old_bar = new_bar
-    
-    print('Current Price: ' + str(x.get_price()))
+def get_signal(conf):
+    no_signal = True
 
-def run_bot(conf):
-    while True:
-        execute(conf)
-        time.sleep(sleep_time) 
+    while no_signal:
+        q.runNN(conf)
+        signal = q.get_signal()
+        if dt.datetime.today() > signal['end']:
+            send('Signal has expired. Waiting for new one ...')
+            time.sleep(p.sleep_interval)
+        else:
+            no_signal = False
+
+    return signal
+
+def execute(conf):
+    send('I am started')
+    signal = get_signal(conf)
+    print(str(signal))
+ 
+    if signal['hold']:
+        send('Hold - no action is required')
+    elif signal['signal'] == 'Buy':
+        send('Received Buy Signal')
+        send('Closing Margin Sell Position')
+        res = x.market_order('Buy', True)
+        send('Balance: ' + str(res))
+
+        send('Opening Buy Position')
+        res = x.market_order('Buy')
+        send('Balance: ' + str(res))
+    elif signal['signal'] == 'Sell':
+        send('Received Sell Signal')
+        send('Closing Buy Position')
+        res = x.market_order('Sell')
+        send('Balance: ' + str(res))
+
+        send('Opening Margin Sell Position')
+        res = x.market_order('Sell', True)
+        send('Balance: ' + str(res))
 
 try:
-    run_bot('ETHUSDNN')
+    execute('ETHUSDNN')
+except Exception as e:
+    send('An error occured')
+    print(e)
 finally:
-    print('I am finished')
+    send('I am finished')
     t.cleanup()
 
 # Fetch Balance

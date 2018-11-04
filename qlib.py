@@ -472,7 +472,15 @@ def run_batch(conf, instances = 1):
     print('Took %s', time.time() - ts)
 
 def get_signal():
-    return td.signal.iloc[-1]    
+    if td.signal.iloc[-1] == td.signal.iloc[-2]:
+        hold = True
+    else:
+        hold = False
+    
+    start = td.date_to.iloc[-1]
+    end = start + dt.timedelta(minutes=p.trade_interval)
+    
+    return {'signal': td.signal.iloc[-1], 'hold': hold, 'start': start, 'end': end}
 
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
@@ -490,6 +498,7 @@ def runNN(conf):
     
 #    Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     
+    dataset['date_to'] = dataset['date'].shift(-1)
     # Calculate Features
     dataset['VOL'] = dataset['volumeto']/dataset['volumeto'].rolling(window = p.vol_period).mean()
     dataset['HH'] = dataset['high']/dataset['high'].rolling(window = p.hh_period).max() 
@@ -579,11 +588,10 @@ def runNN(conf):
     td['trade_id'] = td.trade_id.fillna(method='ffill')
 
     def trade_agg(x):
-        time_interval = 1 if p.bar_period == 'day' else 1/24
         names = {
             'action': x.action.iloc[0],    
             'open_ts': x.date.iloc[0],
-            'close_ts': x.date.iloc[-1] + dt.timedelta(days=time_interval),
+            'close_ts': x.date_to.iloc[-1],
             'open_price': x.open.iloc[0],
             'close_price': x.close.iloc[-1]            
         }
@@ -650,7 +658,7 @@ def runNN(conf):
         plt.title(model)
         plt.show()
     
-    print('Signal: ' + get_signal())
+#    print(str(get_signal()))
 
     if p.stats: # Calculate Chart Stats  
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
@@ -678,6 +686,3 @@ def run():
     runNN('ETHUSDNN') # Best Strategy
 
 #    runNN('ETHEURNN')
-
-# run()
-

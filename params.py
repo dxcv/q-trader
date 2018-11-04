@@ -106,6 +106,10 @@ def load_config(config):
     plot_bars = 0
     global time_lag # Number of hours to offset price data. 0 means no offset
     time_lag = 0 # best 0: 3.49 4: 2.59 6: 1.6 7: 1.49 8: 2.71 20: 0.87
+    global trade_interval
+    trade_interval = 60*24 # Trade interval in minutes
+    global sleep_interval
+    sleep_interval = 60*30 # Bot sleep interval in seconds when waiting for new signal 
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -127,8 +131,7 @@ def load_config(config):
         short = True
         plot_bars = 300
         model = cfgdir+'/model.top'
-#        model = cfgdir+'/model_8.nn' # Adjusted 8 hours using load_prices()
-#        model = cfgdir+'/model.nn'
+        order_size = 10
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
         train = True
         short = True
