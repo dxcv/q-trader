@@ -15,7 +15,7 @@ import logging
 import secrets as s
 import qlib as q
 
-logging.basicConfig(filename="qtrader.log", level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger()
 
 def authorized_only(command_handler: Callable[[Any, Bot, Update], None]) -> Callable[..., Any]:

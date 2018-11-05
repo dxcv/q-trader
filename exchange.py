@@ -61,8 +61,8 @@ def get_price():
 
 def get_balance():
     balance = ex.fetch_balance()['free']
-    print('***** Current Balance *****')
-    print(balance)
+#    print('***** Current Balance *****')
+#    print(balance)
     return balance
 
 def market_order(action, leverage=False):
@@ -71,17 +71,17 @@ def market_order(action, leverage=False):
         
     if action == 'Buy':
         if leverage:
-            print('Placing Market Buy Order with leverage 2')
+#            print('Placing Market Buy Order with leverage 2')
             order = ex.create_market_buy_order(pair, p.order_size, {'leverage': 2})
         else:
-            print('Placing Market Buy Order')
+#            print('Placing Market Buy Order')
             order = ex.create_market_buy_order(pair, p.order_size)
     elif action == 'Sell':
         if leverage:
-            print('Placing Market Sell Order with leverage 2')
+#            print('Placing Market Sell Order with leverage 2')
             order = ex.create_market_sell_order(pair, p.order_size, {'leverage': 2})
         else:
-            print('Placing Market Sell Order')
+#            print('Placing Market Sell Order')
             order = ex.create_market_sell_order(pair, p.order_size)
 
     print('***** Order Placed *****')
@@ -91,8 +91,14 @@ def market_order(action, leverage=False):
     while len(ex.fetch_open_orders(symbol=pair)) > 0: time.sleep(p.order_wait)
 
     # Get new balances
-    b2 = get_balance()
+    b2 = get_balance()    
+    result = {'pair': pair, 'size': p.order_size, 
+              'cash_diff': b2[p.currency] - b1[p.currency],
+              'unit_diff': b2[p.ticker] - b1[p.ticker],
+              'order': order,
+              'balance': b2
+              }
 
-    return b1, b2
+    return result
 
     

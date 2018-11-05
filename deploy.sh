@@ -1,5 +1,5 @@
-#  Remove unused images
-docker image prune -f
+# Remove old images
+docker image rm -f $AWS_ECR_URL
 
 # Remove unused containers
 # docker container prune -f

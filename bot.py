@@ -31,52 +31,38 @@ def get_signal(conf):
 
     return signal
 
+def send_results(res, msg, pnl=False):
+    send(msg+' of '+str(res['size'])+' '+res['pair'])
+    # PnL calculation needs to be based on original balance when position was opened  
+    if pnl:  
+        send('with '+('profit' if res['cash_diff'] > 0 else 'loss')+' of '
+             +str(round(res['cash_diff'], 2))+' '+p.currency)
+    send('New Balance: ' + str(res['balance']))
+
 def execute(conf):
     send('I am started')
     signal = get_signal(conf)
-    print(str(signal))
  
     if signal['hold']:
         send('Hold - no action is required')
     elif signal['signal'] == 'Buy':
         send('Received Buy Signal')
-        send('Closing Margin Sell Position')
         res = x.market_order('Buy', True)
-        send('Balance: ' + str(res))
-
-        send('Opening Buy Position')
+        send_results(res, 'Closed Short Position')
         res = x.market_order('Buy')
-        send('Balance: ' + str(res))
+        send_results(res, 'Opened Long Position')
     elif signal['signal'] == 'Sell':
         send('Received Sell Signal')
-        send('Closing Buy Position')
         res = x.market_order('Sell')
-        send('Balance: ' + str(res))
-
-        send('Opening Margin Sell Position')
+        send_results(res, 'Closed Long Position')
         res = x.market_order('Sell', True)
-        send('Balance: ' + str(res))
+        send_results(res, 'Opened Short Position')
 
 try:
     execute('ETHUSDNN')
 except Exception as e:
     send('An error occured')
-    print(e)
+    send(e)
 finally:
     send('I am finished')
     t.cleanup()
-
-# Fetch Balance
-# balance = ex.fetch_balance()
-
-# Normal Buy 0.1 ETH at market rate (no leverage)
-# order = ex.create_market_buy_order('ETH/USD', 0.1)
-
-# Normal Sell 0.1 ETH at market rate (no leverage)
-# order = ex.create_market_sell_order('ETH/USD', 0.1)
-
-# Leverage Buy
-# order = ex.create_market_buy_order('ETH/USD', 0.01, {'leverage': 2})
-
-# Leverage Sell
-# order = ex.create_market_sell_order('ETH/USD', 0.01, {'leverage': 2})

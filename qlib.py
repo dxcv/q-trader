@@ -658,7 +658,7 @@ def runNN(conf):
         plt.title(model)
         plt.show()
     
-#    print(str(get_signal()))
+    print(str(get_signal()))
 
     if p.stats: # Calculate Chart Stats  
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
@@ -677,12 +677,8 @@ def runNN(conf):
         print("Sortino Ratio: %.2f" % st.sortino_ratio(e, r, f))
 
 def run():
-#    run_batch('ETHUSD') 
-#    run_batch('ETHBTC')
-#    run_batch('BTCUSD')
-
 #    runNN('BTCUSDNN')
-
     runNN('ETHUSDNN') # Best Strategy
-
 #    runNN('ETHEURNN')
+
+#run()
