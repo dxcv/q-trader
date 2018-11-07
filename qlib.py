@@ -518,9 +518,6 @@ def runNN(conf):
     if p.max_bars > 0: dataset = dataset.tail(p.max_bars).reset_index(drop=True)
     dataset = dataset.dropna()
     
-    # Shuffle rows in dataset
-    if p.shuffle: dataset = dataset.sample(frac=1).reset_index(drop=True)
-    
     # Separate input from output
     X = dataset.iloc[:, -11:-2]
     y = dataset.iloc[:, -1]

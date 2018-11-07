@@ -19,6 +19,17 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+
+# Kaggle Courses
+https://www.kaggle.com/learn/overview
+
+# Cross Validation
+https://towardsdatascience.com/cross-validation-in-machine-learning-72924a69872f
+Keras: https://machinelearningmastery.com/use-keras-deep-learning-models-scikit-learn-python/
+
+# Hyperparameter Optimization
+https://en.wikipedia.org/wiki/Hyperparameter_optimization
+
 # Turning Machine Learning Models into APIs in Python
 https://www.datacamp.com/community/tutorials/machine-learning-models-api-python
 

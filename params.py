@@ -92,8 +92,6 @@ def load_config(config):
     margin = 0.0012 # Kraken fee
     global ratio
     ratio = 0 # Min ratio for Q table to take an action
-    global shuffle
-    shuffle = False
     global units
     units = 16
     global train_pct
@@ -131,7 +129,7 @@ def load_config(config):
         short = True
         plot_bars = 300
         model = cfgdir+'/model.top'
-        order_size = 10
+        order_size = 100
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
         train = True
         short = True
