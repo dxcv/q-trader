@@ -6,7 +6,7 @@ Created on Thu Oct 25 17:47:41 2018
 @author: igor
 """
 
-import qlib as q
+import nn
 import tele as t
 import exchange as x
 import datetime as dt
@@ -21,8 +21,8 @@ def get_signal(conf):
     no_signal = True
 
     while no_signal:
-        q.runNN(conf)
-        signal = q.get_signal()
+        nn.runNN(conf)
+        signal = nn.get_signal()
         if dt.datetime.today() > signal['end']:
             send('Signal has expired. Waiting for new one ...')
             time.sleep(p.sleep_interval)
@@ -40,19 +40,19 @@ def send_results(res, msg, pnl=False):
     send('New Balance: ' + str(res['balance']))
 
 def execute(conf):
-    send('I am started')
+    send('Hi there!')
     signal = get_signal(conf)
  
-    if signal['hold']:
-        send('Hold - no action is required')
+    if not signal['new']:
+        send('Same signal today ('+signal['signal']+'). No action is required')
     elif signal['signal'] == 'Buy':
-        send('Received Buy Signal')
+        send('Received New Buy Signal')
         res = x.market_order('Buy', True)
         send_results(res, 'Closed Short Position')
         res = x.market_order('Buy')
         send_results(res, 'Opened Long Position')
     elif signal['signal'] == 'Sell':
-        send('Received Sell Signal')
+        send('Received New Sell Signal')
         res = x.market_order('Sell')
         send_results(res, 'Closed Long Position')
         res = x.market_order('Sell', True)
@@ -61,8 +61,8 @@ def execute(conf):
 try:
     execute('ETHUSDNN')
 except Exception as e:
-    send('An error occured')
+    send('An error occured!')
     send(e)
 finally:
-    send('I am finished')
+    send('Have a good day!')
     t.cleanup()

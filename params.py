@@ -108,6 +108,8 @@ def load_config(config):
     trade_interval = 60*24 # Trade interval in minutes
     global sleep_interval
     sleep_interval = 60*30 # Bot sleep interval in seconds when waiting for new signal 
+    global ignore_signals
+    ignore_signals = [4] # list of y_pred_id to ignore. None to disable 
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -122,12 +124,12 @@ def load_config(config):
         max_r = 1020
     elif conf == 'ETHUSDNN':
 #        train = True
-        epochs = 300
+        epochs = 100
         reload = True
         fee = 0.0026 # Max Kraken fee
         margin = 0.0012 # Kraken daily rollover fee
         short = True
-        plot_bars = 300
+#        plot_bars = 365
         model = cfgdir+'/model.top'
         order_size = 100
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
