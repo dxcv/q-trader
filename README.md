@@ -1,5 +1,7 @@
 # q-trader
 
+#TODO: Calculate Expectancy Ratio: http://www.newtraderu.com/2017/11/27/formula-profitable-trading/
+
 # https://linuxacademy.com/blog/amazon-web-services-2/deploying-a-containerized-flask-application-with-aws-ecs-and-docker/
 # Install AWS CLI for Mac
 xcode-select --install 
@@ -19,6 +21,8 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Time Series Forecasting
+https://machinelearningmastery.com/how-to-use-the-timeseriesgenerator-for-time-series-forecasting-in-keras/
 
 # Kaggle Courses
 https://www.kaggle.com/learn/overview
@@ -26,6 +30,7 @@ https://www.kaggle.com/learn/overview
 # Cross Validation
 https://towardsdatascience.com/cross-validation-in-machine-learning-72924a69872f
 Keras: https://machinelearningmastery.com/use-keras-deep-learning-models-scikit-learn-python/
+https://towardsdatascience.com/time-series-nested-cross-validation-76adba623eb9
 
 # Hyperparameter Optimization
 https://en.wikipedia.org/wiki/Hyperparameter_optimization
@@ -60,8 +65,6 @@ https://aws.amazon.com/blogs/security/how-to-manage-secrets-for-amazon-ec2-conta
 # https://www.quantinsti.com/blog/deep-learning-artificial-neural-network-tensorflow-python/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
 
 #TODO: Calculate daily price with time shift using hourly data
-
-#TODO: Calculate Expectancy Ratio: http://www.newtraderu.com/2017/11/27/formula-profitable-trading/
 
 #TODO: AutoKeras: Build optimal NN architecture: https://towardsdatascience.com/autokeras-the-killer-of-googles-automl-9e84c552a319
 
