@@ -1,8 +1,6 @@
 # Remove old images
+docker image prune -f
 docker image rm -f $AWS_ECR_URL
-
-# Remove unused containers
-# docker container prune -f
 
 # Build Docker Image
 docker build -t q-trader .

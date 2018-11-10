@@ -85,8 +85,6 @@ https://aws.amazon.com/blogs/security/how-to-manage-secrets-for-amazon-ec2-conta
 
 # Trade with daily averege price: split order in small chunks and execute during day
 
-# Integrate with Telegram Bot
-
 # Populate Trade Log for train/test mode
 
 # Use Monte Carlo to find best parameters 

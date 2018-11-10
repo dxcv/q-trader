@@ -311,7 +311,7 @@ def get_ret(df):
     return df.iloc[-1]/df.iloc[0]
 
 def normalize(df):
-    return df/df.at[0]
+    return df/df.iloc[0]
 
 def train_model(df, tdf):
     global qt

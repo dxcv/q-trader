@@ -100,7 +100,7 @@ def load_config(config):
     test_pct = 0.2 # % of data used for testing
     global model
     model = cfgdir+'/model.nn'
-    global plot_bars # Number of bars to plot. 0 means plot all. Ignored in train mode
+    global plot_bars # Number of days to plot. 0 means plot all
     plot_bars = 0
     global time_lag # Number of hours to offset price data. 0 means no offset
     time_lag = 0 # best 0: 3.49 4: 2.59 6: 1.6 7: 1.49 8: 2.71 20: 0.87
@@ -122,18 +122,8 @@ def load_config(config):
         # 918 / 1.29
         version = 1
         max_r = 1020
-    elif conf == 'ETHUSDNN':
-#        train = True
-        epochs = 100
-        reload = True
-        fee = 0.0026 # Max Kraken fee
-        margin = 0.0012 # Kraken daily rollover fee
-        short = True
-#        plot_bars = 365
-        model = cfgdir+'/model.top'
-        order_size = 100
     elif conf == 'BTCUSDNN': # Strategy Return: 18.39
-        train = True
+#        train = True
         short = True
         units = 32
         sma_period = 15
@@ -160,6 +150,16 @@ def load_config(config):
 #        short = True
         plot_bars = 300
         model = cfgdir+'/model.top'
+    elif conf == 'ETHUSDNN':
+#        train = True
+        epochs = 100
+        reload = True
+        fee = 0.0026 # Max Kraken fee
+        margin = 0.0012 # Kraken daily rollover fee
+        short = True
+        plot_bars = 30
+        model = cfgdir+'/model.top'
+        order_size = 100
         
     if train:
         charts = True

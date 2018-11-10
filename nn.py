@@ -147,14 +147,16 @@ def runNN1(conf):
         accu_score = accuracy_score(y_test, y_pred)
         print(name + ": " + str(accu_score))
  
-def plot_chart(td, title):
-    if p.plot_bars > 0 and not p.train: 
-        td = td.tail(p.plot_bars).reset_index(drop=True)
+def plot_chart(df, title, date_col='date'):
+    td = df.copy()
+    if p.plot_bars > 0:
+        td = td[td[date_col] >= td[date_col].max() - dt.timedelta(days=p.plot_bars)]
+#        td = td.tail(p.plot_bars).reset_index(drop=True)
         td['CMR'] = q.normalize(td['CMR'])
         td['CSR'] = q.normalize(td['CSR'])
-    td = td.set_index('date')
+    td = td.set_index(date_col)
     fig, ax = plt.subplots()
-    # fig.autofmt_xdate()
+    fig.autofmt_xdate()
     ax.plot(td['CSR'], color='g', label='Strategy Return')
     ax.plot(td['CMR'], color='r', label='Market Return')
     plt.legend()
@@ -166,7 +168,7 @@ def show_stats():
     avg_loss = 1 - trades[trades.SR1 < 1].SR1.mean()
     avg_win = trades[trades.SR1 >= 1].SR1.mean() - 1
     win_ratio = len(trades[trades.SR1 >= 1]) / len(trades)
-    trade_freq = len(trades) / (trades.open_ts.max() - trades.open_ts.min()).days
+    trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
     exp = 365 * trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
     sr = s.sharpe_ratio((trades.SR1 - 1).mean(), trades.SR1 - 1, 0)
     print('Strategy Return: %.2f' % td.CSR.iloc[-1])
@@ -307,6 +309,7 @@ def runNN(conf):
     trades['SR1'] = trades['SR'] * (1 - p.fee)**2 * (1 - trades.margin)
     trades['CMR'] = np.cumprod(trades['MR'])
     trades['CSR'] = np.cumprod(trades['SR1'])
+    trades = trades.dropna()
     
     td['fee'] = np.where(td.new, (1 - p.fee)**(2 if p.short else 1), 1)
     td['fee'] = np.where(td.new & (td.signal == 'Cash'), 1 - p.fee, td.fee)
