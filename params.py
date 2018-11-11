@@ -157,7 +157,7 @@ def load_config(config):
         fee = 0.0026 # Max Kraken fee
         margin = 0.0012 # Kraken daily rollover fee
         short = True
-        plot_bars = 30
+        plot_bars = 100
         model = cfgdir+'/model.top'
         order_size = 100
         

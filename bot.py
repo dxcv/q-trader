@@ -61,7 +61,7 @@ def execute(conf):
 try:
     execute('ETHUSDNN')
 except Exception as e:
-    send('An error occured!')
+    send('An error has occured. Please investigate!')
     send(e)
 finally:
     send('Have a good day!')

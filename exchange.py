@@ -9,10 +9,13 @@ import ccxt
 import time
 import params as p
 import secrets as s
+import cfscrape
 
 ex = ccxt.kraken({
     'apiKey': s.exchange_api_key,
-    'secret': s.exchange_sk
+    'secret': s.exchange_sk,
+    'timeout': 20000,
+    'session': cfscrape.create_scraper() # To avoid Cloudflare block
 })
 
 

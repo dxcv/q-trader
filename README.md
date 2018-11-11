@@ -58,6 +58,9 @@ https://aws.amazon.com/blogs/security/how-to-manage-secrets-for-amazon-ec2-conta
 # Cloud Based Trading
 # https://www.quantinsti.com/blog/epat-project-automated-trading-maxime-fages-derek-wong/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
 
+# Kraken API
+https://github.com/dominiktraxl/pykrakenapi
+
 # Read: Прогнозирование финансовых временных рядов с MLP в Keras
 # https://habr.com/post/327022/
 
