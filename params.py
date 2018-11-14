@@ -157,9 +157,18 @@ def load_config(config):
         fee = 0.0026 # Max Kraken fee
         margin = 0.0012 # Kraken daily rollover fee
         short = True
-        plot_bars = 100
+        plot_bars = 365
         model = cfgdir+'/model.top'
-        order_size = 100
+        order_size = 250
+    elif conf == 'XRPUSDNN':
+        train = True
+        epochs = 100
+        reload = True
+        fee = 0.0026 # Max Kraken fee
+        margin = 0.0012 # Kraken daily rollover fee
+        short = True
+        plot_bars = 365
+        model = cfgdir+'/model.top'
         
     if train:
         charts = True

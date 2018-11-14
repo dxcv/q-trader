@@ -41,6 +41,9 @@ https://www.datacamp.com/community/tutorials/machine-learning-models-api-python
 # Securing Docker secrets on AWS
 https://aws.amazon.com/blogs/security/how-to-manage-secrets-for-amazon-ec2-container-service-based-applications-by-using-amazon-s3-and-docker/
 
+# Tips to reduce Docker image size
+https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
+
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
 # https://dzone.com/articles/deploying-docker-containers-to-aws-ecs
 

@@ -96,15 +96,15 @@ def load_prices():
         print('Loaded Hourly Prices in UTC')
 
     df = pd.read_csv(file)
+    df = df.set_index('time')
     df = df[df.close > 0]  
-    df['date'] = pd.to_datetime(df.time, unit='s')
-    df['date_adj'] = df.date - dt.timedelta(hours=p.time_lag)
-    df = df.set_index('date_adj')
-    print('Price Rows: '+str(len(df))+' Last Timestamp: '+str(df.date.max()))
-    df = df.resample('D').agg({
+    df['date'] = pd.to_datetime(df.index, unit='s')
+    if p.time_lag > 0:
+        df['date'] = df.date - dt.timedelta(hours=p.time_lag)
+        df = df.resample('D').agg({
             'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 
             'volumefrom': 'sum', 'volumeto': 'sum'})
-    df['date'] = df.index
+    print('Price Rows: '+str(len(df))+' Last Timestamp: '+str(df.date.max()))
     return df
 
 # Map feature values to bins (numbers)

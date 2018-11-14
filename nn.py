@@ -195,7 +195,7 @@ def runNN(conf):
     
     q.init(conf)
     ds = q.load_data()
-#    ds = load_prices()
+#    ds = q.load_prices()
     
     #  Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     ds['date_to'] = ds['date'].shift(-1)
@@ -353,3 +353,4 @@ def runNN(conf):
     print(str(get_signal()))
 
 #runNN('ETHUSDNN')
+#runNN('XRPUSDNN')
