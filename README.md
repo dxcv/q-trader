@@ -21,6 +21,9 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# TODO: Implement Stop Loss / Take Profit / Position Sizing
+http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
+
 # Time Series Forecasting
 https://machinelearningmastery.com/how-to-use-the-timeseriesgenerator-for-time-series-forecasting-in-keras/
 

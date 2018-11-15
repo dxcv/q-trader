@@ -110,6 +110,9 @@ def load_config(config):
     sleep_interval = 60*30 # Bot sleep interval in seconds when waiting for new signal 
     global ignore_signals
     ignore_signals = [4] # list of y_pred_id to ignore. None to disable 
+    global min_data_size # Minimum records expected from Cryptocompare API
+    min_data_size = 100
+    
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -159,16 +162,25 @@ def load_config(config):
         short = True
         plot_bars = 365
         model = cfgdir+'/model.top'
-        order_size = 250
+        order_size = 250 # deployed
     elif conf == 'XRPUSDNN':
         train = True
         epochs = 100
-        reload = True
+#        reload = True
         fee = 0.0026 # Max Kraken fee
         margin = 0.0012 # Kraken daily rollover fee
         short = True
-        plot_bars = 365
+#        plot_bars = 365
         model = cfgdir+'/model.top'
+        units = 8
+        sma_period = 25
+        hh_period = 20
+        ll_period = 20
+        rsi_period = 30
+        std_period = 20
+        vol_period = 7
+        wil_period = 7
+
         
     if train:
         charts = True

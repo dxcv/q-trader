@@ -43,7 +43,6 @@ def init_q():
 # API Guide: https://medium.com/@agalea91/cryptocompare-api-quick-start-guide-ca4430a484d4
 def load_data():
     now = dt.datetime.today().strftime('%Y-%m-%d')
-    df = pd.DataFrame()
     if (not p.reload) and os.path.isfile(p.file): 
         df = pickle.load(open(p.file, "rb" ))
         # Return loaded price data if it is up to date
@@ -55,10 +54,14 @@ def load_data():
         period = 'histoday'
     elif p.bar_period == 'hour': 
         period = 'histohour'
-    r = requests.get('https://min-api.cryptocompare.com/data/'+period
-                     +'?fsym='+p.ticker+'&tsym='+p.currency
-                     +'&allData=true&e='+p.exchange)
-    df = pd.DataFrame(r.json()['Data'])
+    
+    retry = True
+    while retry: # This is to avoid issue when only 31 rows are returned
+        r = requests.get('https://min-api.cryptocompare.com/data/'+period
+                         +'?fsym='+p.ticker+'&tsym='+p.currency
+                         +'&allData=true&e='+p.exchange)
+        df = pd.DataFrame(r.json()['Data'])
+        if len(df) > p.min_data_size: retry = False
     df = df.set_index('time')
     df['date'] = pd.to_datetime(df.index, unit='s')
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
