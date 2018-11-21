@@ -87,9 +87,9 @@ def load_config(config):
     global train_goal
     train_goal = 'R' # Maximize Return
     global fee # Exchange fee
-    fee = 0.002 # Bitfinex fee 
+    fee = 0.0026 # Max Kraken fee
     global margin # Daily Margin fee for short positions
-    margin = 0.0012 # Kraken fee
+    margin = 0.0012 # Kraken daily rollover fee
     global ratio
     ratio = 0 # Min ratio for Q table to take an action
     global units
@@ -109,10 +109,13 @@ def load_config(config):
     global sleep_interval
     sleep_interval = 60*30 # Bot sleep interval in seconds when waiting for new signal 
     global ignore_signals
-    ignore_signals = [4] # list of y_pred_id to ignore. None to disable 
+    ignore_signals = None # list of y_pred_id to ignore. None to disable 
     global min_data_size # Minimum records expected from Cryptocompare API
     min_data_size = 100
-    
+    global stop_loss # Stop Loss: Minimum Return %
+    stop_loss = 0.8 
+    global take_profit # Take Profit: Max Return %
+    take_profit = 5
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -125,15 +128,17 @@ def load_config(config):
         # 918 / 1.29
         version = 1
         max_r = 1020
-    elif conf == 'BTCUSDNN': # Strategy Return: 18.39
+    elif conf == 'BTCUSDNN': # Expectancy: 17.75
 #        train = True
+#        reload = False
         short = True
         units = 32
-        sma_period = 15
-        hh_period = 20
-        ll_period = 20
-        rsi_period = 5
-        model = cfgdir+'/model57.nn'
+        epochs = 30
+        stop_loss = 0.30
+        take_profit = 100
+        ignore_signals = [4]
+#        plot_bars = 365
+        model = cfgdir+'/model.top'
     elif conf == 'ETHBTCNN': # 847 / 2.26
 #        train = True
         units = 10
@@ -155,14 +160,16 @@ def load_config(config):
         model = cfgdir+'/model.top'
     elif conf == 'ETHUSDNN':
 #        train = True
-        epochs = 100
         reload = True
-        fee = 0.0026 # Max Kraken fee
-        margin = 0.0012 # Kraken daily rollover fee
+        units = 32
+        epochs = 30
+#        ignore_signals = [4]
         short = True
         plot_bars = 365
-        model = cfgdir+'/model.top'
-        order_size = 250 # deployed
+        model = cfgdir+'/model32.top'
+        order_size = 250
+        take_profit = 100
+        stop_loss = 0.5 
     elif conf == 'XRPUSDNN':
         train = True
         epochs = 100

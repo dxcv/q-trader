@@ -164,25 +164,6 @@ def plot_chart(df, title, date_col='date'):
     plt.title(title)
     plt.show()
 
-def show_stats():
-    avg_loss = 1 - trades[trades.SR1 < 1].SR1.mean()
-    avg_win = trades[trades.SR1 >= 1].SR1.mean() - 1
-    win_ratio = len(trades[trades.SR1 >= 1]) / len(trades)
-    trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
-    exp = 365 * trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
-    sr = s.sharpe_ratio((trades.SR1 - 1).mean(), trades.SR1 - 1, 0)
-    print('Strategy Return: %.2f' % td.CSR.iloc[-1])
-    print('Market Return: %.2f'   % td.CMR.iloc[-1])
-    print('Trade Frequency: %.2f' % trade_freq)
-    print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
-    print('Win Ratio: %.2f' % win_ratio)
-    print('Avg Win: %.2f' % avg_win)
-    print('Avg Loss: %.2f' % avg_loss)
-    print('Expectancy: %.2f' % exp)
-    print('Sharpe Ratio: %.2f' % sr)
-    print('Average Daily Return: %.3f' % np.mean(td.SR - 1))
-    
-
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
 def runNN(conf):
@@ -285,26 +266,39 @@ def runNN(conf):
     # Generate Trade List
     td['action'] = td['signal'].shift(1)
     td['trade_id'] = np.where(td.new.shift(1), td.index, np.NaN)
-    td['trade_id'] = td.trade_id.fillna(method='ffill')
+    td['open_price'] = np.where(td.new.shift(1), td.open, np.NaN)
+    td = td.fillna(method='ffill')
 
     def trade_agg(x):
         names = {
             'action': x.action.iloc[0],    
             'open_ts': x.date.iloc[0],
             'close_ts': x.date_to.iloc[-1],
-            'open_price': x.open.iloc[0],
-            'close_price': x.close.iloc[-1]            
+            'open': x.open.iloc[0],
+            'close': x.close.iloc[-1],
+            'high': x.high.max(),
+            'low': x.low.min()            
         }
     
         return pd.Series(names)
 
     trades = td.groupby(td.trade_id).apply(trade_agg)
+    trades['minr'] = np.where(trades['action'] == 'Buy', trades.low / trades.open, np.NaN)
+    trades['minr'] = np.where(trades['action'] == 'Sell', 
+          (2 - trades.high / trades.open) if p.short else 1, trades.minr)
+    trades['sl'] = trades.minr <= p.stop_loss
+    trades['maxr'] = np.where(trades['action'] == 'Buy', trades.high / trades.open, np.NaN)
+    trades['maxr'] = np.where(trades['action'] == 'Sell', 
+          (2 - trades.low / trades.open) if p.short else 1, trades.maxr)
+    trades['tp'] = trades.maxr >= p.take_profit
     trades['hours'] = (trades.close_ts - trades.open_ts).astype('timedelta64[h]')
     trades['margin'] = np.where(p.short and trades.action == 'Sell', trades.hours/24 * p.margin, 0)
-    trades['MR'] = trades['close_price']/trades['open_price']
+    trades['MR'] = trades['close']/trades['open']
     trades['SR'] = np.where(trades['action'] == 'Buy', trades['MR'], np.NaN)
     trades['SR'] = np.where(trades['action'] == 'Sell', (2 - trades['MR']) if p.short else 1, trades.SR)
-    trades['SR'] = np.where(trades['action'] == 'Cash', 1, trades.SR)
+    # FIXME: When SL and TP happen for same trade - take SL. But this should be based on actual timing
+    trades['SR'] = np.where(trades.tp, p.take_profit, trades.SR)
+    trades['SR'] = np.where(trades.sl, p.stop_loss, trades.SR)
     # Fee is applied twice: on open and close position
     trades['SR1'] = trades['SR'] * (1 - p.fee)**2 * (1 - trades.margin)
     trades['CMR'] = np.cumprod(trades['MR'])
@@ -312,11 +306,9 @@ def runNN(conf):
     trades = trades.dropna()
     
     td['fee'] = np.where(td.new, (1 - p.fee)**(2 if p.short else 1), 1)
-    td['fee'] = np.where(td.new & (td.signal == 'Cash'), 1 - p.fee, td.fee)
     td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
     td['SR'] = np.where(td['signal'] == 'Buy', td['TR'], np.NaN)
     td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['TR']) if p.short else 1, td.SR)
-    td['SR'] = np.where(td['signal'] == 'Cash', 1, td.SR)
     td['SR'] = td['SR'] * td['fee'] * td['margin']
     td['CMR'] = np.cumprod(td['TR'])
     td['CSR'] = np.cumprod(td['SR'])
@@ -347,10 +339,36 @@ def runNN(conf):
     stats_mon['CMR'] = np.cumprod(stats_mon['MR'])
     stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
     
-    if p.charts: plot_chart(td, model)
-    if p.stats: show_stats()
+    if p.charts: plot_chart(trades, model, 'close_ts')
+    
+    if p.stats:
+        # FIXME: Calculate Loss and Win in $. 
+        # Currently assumed that trade size is fixed, no compounding
+        avg_loss = 1 - trades[trades.SR1 < 1].SR1.mean()
+        avg_win = trades[trades.SR1 >= 1].SR1.mean() - 1
+        r2r = avg_win / avg_loss
+        win_ratio = len(trades[trades.SR1 >= 1]) / len(trades)
+        trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
+        adr = trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
+        exp = 365 * adr
+        exp_adj = exp / (100 * (1 - p.stop_loss))
+        sr = s.sharpe_ratio((trades.SR1 - 1).mean(), trades.SR1 - 1, 0)
+        print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
+        print('Market Return: %.2f'   % trades.CMR.iloc[-1])
+        print('Trade Frequency: %.2f' % trade_freq)
+        print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
+        print('Win Ratio: %.2f' % win_ratio)
+        print('Avg Win: %.2f' % avg_win)
+        print('Avg Loss: %.2f' % avg_loss)
+        print('Risk to Reward: %.2f' % r2r)
+        print('Stop Loss: %.2f' % p.stop_loss)
+        print('Expectancy: %.2f' % exp)
+        print('Expectancy SL Adj: %.2f' % exp_adj)
+        print('Sharpe Ratio: %.2f' % sr)
+        print('Average Daily Return: %.3f' % adr)
+        
 
     print(str(get_signal()))
 
 #runNN('ETHUSDNN')
-#runNN('XRPUSDNN')
+#runNN('BTCUSDNN')

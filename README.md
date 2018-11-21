@@ -21,6 +21,11 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+
+# TODO: Predict price rise for 1 week / month. Use weekly / monthly market return
+
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+
 # TODO: Implement Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
 
