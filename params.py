@@ -113,9 +113,9 @@ def load_config(config):
     global min_data_size # Minimum records expected from Cryptocompare API
     min_data_size = 100
     global stop_loss # Stop Loss: Minimum Return %
-    stop_loss = 0.8 
+    stop_loss = 0 
     global take_profit # Take Profit: Max Return %
-    take_profit = 5
+    take_profit = 100
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -131,10 +131,10 @@ def load_config(config):
     elif conf == 'BTCUSDNN': # Expectancy: 17.75
 #        train = True
 #        reload = False
-        short = True
+#        short = True
         units = 32
         epochs = 30
-        stop_loss = 0.30
+        stop_loss = 0.3
         take_profit = 100
         ignore_signals = [4]
 #        plot_bars = 365
@@ -160,34 +160,40 @@ def load_config(config):
         model = cfgdir+'/model.top'
     elif conf == 'ETHUSDNN':
 #        train = True
-        reload = True
         units = 32
         epochs = 30
 #        ignore_signals = [4]
         short = True
         plot_bars = 365
         model = cfgdir+'/model32.top'
-        order_size = 250
+        order_size = 25
         take_profit = 100
         stop_loss = 0.5 
-    elif conf == 'XRPUSDNN':
-        train = True
-        epochs = 100
-#        reload = True
-        fee = 0.0026 # Max Kraken fee
-        margin = 0.0012 # Kraken daily rollover fee
+    elif conf == 'XMRUSDNN':
+#        train = True
+        units = 32
+        epochs = 30
         short = True
-#        plot_bars = 365
+        stop_loss = 0.80
         model = cfgdir+'/model.top'
-        units = 8
-        sma_period = 25
-        hh_period = 20
-        ll_period = 20
-        rsi_period = 30
-        std_period = 20
-        vol_period = 7
-        wil_period = 7
-
+#        ignore_signals = [4]
+        plot_bars = 365
+    elif conf == 'ETCUSDNN':
+#        train = True
+        units = 32
+        epochs = 30
+        short = True
+        stop_loss = 0.6
+        ignore_signals = [4]
+#        plot_bars = 365
+    elif conf == 'XRPUSDNN':
+#        train = True
+        units = 32
+        epochs = 30
+#        short = True
+        stop_loss = 0.6
+        ignore_signals = [4]
+        plot_bars = 365
         
     if train:
         charts = True

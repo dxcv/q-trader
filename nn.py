@@ -59,9 +59,6 @@ def runNN1(conf):
     global ds
     global grid_result
 
-    seed = 7
-    np.random.seed(seed)
-
     q.init(conf)
     ds = q.load_data()    
 
@@ -305,6 +302,8 @@ def runNN(conf):
     trades['CSR'] = np.cumprod(trades['SR1'])
     trades = trades.dropna()
     
+    # FIXME: This calculation needs to be shifted so it corresponds to current day.
+    # Currently it corresponds to next day data   
     td['fee'] = np.where(td.new, (1 - p.fee)**(2 if p.short else 1), 1)
     td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
     td['SR'] = np.where(td['signal'] == 'Buy', td['TR'], np.NaN)
@@ -315,7 +314,7 @@ def runNN(conf):
     
     def my_agg(x):
         names = {
-            'SRAvg': x['SR'].mean(),
+            'SRAvg': x['SR'].median(),
             'SRTotal': x['SR'].prod(),
             'Price_Rise_Prob': x['Price_Rise'].mean(),
             'YPredCount': x['TR'].count()
@@ -344,15 +343,15 @@ def runNN(conf):
     if p.stats:
         # FIXME: Calculate Loss and Win in $. 
         # Currently assumed that trade size is fixed, no compounding
-        avg_loss = 1 - trades[trades.SR1 < 1].SR1.mean()
-        avg_win = trades[trades.SR1 >= 1].SR1.mean() - 1
+        avg_loss = 1 - trades[trades.SR1 < 1].SR1.median()
+        avg_win = trades[trades.SR1 >= 1].SR1.median() - 1
         r2r = avg_win / avg_loss
         win_ratio = len(trades[trades.SR1 >= 1]) / len(trades)
         trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
         adr = trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
         exp = 365 * adr
         exp_adj = exp / (100 * (1 - p.stop_loss))
-        sr = s.sharpe_ratio((trades.SR1 - 1).mean(), trades.SR1 - 1, 0)
+        sr = s.sharpe_ratio((trades.SR1 - 1).median(), trades.SR1 - 1, 0)
         print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
         print('Market Return: %.2f'   % trades.CMR.iloc[-1])
         print('Trade Frequency: %.2f' % trade_freq)
@@ -372,3 +371,6 @@ def runNN(conf):
 
 #runNN('ETHUSDNN')
 #runNN('BTCUSDNN')
+#runNN('XMRUSDNN')
+#runNN('ETCUSDNN')
+#runNN('XRPUSDNN')

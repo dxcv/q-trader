@@ -22,6 +22,10 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# TODO: Trade multiple coins
+
+# TODO: Use ephemeris for price prediction
+
 # TODO: Predict price rise for 1 week / month. Use weekly / monthly market return
 
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
