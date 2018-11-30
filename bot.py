@@ -40,25 +40,27 @@ def send_results(res, msg, pnl=False):
     send('New Balance: ' + str(res['balance']))
 
 def execute(conf):
-    send('Hi there!')
     signal = get_signal(conf)
  
     if not signal['new']:
         send('Same signal today ('+signal['signal']+'). No action is required')
     elif signal['signal'] == 'Buy':
         send('Received New Buy Signal')
-        res = x.market_order('Buy', True)
-        send_results(res, 'Closed Short Position')
+        if p.short:
+            res = x.market_order('Buy', True)
+            send_results(res, 'Closed Short Position')
         res = x.market_order('Buy')
         send_results(res, 'Opened Long Position')
     elif signal['signal'] == 'Sell':
         send('Received New Sell Signal')
         res = x.market_order('Sell')
         send_results(res, 'Closed Long Position')
-        res = x.market_order('Sell', True)
-        send_results(res, 'Opened Short Position')
+        if p.short:
+            res = x.market_order('Sell', True)
+            send_results(res, 'Opened Short Position')
 
 try:
+    send('Hi Master!')
     execute('ETHUSDNN')
 except Exception as e:
     send('An error has occured. Please investigate!')

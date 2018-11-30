@@ -181,7 +181,7 @@ def runNN(conf):
     ds['VOL'] = ds['volumeto']/ds['volumeto'].rolling(window = p.vol_period).mean()
     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
-#    ds['HHLL'] = (ds.high+ds.low)/(ds.high/ds.HH+ds.low/ds.LL)
+    ds['HHLL'] = (ds.high+ds.low)/(ds.high/ds.HH+ds.low/ds.LL)
     ds['DR'] = ds['close']/ds['close'].shift(1)
     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
@@ -222,7 +222,7 @@ def runNN(conf):
         # Early stopping  
         #es = EarlyStopping(monitor='val_acc', min_delta=0, patience=100, verbose=1, mode='max')
         model = p.cfgdir+'/model.nn'
-        cp = ModelCheckpoint(model, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+        cp = ModelCheckpoint(model, monitor='val_acc', verbose=0, save_best_only=True, mode='max')
         classifier.compile(optimizer = 'adam', loss = 'mse', metrics = ['accuracy'])
         history = classifier.fit(X_train, y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, y_test), verbose=0)
     
@@ -314,7 +314,7 @@ def runNN(conf):
     
     def my_agg(x):
         names = {
-            'SRAvg': x['SR'].median(),
+            'SRAvg': x['SR'].mean(),
             'SRTotal': x['SR'].prod(),
             'Price_Rise_Prob': x['Price_Rise'].mean(),
             'YPredCount': x['TR'].count()
@@ -343,15 +343,15 @@ def runNN(conf):
     if p.stats:
         # FIXME: Calculate Loss and Win in $. 
         # Currently assumed that trade size is fixed, no compounding
-        avg_loss = 1 - trades[trades.SR1 < 1].SR1.median()
-        avg_win = trades[trades.SR1 >= 1].SR1.median() - 1
+        avg_loss = 1 - trades[trades.SR1 < 1].SR1.mean()
+        avg_win = trades[trades.SR1 >= 1].SR1.mean() - 1
         r2r = avg_win / avg_loss
         win_ratio = len(trades[trades.SR1 >= 1]) / len(trades)
         trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
         adr = trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
         exp = 365 * adr
         exp_adj = exp / (100 * (1 - p.stop_loss))
-        sr = s.sharpe_ratio((trades.SR1 - 1).median(), trades.SR1 - 1, 0)
+        sr = s.sharpe_ratio((trades.SR1 - 1).mean(), trades.SR1 - 1, 0)
         print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
         print('Market Return: %.2f'   % trades.CMR.iloc[-1])
         print('Trade Frequency: %.2f' % trade_freq)

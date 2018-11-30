@@ -22,6 +22,7 @@ import requests
 import pickle
 import os
 import params as p
+import secrets as s
 import exchange as ex
 import datetime as dt
 from concurrent.futures import ProcessPoolExecutor
@@ -59,9 +60,13 @@ def load_data():
     while retry: # This is to avoid issue when only 31 rows are returned
         r = requests.get('https://min-api.cryptocompare.com/data/'+period
                          +'?fsym='+p.ticker+'&tsym='+p.currency
-                         +'&allData=true&e='+p.exchange)
+                         +'&allData=true&e='+p.exchange
+                         +'&api_key='+s.cryptocompare_key)
         df = pd.DataFrame(r.json()['Data'])
-        if len(df) > p.min_data_size: retry = False
+        if len(df) > p.min_data_size: 
+            retry = False
+        else:
+            print("Incomplete price data. Retrying ...")
     df = df.set_index('time')
     df['date'] = pd.to_datetime(df.index, unit='s')
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
@@ -84,6 +89,7 @@ def load_prices():
                 +'?fsym='+p.ticker+'&tsym='+p.currency
                 +'&e='+p.exchange
                 +'&limit=10000'
+                +'&api_key='+s.cryptocompare_key
                 +('' if first_call else '&toTs='+str(min_time)))
                              
             r = requests.get(url)

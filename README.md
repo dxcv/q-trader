@@ -22,6 +22,23 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# Moon Ingress
+https://www.astro.com/swisseph/ing_mo.txt
+
+# Financial Astrology and Neural Networks
+https://www.scribd.com/document/187532408/Alphee-Lavoie-Neural-Networks-in-Financial-Astrology
+The basic neural net in the program has the following parameters: for the 7-year market 
+(i.e. 2000 examples for learning), it has 600-700 inputs. 
+According to the theory of neural networks, the neural net with 600 inputs could be educated at the market 
+with price history of more than 20 (sometimes 30) years. Otherwise the neural net will be 'over-educated' 
+(it means that the neural net works perfectly within the optimizing interval and does not work at all 
+within the testing interval). We created a specialized neural net, and 7 years of history is enough. 
+In this case, the total process of learning takes only 3-4 minutes). 
+The program allows for setting the amount of hidden neurons; in our opinion, less than 100 is enough
+
+# A Machine Learning framework for Algorithmic trading on Energy markets
+https://towardsdatascience.com/https-medium-com-skuttruf-machine-learning-in-finance-algorithmic-trading-on-energy-markets-cb68f7471475
+
 # TODO: Trade multiple coins
 
 # TODO: Use ephemeris for price prediction
@@ -29,6 +46,7 @@ export AWS_REGION=You AWS  Region
 # TODO: Predict price rise for 1 week / month. Use weekly / monthly market return
 
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 
 # TODO: Implement Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
