@@ -167,7 +167,7 @@ def load_config(config):
 #        plot_bars = 365
         model = cfgdir+'/model32.top'
 #        model = cfgdir+'/model32vol.top'
-        order_size = 120
+        order_size = 160
         take_profit = 100
         stop_loss = 0.50
     elif conf == 'XMRUSDNN':

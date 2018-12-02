@@ -22,6 +22,9 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# Feature Selection Tool
+https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
+
 # Moon Ingress
 https://www.astro.com/swisseph/ing_mo.txt
 
