@@ -55,9 +55,10 @@ updater = Updater(token=s.telegram_token, workers=0)
 updater.dispatcher.add_handler(CommandHandler('status', status))
 updater.start_polling(clean=True, bootstrap_retries=-1, timeout=300, read_latency=60)
 
-def send_msg(msg):
+def send_msg(msg, public=False):
     updater.bot.send_message(chat_id=s.telegram_chat_id, text=msg)
-    updater.bot.send_message(chat_id=716893261, text=msg)
+    # Send message to another user
+    if public: updater.bot.send_message(chat_id=s.telegram_chat_id1, text=msg) 
 
 def cleanup():
     updater.stop()
