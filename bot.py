@@ -38,31 +38,34 @@ def send_results(res, msg):
 def execute(conf):
     signal = get_signal(conf)
     ticker = conf[0:3]+'/'+conf[3:6]
-    send('Market: '+ticker, True)
  
     if not signal['new']:
-        send('No action today', True)
+        send(ticker+': No action today', True)
     elif signal['signal'] == 'Buy':
-        send('Buy! Buy! Buy!', True)
+        send(ticker+': Buy! Buy! Buy!', True)
         if p.short:
             res = x.market_order('Buy', True)
             send_results(res, 'Closed Short Position')
         res = x.market_order('Buy')
         send_results(res, 'Opened Long Position')
     elif signal['signal'] == 'Sell':
-        send('Sell! Sell! Sell!', True)
+        send(ticker+': Sell! Sell! Sell!', True)
         res = x.market_order('Sell')
         send_results(res, 'Closed Long Position')
         if p.short:
             res = x.market_order('Sell', True)
             send_results(res, 'Opened Short Position')
 
-try:
-    send('Hi Master!')
-    execute('ETHUSDNN')
-except Exception as e:
-    send('An error has occured. Please investigate!')
-    send(e)
-finally:
-    send('Have a good day!')
-    t.cleanup()
+def run_model(conf):
+    try:
+        execute(conf)
+    except Exception as e:
+        send('An error has occured. Please investigate!')
+        send(e)
+    
+run_model('BTCUSDNN')
+run_model('ETHUSDNN')
+#run_model('XRPUSDNN')
+#run_model('XMRUSDNN')
+run_model('ETCUSDNN')
+t.cleanup()

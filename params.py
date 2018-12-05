@@ -128,7 +128,7 @@ def load_config(config):
         # 918 / 1.29
         version = 1
         max_r = 1020
-    elif conf == 'BTCUSDNN': # Expectancy: 17.75
+    elif conf == 'BTCUSDNN':
 #        train = True
 #        reload = False
 #        short = True
@@ -137,8 +137,9 @@ def load_config(config):
         stop_loss = 0.5
         take_profit = 1000
         ignore_signals = [4]
-#        plot_bars = 365
+        plot_bars = 365
         model = cfgdir+'/model.top'
+        order_size = 0.523
     elif conf == 'ETHBTCNN': # 847 / 2.26
 #        train = True
         units = 10
@@ -162,14 +163,13 @@ def load_config(config):
 #        train = True
         units = 32
         epochs = 30
-#        ignore_signals = [4]
         short = True
-#        plot_bars = 365
+        plot_bars = 365
         model = cfgdir+'/model32.top'
 #        model = cfgdir+'/model32vol.top'
-        order_size = 180
         take_profit = 100
         stop_loss = 0.50
+        order_size = 180
     elif conf == 'XMRUSDNN':
 #        train = True
         units = 32
@@ -177,8 +177,8 @@ def load_config(config):
         short = True
         stop_loss = 0.80
         model = cfgdir+'/model.top'
-#        ignore_signals = [4]
         plot_bars = 365
+        order_size = 37
     elif conf == 'ETCUSDNN':
 #        train = True
         units = 32
@@ -186,7 +186,8 @@ def load_config(config):
         short = True
         stop_loss = 0.6
         ignore_signals = [4]
-#        plot_bars = 365
+        plot_bars = 365
+        order_size = 437
     elif conf == 'XRPUSDNN':
 #        train = True
         units = 32
@@ -195,6 +196,7 @@ def load_config(config):
         stop_loss = 0.6
         ignore_signals = [4]
         plot_bars = 365
+        order_size = 5800
         
     if train:
         charts = True

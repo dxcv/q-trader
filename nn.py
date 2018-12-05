@@ -369,8 +369,8 @@ def runNN(conf):
 
     print(str(get_signal()))
 
-#runNN('ETHUSDNN')
 #runNN('BTCUSDNN')
+#runNN('ETHUSDNN')
+#runNN('XRPUSDNN')
 #runNN('XMRUSDNN')
 #runNN('ETCUSDNN')
-#runNN('XRPUSDNN')
