@@ -65,7 +65,7 @@ def run_model(conf):
     
 run_model('BTCUSDNN')
 run_model('ETHUSDNN')
-#run_model('XRPUSDNN')
-#run_model('XMRUSDNN')
+run_model('XRPUSDNN')
+run_model('XMRUSDNN')
 run_model('ETCUSDNN')
 t.cleanup()
