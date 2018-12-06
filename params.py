@@ -180,16 +180,17 @@ def load_config(config):
 #        model = cfgdir+'/model32vol.top'
         take_profit = 100
         stop_loss = 0.50
-        order_size = 40
+        order_size = 41
     elif conf == 'XMRUSDNN':
 #        train = True
         units = 32
         epochs = 30
         short = True
-        stop_loss = 0.80
+        stop_loss = 0.6
+#        ignore_signals = [4]
         model = cfgdir+'/model.top'
         plot_bars = 365
-        order_size = 208
+        order_size = 104
     elif conf == 'ETCUSDNN':
 #        train = True
         units = 32
@@ -198,7 +199,7 @@ def load_config(config):
         stop_loss = 0.6
         ignore_signals = [4]
         plot_bars = 365
-        order_size = 1037
+        order_size = 1302
         
     if train:
         charts = True
