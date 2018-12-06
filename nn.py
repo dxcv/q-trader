@@ -12,7 +12,7 @@ import talib
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
-import qlib as q
+import datalib as dl
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 #from keras.callbacks import EarlyStopping
@@ -32,8 +32,8 @@ def plot_chart(df, title, date_col='date'):
     if p.plot_bars > 0:
         td = td[td[date_col] >= td[date_col].max() - dt.timedelta(days=p.plot_bars)]
 #        td = td.tail(p.plot_bars).reset_index(drop=True)
-        td['CMR'] = q.normalize(td['CMR'])
-        td['CSR'] = q.normalize(td['CSR'])
+        td['CMR'] = dl.normalize(td['CMR'])
+        td['CSR'] = dl.normalize(td['CSR'])
     td = td.set_index(date_col)
     fig, ax = plt.subplots()
     fig.autofmt_xdate()
@@ -54,8 +54,8 @@ def runNN(conf):
     global stats_mon
     global trades
     
-    q.init(conf)
-    ds = q.load_data()
+    p.load_config(conf)
+    ds = dl.load_data()
 #    ds = q.load_prices()
     
     #  Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/

@@ -6,171 +6,33 @@
 # https://www.analyticsvidhya.com/blog/2017/01/introduction-to-reinforcement-learning-implementation/
 # Sell/Buy orders are executed at last day close price
 # Crypto Analysis: https://blog.patricktriest.com/analyzing-cryptocurrencies-python/
-
-# pip install ccxt
-#conda install theano
-#conda install tensorflow
-#conda install keras
-#pip install -U numpy
  
 import pandas as pd
 import numpy as np
 import time
-import talib.abstract as ta
 import matplotlib.pyplot as plt
-import requests
 import pickle
 import os
 import params as p
-import secrets as s
-import exchange as ex
-import datetime as dt
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+import datalib as dl
+import trade as t
+import exchange as ex
 
 # Init Q table with small random values
 def init_q():
     qt = pd.DataFrame()
     if p.train:
         qt = pd.DataFrame(np.random.normal(scale=p.random_scale, size=(p.feature_bins**p.features,p.actions)))
+        # Use Optimistic Values: 1
+#        qt = pd.DataFrame(np.ones((p.feature_bins**p.features,p.actions)))
         qt['visits'] = 0
         qt['conf'] = 0
         qt['ratio'] = 0.0
     else:
         if os.path.isfile(p.q): qt = pickle.load(open(p.q, "rb" ))
     return qt
-
-# Load Historical Price Data from Cryptocompare
-# API Guide: https://medium.com/@agalea91/cryptocompare-api-quick-start-guide-ca4430a484d4
-def load_data():
-    now = dt.datetime.today().strftime('%Y-%m-%d')
-    if (not p.reload) and os.path.isfile(p.file): 
-        df = pickle.load(open(p.file, "rb" ))
-        # Return loaded price data if it is up to date
-        if df.date.iloc[-1].strftime('%Y-%m-%d') == now:
-            print('Using loaded prices for ' + now)
-            return df
-    
-    if p.bar_period == 'day':
-        period = 'histoday'
-    elif p.bar_period == 'hour': 
-        period = 'histohour'
-    
-    retry = True
-    while retry: # This is to avoid issue when only 31 rows are returned
-        r = requests.get('https://min-api.cryptocompare.com/data/'+period
-                         +'?fsym='+p.ticker+'&tsym='+p.currency
-                         +'&allData=true&e='+p.exchange
-                         +'&api_key='+s.cryptocompare_key)
-        df = pd.DataFrame(r.json()['Data'])
-        if len(df) > p.min_data_size: 
-            retry = False
-        else:
-            print("Incomplete price data. Retrying ...")
-    df = df.set_index('time')
-    df['date'] = pd.to_datetime(df.index, unit='s')
-    os.makedirs(os.path.dirname(p.file), exist_ok=True)
-    pickle.dump(df, open(p.file, "wb" ))
-    print('Loaded Prices. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
-    return df
-
-def load_prices():
-    """ Loads hourly historical prices and converts them to daily usung p.time_offset
-        Stores hourly prices in price.csv
-        Returns DataFrame with daily price data
-    """
-    has_data = True
-    min_time = 0
-    first_call = True
-    file = p.cfgdir+'/price.csv'
-    if p.reload or not os.path.isfile(file):
-        while has_data:
-            url = ('https://min-api.cryptocompare.com/data/histohour'
-                +'?fsym='+p.ticker+'&tsym='+p.currency
-                +'&e='+p.exchange
-                +'&limit=10000'
-                +'&api_key='+s.cryptocompare_key
-                +('' if first_call else '&toTs='+str(min_time)))
-                             
-            r = requests.get(url)
-            df = pd.DataFrame(r.json()['Data'])
-            if df.close.max() == 0 or len(df) == 0:
-                has_data = False
-            else:
-                min_time = df.time[0] - 1
-                with open(file, 'w' if first_call else 'a') as f: 
-                    df.to_csv(f, header=first_call, index = False)
-            
-            if first_call: first_call = False
-        print('Loaded Hourly Prices in UTC')
-
-    df = pd.read_csv(file)
-    df = df.set_index('time')
-    df = df[df.close > 0]  
-    df['date'] = pd.to_datetime(df.index, unit='s')
-    if p.time_lag > 0:
-        df['date'] = df.date - dt.timedelta(hours=p.time_lag)
-        df = df.resample('D').agg({
-            'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 
-            'volumefrom': 'sum', 'volumeto': 'sum'})
-    print('Price Rows: '+str(len(df))+' Last Timestamp: '+str(df.date.max()))
-    return df
-
-# Map feature values to bins (numbers)
-# Each bin has same number of feature values
-def bin_feature(feature, bins=None, cum=True):
-    if bins is None: bins = p.feature_bins
-    l = lambda x: int(x[x < x[-1]].size/(x.size/bins))
-    if cum:
-        return feature.expanding().apply(l, raw = True)
-    else:
-        return ((feature.rank()-1)/(feature.size/bins)).astype('int')
-
-#    binfile = p.cfgdir+'/bin'+feature.name+'.pkl'
-#    if test:
-#        b = pickle.load(open(binfile, "rb" )) # Load bin config
-#        d = pd.cut(feature, bins=b, labels=False, include_lowest=True)
-#    else:
-#        d, b = pd.qcut(feature, bins, duplicates='drop', labels=False, retbins=True)
-##        d, b = pd.qcut(feature.rank(method='first'), bins, labels=False, retbins=True)
-#        pickle.dump(b, open(binfile, "wb" )) # Save bin config
-#    return d
-
-# Read Price Data and add features
-def get_dataset(test=False):
-    df = pickle.load(open(p.file, "rb" ))
-    
-    # Add features to dataframe
-    # Typical Features: close/sma, bollinger band, holding stock, return since entry
-    df['dr'] = df.close/df.close.shift(1)-1 # daily return
-    df['adr'] = ta.SMA(df, price='dr', timeperiod=p.adr_period)
-    df['sma'] = ta.SMA(df, price='close', timeperiod=p.sma_period)
-    df['dsma'] = df.sma/df.sma.shift(1)-1
-    df['rsma'] = df.close/df.sma
-    df['rsi'] = ta.RSI(df, price='close', timeperiod=p.rsi_period)
-    df['hh'] = df.high/ta.MAX(df, price='high', timeperiod=p.hh_period)
-    df['ll'] = df.low/ta.MIN(df, price='low', timeperiod=p.ll_period)
-    df['hhll'] = (df.high+df.low)/(df.high/df.hh+df.low/df.ll)
-    df = df.dropna()
-    # Map features to bins
-    df = df.assign(binrsi=bin_feature(df.rsi))
-    if p.version == 1:
-        df = df.assign(binadr=bin_feature(df.adr))
-        df = df.assign(binhh=bin_feature(df.hh))
-        df = df.assign(binll=bin_feature(df.ll))
-    elif p.version == 2:
-        df = df.assign(bindsma=bin_feature(df.dsma))
-        df = df.assign(binrsma=bin_feature(df.rsma))
-        df = df.assign(binhhll=bin_feature(df.hhll))
-    
-    if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
-    # Separate Train / Test Datasets using train_pct number of rows
-    if test:
-        rows = int(len(df)*p.test_pct)
-        return df.tail(rows).reset_index(drop=True)
-    else:
-        rows = int(len(df)*p.train_pct)
-        return df.head(rows).reset_index(drop=True)
     
 # Calculate Discretised State based on features
 def get_state(row):
@@ -195,48 +57,21 @@ def get_action(state, test=True):
     max_reward = qt.iat[state, max_action]
     return max_action, max_reward
 
-class Portfolio:
-    def __init__(self, balance):
-          self.cash = balance
-          self.equity = 0.0
-          self.short = 0.0
-          self.total = balance    
-    
-    def upd_total(self):
-        self.total = self.cash+self.equity+self.short
-
-
-def buy_lot(pf, lot, short=False):
-    if lot > pf.cash: lot = pf.cash
-    pf.cash -= lot
-    adj_lot = lot*(1-p.fee)
-    if short: pf.short += adj_lot
-    else: pf.equity += adj_lot
-    
-def sell_lot(pf, lot, short=False):
-    if short:
-        if lot > pf.short: lot = pf.short
-        pf.short -= lot
-    else:
-        if lot > pf.equity: lot = pf.equity 
-        pf.equity -= lot
-    
-    pf.cash = pf.cash + lot*(1-p.fee)
 
 # Execute Action: buy or sell
 def take_action(pf, action, dr):
     old_total = pf.total
     target = pf.total*actions.iat[action,0] # Target portfolio
     if target >= 0: # Long
-        if pf.short > 0: sell_lot(pf, pf.short, True) # Close short positions first
+        if pf.short > 0: t.sell_lot(pf, pf.short, True) # Close short positions first
         diff = target - pf.equity
-        if diff > 0: buy_lot(pf, diff) 
-        elif diff < 0: sell_lot(pf, -diff)
+        if diff > 0: t.buy_lot(pf, diff) 
+        elif diff < 0: t.sell_lot(pf, -diff)
     else: # Short
-        if pf.equity > 0: sell_lot(pf, pf.equity) # Close long positions first
+        if pf.equity > 0: t.sell_lot(pf, pf.equity) # Close long positions first
         diff = -target - pf.short
-        if diff > 0: buy_lot(pf, diff, True) 
-        elif diff < 0: sell_lot(pf, -diff, True)
+        if diff > 0: t.buy_lot(pf, diff, True) 
+        elif diff < 0: t.sell_lot(pf, -diff, True)
 
     # Calculate reward as a ratio to maximum daily return
     # reward = 1 - (1 + abs(dr))/(1 + dr*(equity-cash)/total)
@@ -275,7 +110,7 @@ def update_q(s, a, s1, r):
 def run_model(df, test=False):
     global qt
     df = df.assign(state=-1, visits=1, conf=0, action=0, equity=0.0, cash=0.0, total=0.0, pnl=0.0)
-    pf = Portfolio(p.start_balance)
+    pf = t.Portfolio(p.start_balance)
     
     for i, row in df.iterrows():
         if i == 0:            
@@ -311,17 +146,6 @@ def run_model(df, test=False):
              
     return df
 
-# Sharpe Ratio Calculation
-# See also: https://www.quantstart.com/articles/Sharpe-Ratio-for-Algorithmic-Trading-Performance-Measurement
-def get_sr(df):
-    return df.mean()/(df.std()+0.000000000000001) # Add small number to avoid division by 0
-
-def get_ret(df):
-    return df.iloc[-1]/df.iloc[0]
-
-def normalize(df):
-    return df/df.iloc[0]
-
 def train_model(df, tdf):
     global qt
     print("*** Training Model using "+p.ticker+" data. Epochs: %s ***" % p.epochs) 
@@ -334,9 +158,9 @@ def train_model(df, tdf):
         # Test Model   
         tdf = run_model(tdf, test=True)
         if p.train_goal == 'R':
-            r = get_ret(tdf.total)
+            r = dl.get_ret(tdf.total)
         else:
-            r = get_sr(tdf.pnl)
+            r = dl.get_sr(tdf.pnl)
 #        print("Epoch: %s %s: %s" % (ii, p.train_goal, r))
         if r > max_r:
             max_r = r
@@ -352,8 +176,8 @@ def train_model(df, tdf):
 def show_result(df, title):
     # Thanks to: http://benalexkeen.com/bar-charts-in-matplotlib/
     if p.result_size > 0: df = df.tail(p.result_size).reset_index(drop=True)
-    df['nclose'] = normalize(df.close) # Normalise Price
-    df['ntotal'] = normalize(df.total) # Normalise Price
+    df['nclose'] = dl.normalize(df.close) # Normalise Price
+    df['ntotal'] = dl.normalize(df.total) # Normalise Price
     if p.charts:
         d = df.set_index('date')
         d['signal'] = d.action-d.action.shift(1)        
@@ -375,10 +199,10 @@ def show_result(df, title):
         plt.grid(True)
         plt.show()
     
-    qlr = get_ret(df.ntotal)
-    qlsr = get_sr(df.pnl)
-    bhr = get_ret(df.nclose)
-    bhsr = get_sr(df.dr)
+    qlr = dl.get_ret(df.ntotal)
+    qlsr = dl.get_sr(df.pnl)
+    bhr = dl.get_ret(df.nclose)
+    bhsr = dl.get_sr(df.dr)
     print("R: %.2f SR: %.3f QL/BH R: %.2f QL/BH SR: %.2f" % (qlr, qlsr, qlr/bhr, qlsr/bhsr))
     print("AVG Confidence: %.2f" % df.conf.mean())
     print('QT States: %s Valid: %s Confident: %s' % 
@@ -404,31 +228,6 @@ def print_forecast(tdf):
         action = 'BUY' if next_action > 0 else 'SELL'
     print('Tomorrow: '+action)
 
-class TradeLog:
-    def __init__(self):
-        self.cash = p.start_balance
-        self.equity = 0.0
-        columns = ['date', 'action', 'cash', 'equity', 'price', 'cash_bal', 'equity_bal']
-        self.log = pd.DataFrame(columns=columns)
-    
-    def log_trade(self, action, cash, equity):
-        price = abs(cash)/abs(equity)
-        self.cash += cash
-        self.equity += equity
-        row = [{'date': dt.datetime.now(),'action':action, 
-            'cash':cash, 'equity':equity, 'price':price, 
-            'cash_bal':self.cash, 'equity_bal':self.equity}]
-        self.log = self.log.append(row, ignore_index=True)
-
-def execute_action():
-    print('!!!EXECUTE MODE!!!')
-    action = get_today_action(tdf)
-    if action == 'HOLD': return
-    amount = tl.cash if action == 'buy' else tl.equity
-    cash, equity = ex.market_order(action, amount)
-    tl.log_trade(action, cash, equity) # Update trade log
-    pickle.dump(tl, open(p.tl, "wb" ))
-
 def init(conf):
     global actions
     global tl
@@ -441,7 +240,16 @@ def init(conf):
     if os.path.isfile(p.tl):
         tl = pickle.load(open(p.tl, "rb" ))
     else:
-        tl = TradeLog()
+        tl = t.TradeLog()
+
+def execute_action():
+    print('!!!EXECUTE MODE!!!')
+    action = get_today_action(tdf)
+    if action == 'HOLD': return
+    amount = tl.cash if action == 'buy' else tl.equity
+    cash, equity = ex.market_order(action, amount)
+    tl.log_trade(action, cash, equity) # Update trade log
+    pickle.dump(tl, open(p.tl, "wb" ))
 
 def run_forecast(conf, seed = None):
     global tdf
@@ -450,16 +258,16 @@ def run_forecast(conf, seed = None):
     if seed is not None: np.random.seed(seed)
     init(conf)
     
-    load_data() # Load Historical Price Data   
+    dl.load_data() # Load Historical Price Data   
     # This needs to run before test dataset as it generates bin config
-    if p.train: df = get_dataset() # Read Train data. 
-    tdf = get_dataset(test=True) # Read Test data
+    if p.train: df = dl.get_dataset() # Read Train data. 
+    tdf = dl.get_dataset(test=True) # Read Test data
     if p.train: train_model(df, tdf)
     
     tdf = run_model(tdf, test=True)
     if p.stats: show_result(tdf, "Test") # Test Result
     print_forecast(tdf) # Print Forecast
-    if p.execute: execute_action()
+    if p.execute: t.execute_action()
 
 def run_batch(conf, instances = 1):
     if instances == 1:

@@ -123,23 +123,13 @@ def load_config(config):
         version = 1
     elif conf == 'ETHUSD': # R: 6984.42 SR: 0.164 QL/BH R: 8.94 QL/BH SR: 1.30
 #        6508 / 1.25
-        max_r = 6984
+        max_r = 6508
+#        train = True
+#        epsilon = 0
     elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
         # 918 / 1.29
         version = 1
         max_r = 1020
-    elif conf == 'BTCUSDNN':
-#        train = True
-#        reload = False
-#        short = True
-        units = 32
-        epochs = 30
-        stop_loss = 0.5
-        take_profit = 1000
-        ignore_signals = [4]
-        plot_bars = 365
-        model = cfgdir+'/model.top'
-        order_size = 0.523
     elif conf == 'ETHBTCNN': # 847 / 2.26
 #        train = True
         units = 10
@@ -159,6 +149,27 @@ def load_config(config):
 #        short = True
         plot_bars = 300
         model = cfgdir+'/model.top'
+# ***************************************** Active Strategies
+    elif conf == 'BTCUSDNN':
+#        train = True
+#        short = True
+        units = 32
+        epochs = 30
+        stop_loss = 0.5
+        take_profit = 1000
+        ignore_signals = [4]
+        plot_bars = 365
+        model = cfgdir+'/model.top'
+        order_size = 1.097
+    elif conf == 'XRPUSDNN':
+#        train = True
+        units = 32
+        epochs = 30
+#        short = True
+        stop_loss = 0.6
+        ignore_signals = [4]
+        plot_bars = 365
+        order_size = 15354
     elif conf == 'ETHUSDNN':
 #        train = True
         units = 32
@@ -169,7 +180,7 @@ def load_config(config):
 #        model = cfgdir+'/model32vol.top'
         take_profit = 100
         stop_loss = 0.50
-        order_size = 180
+        order_size = 40
     elif conf == 'XMRUSDNN':
 #        train = True
         units = 32
@@ -178,7 +189,7 @@ def load_config(config):
         stop_loss = 0.80
         model = cfgdir+'/model.top'
         plot_bars = 365
-        order_size = 37
+        order_size = 208
     elif conf == 'ETCUSDNN':
 #        train = True
         units = 32
@@ -187,16 +198,7 @@ def load_config(config):
         stop_loss = 0.6
         ignore_signals = [4]
         plot_bars = 365
-        order_size = 437
-    elif conf == 'XRPUSDNN':
-#        train = True
-        units = 32
-        epochs = 30
-#        short = True
-        stop_loss = 0.6
-        ignore_signals = [4]
-        plot_bars = 365
-        order_size = 5800
+        order_size = 1037
         
     if train:
         charts = True
