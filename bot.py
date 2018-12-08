@@ -23,7 +23,7 @@ def get_signal(conf):
     while no_signal:
         nn.runNN(conf)
         signal = nn.get_signal()
-        if dt.datetime.today() > signal['end']:
+        if dt.datetime.today() > signal.close_ts:
             send('Signal has expired. Waiting for new one ...')
             time.sleep(p.sleep_interval)
         else:
@@ -32,29 +32,30 @@ def get_signal(conf):
     return signal
 
 def send_results(res, msg):
-    send(msg+' of '+str(res['size'])+' '+res['pair'])
+    send(msg+' of '+str(res['size'])+' '+res['pair']+' with price '+str(res['price']))
     send('New Balance: ' + str(res['balance']))
 
 def execute(conf):
-    signal = get_signal(conf)
+    s = get_signal(conf)
     ticker = conf[0:3]+'/'+conf[3:6]
  
-    if not signal['new']:
-        send(ticker+': No action today', True)
-    elif signal['signal'] == 'Buy':
-        send(ticker+': Buy! Buy! Buy!', True)
+    send(ticker+': '+s.action, True)
+    if dt.datetime.today() >= s.open_ts + dt.timedelta(minutes=p.trade_interval):
+        # Same signal as before - no action
+        send('No action is required today')
+    elif s.action == 'Buy':
         if p.short:
             res = x.market_order('Buy', True)
             send_results(res, 'Closed Short Position')
         res = x.market_order('Buy')
         send_results(res, 'Opened Long Position')
-    elif signal['signal'] == 'Sell':
-        send(ticker+': Sell! Sell! Sell!', True)
+    elif s.action == 'Sell':
         res = x.market_order('Sell')
         send_results(res, 'Closed Long Position')
         if p.short:
             res = x.market_order('Sell', True)
             send_results(res, 'Opened Short Position')
+    send(nn.get_signal_str(), True)
 
 def run_model(conf):
     try:

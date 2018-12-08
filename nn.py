@@ -21,11 +21,18 @@ import pandas as pd
 import stats as s
 
 def get_signal():
-    new = td.new.iloc[-1]
-    start = td.date_to.iloc[-1]
-    end = start + dt.timedelta(minutes=p.trade_interval)
+    return trades.iloc[-1]
+
+def get_signal_str():
+    s = get_signal()
+    pnl = round(100*(s.SR1 - 1), 2)
+    if s.sl: txt = '!!!STOP LOSS TRIGGERED!!! '
+    txt = 'Opened: '+s.open_ts.strftime('%Y-%m-%d')
+    txt += ' At: '+str(s.open)
+    txt +=' Now: '+str(s.close)
+    txt +=' P/L: '+str(pnl)+'%'
     
-    return {'new': new, 'signal': td.signal.iloc[-1], 'start': start, 'end': end}
+    return txt
  
 def plot_chart(df, title, date_col='date'):
     td = df.copy()
@@ -60,6 +67,8 @@ def runNN(conf):
     
     #  Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     ds['date_to'] = ds['date'].shift(-1)
+    # Set date_to to next date
+    ds.iloc[-1, ds.columns.get_loc('date_to')] = ds.iloc[-1, ds.columns.get_loc('date')] + dt.timedelta(minutes=p.trade_interval)
     # Calculate Features
     ds['VOL'] = ds['volumeto']/ds['volumeto'].rolling(window = p.vol_period).mean()
     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
@@ -74,6 +83,8 @@ def runNN(conf):
     
     # Tomorrow Return - this should not be included in training set
     ds['TR'] = ds['DR'].shift(-1)
+    # Set current bar TR as 1
+    ds.iloc[-1, ds.columns.get_loc('TR')] = 1
     # Predicted value is whether price will rise
     ds['Price_Rise'] = np.where(ds['TR'] > 1, 1, 0)
     

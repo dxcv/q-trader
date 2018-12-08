@@ -22,6 +22,10 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# TODO: Add Stop Loss to Signal
+
+# TODO: Generic MA Trading System
+
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 

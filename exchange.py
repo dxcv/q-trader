@@ -69,39 +69,44 @@ def get_balance():
     return balance
 
 def market_order(action, leverage=False):
-    b1 = get_balance()
     pair = p.ticker+'/'+p.currency
         
     if action == 'Buy':
         if leverage:
-#            print('Placing Market Buy Order with leverage 2')
-            order = ex.create_market_buy_order(pair, p.order_size, {'leverage': 2})
+            # Closing Short Position
+            # TODO: Try using 0 for order_size to close whole position 
+            ex.create_market_buy_order(pair, p.order_size, {'leverage': 2})
         else:
-#            print('Placing Market Buy Order')
-            order = ex.create_market_buy_order(pair, p.order_size)
+            # Placing Market Buy Order
+            ex.create_market_buy_order(pair, p.order_size)
     elif action == 'Sell':
         if leverage:
-#            print('Placing Market Sell Order with leverage 2')
-            order = ex.create_market_sell_order(pair, p.order_size, {'leverage': 2})
+            # Open Short Position with leverage 2
+            ex.create_market_sell_order(pair, p.order_size, {'leverage': 2})
         else:
-#            print('Placing Market Sell Order')
-            order = ex.create_market_sell_order(pair, p.order_size)
-
-    print('***** Order Placed *****')
-    print(order)
+            # Placing Market Sell Order
+            ex.create_market_sell_order(pair, p.order_size)
 
     # Wait till order is executed
     while len(ex.fetch_open_orders(symbol=pair)) > 0: time.sleep(p.order_wait)
+    
+    trade = ex.fetch_my_trades(pair)[-1]
+    print('***** Order Executed *****')
+    print(trade)
 
-    # Get new balances
-    b2 = get_balance()    
-    result = {'pair': pair, 'size': p.order_size, 
-              'cash_diff': b2[p.currency] - b1[p.currency],
-              'unit_diff': b2[p.ticker] - b1[p.ticker],
-              'order': order,
-              'balance': b2
+    # Get new balance
+    fee = trade['fee']['cost']
+    cost = trade['cost']
+    size = trade['amount']
+    price = round((cost + fee) / size, 4)
+    balance = dict((k, get_balance()[k]) for k in (p.ticker, p.currency))
+        
+    result = {'pair': pair,
+              'size': size,
+              'price': price,
+              'fee': fee,
+              'trade': trade,
+              'balance': balance
               }
 
     return result
-
-    
