@@ -48,6 +48,7 @@ def load_data():
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
     print('Loaded Prices. Period:'+p.bar_period+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    print('Last complete '+p.bar_period+' close: '+str(df.close.iloc[-2]))
     return df
 
 def load_prices():

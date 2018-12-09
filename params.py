@@ -29,7 +29,7 @@ def load_config(config):
     global train
     train = False # Train model
     global reload
-    reload = False # Force to reload price data  
+    reload = False # Force to reload price data. False means reload only if data is old 
     global charts
     charts = True # Plot charts
     global stats
@@ -180,7 +180,7 @@ def load_config(config):
 #        model = cfgdir+'/model32vol.top'
         take_profit = 100
         stop_loss = 0.50
-        order_size = 41
+        order_size = 82
     elif conf == 'XMRUSDNN':
 #        train = True
         units = 32

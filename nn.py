@@ -20,17 +20,28 @@ from keras.callbacks import ModelCheckpoint
 import pandas as pd
 import stats as s
 
-def get_signal():
-    return trades.iloc[-1]
+def get_signal(offset=-1):
+    tr = trades.iloc[offset]
+    if dt.datetime.today() >= tr.open_ts + dt.timedelta(minutes=p.trade_interval):
+        new = False
+    else:
+        new = True
+    pnl = round(100*(tr.SR1 - 1), 2)
+    
+    return {'new':new, 'action':tr.action, 'open':tr.open, 'open_ts':tr.open_ts, 
+            'close':tr.close, 'close_ts':tr.close_ts, 'pnl':pnl, 'sl':tr.sl}
 
-def get_signal_str():
-    s = get_signal()
-    pnl = round(100*(s.SR1 - 1), 2)
-    if s.sl: txt = '!!!STOP LOSS TRIGGERED!!! '
-    txt = 'Opened: '+s.open_ts.strftime('%Y-%m-%d')
-    txt += ' At: '+str(s.open)
-    txt +=' Now: '+str(s.close)
-    txt +=' P/L: '+str(pnl)+'%'
+def get_signal_str(offset=-1):
+    s = get_signal(offset)
+    
+    txt = ''
+    if s['sl']: txt = '!!!STOP LOSS TRIGGERED!!! '
+    if s['new']: txt += 'NEW!!! '
+    txt += 'Position: '+s['action']
+    txt += ' Open: '+str(s['open'])
+    txt +=' Close: '+str(s['close'])
+    txt +=' PnL: '+str(s['pnl'])+'%'
+    txt += ' Opened: '+s['open_ts'].strftime('%Y-%m-%d')
     
     return txt
  
@@ -261,7 +272,7 @@ def runNN(conf):
         print('Average Daily Return: %.3f' % adr)
         
 
-    print(str(get_signal()))
+    print(str(get_signal_str()))
 
 #runNN('BTCUSDNN')
 #runNN('ETHUSDNN')

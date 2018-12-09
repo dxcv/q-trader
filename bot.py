@@ -23,7 +23,7 @@ def get_signal(conf):
     while no_signal:
         nn.runNN(conf)
         signal = nn.get_signal()
-        if dt.datetime.today() > signal.close_ts:
+        if dt.datetime.today() > signal['close_ts']:
             send('Signal has expired. Waiting for new one ...')
             time.sleep(p.sleep_interval)
         else:
@@ -39,23 +39,27 @@ def execute(conf):
     s = get_signal(conf)
     ticker = conf[0:3]+'/'+conf[3:6]
  
-    send(ticker+': '+s.action, True)
-    if dt.datetime.today() >= s.open_ts + dt.timedelta(minutes=p.trade_interval):
-        # Same signal as before - no action
-        send('No action is required today')
-    elif s.action == 'Buy':
-        if p.short:
-            res = x.market_order('Buy', True)
-            send_results(res, 'Closed Short Position')
-        res = x.market_order('Buy')
-        send_results(res, 'Opened Long Position')
-    elif s.action == 'Sell':
-        res = x.market_order('Sell')
-        send_results(res, 'Closed Long Position')
-        if p.short:
-            res = x.market_order('Sell', True)
-            send_results(res, 'Opened Short Position')
-    send(nn.get_signal_str(), True)
+    send(ticker, True)
+    if s['new']:
+        # Send details about old position
+        send('Closing ' + nn.get_signal_str(-2), True)
+        if s['action'] == 'Buy':
+            if p.short:
+                res = x.market_order('Buy', True)
+                send_results(res, 'Closed Short Position')
+            res = x.market_order('Buy')
+            send_results(res, 'Opened Long Position')
+        elif s['action'] == 'Sell':
+            res = x.market_order('Sell')
+            send_results(res, 'Closed Long Position')
+            if p.short:
+                res = x.market_order('Sell', True)
+                send_results(res, 'Opened Short Position')
+    else:
+        send('No action is required')
+
+    # Send details about new / current position
+    send('Current '+nn.get_signal_str(), True)
 
 def run_model(conf):
     try:
@@ -64,9 +68,5 @@ def run_model(conf):
         send('An error has occured. Please investigate!')
         send(e)
     
-run_model('BTCUSDNN')
-run_model('XRPUSDNN')
 run_model('ETHUSDNN')
-run_model('XMRUSDNN')
-run_model('ETCUSDNN')
 t.cleanup()
