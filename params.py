@@ -179,8 +179,8 @@ def load_config(config):
         model = cfgdir+'/model32.top'
 #        model = cfgdir+'/model32vol.top'
         take_profit = 100
-        stop_loss = 0.50
-        order_size = 82
+        stop_loss = 0.5
+        order_size = 41
     elif conf == 'XMRUSDNN':
 #        train = True
         units = 32
