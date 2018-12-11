@@ -21,8 +21,7 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-
-# TODO: Add Stop Loss to Signal
+# TODO: Daily Trades with SL/TP
 
 # TODO: Generic MA Trading System
 

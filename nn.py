@@ -84,7 +84,6 @@ def runNN(conf):
     ds['VOL'] = ds['volumeto']/ds['volumeto'].rolling(window = p.vol_period).mean()
     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
-    ds['HHLL'] = (ds.high+ds.low)/(ds.high/ds.HH+ds.low/ds.LL)
     ds['DR'] = ds['close']/ds['close'].shift(1)
     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
@@ -168,7 +167,6 @@ def runNN(conf):
     # Generate Trade List
     td['action'] = td['signal'].shift(1)
     td['trade_id'] = np.where(td.new.shift(1), td.index, np.NaN)
-    td['open_price'] = np.where(td.new.shift(1), td.open, np.NaN)
     td = td.fillna(method='ffill')
 
     def trade_agg(x):
@@ -209,10 +207,14 @@ def runNN(conf):
     
     # FIXME: This calculation needs to be shifted so it corresponds to current day.
     # Currently it corresponds to next day data   
+    td['minr'] = np.where(td.signal == 'Buy', td.low / td.open, np.NaN)
+    td['minr'] = np.where(td.signal == 'Sell', (2 - td.high / td.open) if p.short else 1, td.minr)
+    td['sl'] = td.minr <= p.stop_loss
     td['fee'] = np.where(td.new, (1 - p.fee)**(2 if p.short else 1), 1)
     td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
     td['SR'] = np.where(td['signal'] == 'Buy', td['TR'], np.NaN)
     td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['TR']) if p.short else 1, td.SR)
+    td['SR'] = np.where(td.sl, p.stop_loss, td.SR)
     td['SR'] = td['SR'] * td['fee'] * td['margin']
     td['CMR'] = np.cumprod(td['TR'])
     td['CSR'] = np.cumprod(td['SR'])
@@ -243,22 +245,23 @@ def runNN(conf):
     stats_mon['CMR'] = np.cumprod(stats_mon['MR'])
     stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
     
-    if p.charts: plot_chart(trades, model, 'close_ts')
+    if p.charts: plot_chart(td, model, 'date')
     
     if p.stats:
         # FIXME: Calculate Loss and Win in $. 
         # Currently assumed that trade size is fixed, no compounding
-        avg_loss = 1 - trades[trades.SR1 < 1].SR1.mean()
-        avg_win = trades[trades.SR1 >= 1].SR1.mean() - 1
+        avg_loss = 1 - td[td.SR < 1].SR.mean()
+        avg_win = td[td.SR >= 1].SR.mean() - 1
         r2r = avg_win / avg_loss
-        win_ratio = len(trades[trades.SR1 >= 1]) / len(trades)
-        trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
+        win_ratio = len(td[td.SR >= 1]) / len(td)
+#        trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
+        trade_freq = 1
         adr = trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
         exp = 365 * adr
         exp_adj = exp / (100 * (1 - p.stop_loss))
-        sr = s.sharpe_ratio((trades.SR1 - 1).mean(), trades.SR1 - 1, 0)
-        print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
-        print('Market Return: %.2f'   % trades.CMR.iloc[-1])
+        sr = s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
+        print('Strategy Return: %.2f' % td.CSR.iloc[-1])
+        print('Market Return: %.2f'   % td.CMR.iloc[-1])
         print('Trade Frequency: %.2f' % trade_freq)
         print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
         print('Win Ratio: %.2f' % win_ratio)

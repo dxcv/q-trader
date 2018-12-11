@@ -149,7 +149,6 @@ def load_config(config):
 #        short = True
         plot_bars = 300
         model = cfgdir+'/model.top'
-# ***************************************** Active Strategies
     elif conf == 'BTCUSDNN':
 #        train = True
 #        short = True
@@ -170,17 +169,6 @@ def load_config(config):
         ignore_signals = [4]
         plot_bars = 365
         order_size = 15354
-    elif conf == 'ETHUSDNN':
-#        train = True
-        units = 32
-        epochs = 30
-        short = True
-        plot_bars = 365
-        model = cfgdir+'/model32.top'
-#        model = cfgdir+'/model32vol.top'
-        take_profit = 100
-        stop_loss = 0.5
-        order_size = 41
     elif conf == 'XMRUSDNN':
 #        train = True
         units = 32
@@ -200,6 +188,16 @@ def load_config(config):
         ignore_signals = [4]
         plot_bars = 365
         order_size = 1302
+# ***************************************** Active Strategies
+    elif conf == 'ETHUSDNN':
+#        train = True
+        units = 32
+        epochs = 30
+        short = True
+        plot_bars = 365
+        model = cfgdir+'/model32.top'
+        stop_loss = 0.5
+        order_size = 125
         
     if train:
         charts = True
