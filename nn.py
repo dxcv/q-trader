@@ -21,27 +21,22 @@ import pandas as pd
 import stats as s
 
 def get_signal(offset=-1):
-    tr = trades.iloc[offset]
-    if dt.datetime.today() >= tr.open_ts + dt.timedelta(minutes=p.trade_interval):
-        new = False
-    else:
-        new = True
-    pnl = round(100*(tr.SR1 - 1), 2)
+    s = td.iloc[offset]
+    pnl = round(100*(s.SR - 1), 2)
     
-    return {'new':new, 'action':tr.action, 'open':tr.open, 'open_ts':tr.open_ts, 
-            'close':tr.close, 'close_ts':tr.close_ts, 'pnl':pnl, 'sl':tr.sl}
+    return {'new':s.new, 'action':s.signal, 'open':s.open, 'open_ts':s.date, 
+            'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 'sl':s.sl, 'tp':s.tp}
 
 def get_signal_str(offset=-1):
     s = get_signal(offset)
     
     txt = ''
-    if s['sl']: txt = '!!!STOP LOSS TRIGGERED!!! '
-    if s['new']: txt += 'NEW!!! '
-    txt += 'Position: '+s['action']
+    if s['tp']: txt = '!!!TAKE PROFIT!!! '
+    if s['sl']: txt = '!!!STOP LOSS!!! '
+    txt += 'Action: '+s['action']
     txt += ' Open: '+str(s['open'])
     txt +=' Close: '+str(s['close'])
     txt +=' PnL: '+str(s['pnl'])+'%'
-    txt += ' Opened: '+s['open_ts'].strftime('%Y-%m-%d')
     
     return txt
  
@@ -82,28 +77,22 @@ def runNN(conf):
     ds.iloc[-1, ds.columns.get_loc('date_to')] = ds.iloc[-1, ds.columns.get_loc('date')] + dt.timedelta(minutes=p.trade_interval)
     # Calculate Features
     ds['VOL'] = ds['volumeto']/ds['volumeto'].rolling(window = p.vol_period).mean()
-    ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
-    ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
+    ds['HH'] = ds['high'].rolling(window = p.sl_hh_period).max()
+    ds['LL'] = ds['low'].rolling(window = p.sl_ll_period).min()
+    ds['H2H'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
+    ds['L2L'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
     ds['DR'] = ds['close']/ds['close'].shift(1)
     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
     ds['Std_dev']= ds['close'].rolling(p.std_period).std()/ds['close']
     ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
     ds['Williams %R'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
-    
-    # Tomorrow Return - this should not be included in training set
-    ds['TR'] = ds['DR'].shift(-1)
-    # Set current bar TR as 1
-    ds.iloc[-1, ds.columns.get_loc('TR')] = 1
-    # Predicted value is whether price will rise
-    ds['Price_Rise'] = np.where(ds['TR'] > 1, 1, 0)
-    
-    if p.max_bars > 0: ds = ds.tail(p.max_bars).reset_index(drop=True)
+    ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
     ds = ds.dropna()
-
-    # Separate input from output
-    X = ds[['VOL','HH','LL','DR','MA','MA2','Std_dev','RSI','Williams %R']]
-    y = ds[['Price_Rise']]
+    
+    # Separate input from output. Exclude last row
+    X = ds[['VOL','H2H','L2L','DR','MA','MA2','Std_dev','RSI','Williams %R']][:-1]
+    y = ds[['Price_Rise']].shift(-1)[:-1]
     
     # Separate train from test
     train_split = int(len(ds)*p.train_pct)
@@ -128,7 +117,10 @@ def runNN(conf):
         model = p.cfgdir+'/model.nn'
         cp = ModelCheckpoint(model, monitor='val_acc', verbose=0, save_best_only=True, mode='max')
         classifier.compile(optimizer = 'adam', loss = 'mse', metrics = ['accuracy'])
-        history = classifier.fit(X_train, y_train, batch_size = 10, epochs = p.epochs, callbacks=[cp], validation_data=(X_test, y_test), verbose=0)
+        history = classifier.fit(X_train, y_train, batch_size = 10, 
+                                 epochs = p.epochs, callbacks=[cp], 
+                                 validation_data=(X_test, y_test), 
+                                 verbose=0)
     
         # Plot model history
         # Accuracy: % of correct predictions 
@@ -163,68 +155,37 @@ def runNN(conf):
     if p.ignore_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.ignore_signals), np.NaN, td.signal)
         td['signal'] = td.signal.fillna(method='ffill')
-    td['new'] = td['signal'] != td['signal'].shift(1)
-    # Generate Trade List
-    td['action'] = td['signal'].shift(1)
-    td['trade_id'] = np.where(td.new.shift(1), td.index, np.NaN)
-    td = td.fillna(method='ffill')
-
-    def trade_agg(x):
-        names = {
-            'action': x.action.iloc[0],    
-            'open_ts': x.date.iloc[0],
-            'close_ts': x.date_to.iloc[-1],
-            'open': x.open.iloc[0],
-            'close': x.close.iloc[-1],
-            'high': x.high.max(),
-            'low': x.low.min()            
-        }
-    
-        return pd.Series(names)
-
-    trades = td.groupby(td.trade_id).apply(trade_agg)
-    trades['minr'] = np.where(trades['action'] == 'Buy', trades.low / trades.open, np.NaN)
-    trades['minr'] = np.where(trades['action'] == 'Sell', 
-          (2 - trades.high / trades.open) if p.short else 1, trades.minr)
-    trades['sl'] = trades.minr <= p.stop_loss
-    trades['maxr'] = np.where(trades['action'] == 'Buy', trades.high / trades.open, np.NaN)
-    trades['maxr'] = np.where(trades['action'] == 'Sell', 
-          (2 - trades.low / trades.open) if p.short else 1, trades.maxr)
-    trades['tp'] = trades.maxr >= p.take_profit
-    trades['hours'] = (trades.close_ts - trades.open_ts).astype('timedelta64[h]')
-    trades['margin'] = np.where(p.short and trades.action == 'Sell', trades.hours/24 * p.margin, 0)
-    trades['MR'] = trades['close']/trades['open']
-    trades['SR'] = np.where(trades['action'] == 'Buy', trades['MR'], np.NaN)
-    trades['SR'] = np.where(trades['action'] == 'Sell', (2 - trades['MR']) if p.short else 1, trades.SR)
-    # FIXME: When SL and TP happen for same trade - take SL. But this should be based on actual timing
-    trades['SR'] = np.where(trades.tp, p.take_profit, trades.SR)
-    trades['SR'] = np.where(trades.sl, p.stop_loss, trades.SR)
-    # Fee is applied twice: on open and close position
-    trades['SR1'] = trades['SR'] * (1 - p.fee)**2 * (1 - trades.margin)
-    trades['CMR'] = np.cumprod(trades['MR'])
-    trades['CSR'] = np.cumprod(trades['SR1'])
-    trades = trades.dropna()
-    
-    # FIXME: This calculation needs to be shifted so it corresponds to current day.
-    # Currently it corresponds to next day data   
     td['minr'] = np.where(td.signal == 'Buy', td.low / td.open, np.NaN)
     td['minr'] = np.where(td.signal == 'Sell', (2 - td.high / td.open) if p.short else 1, td.minr)
-    td['sl'] = td.minr <= p.stop_loss
-    td['fee'] = np.where(td.new, (1 - p.fee)**(2 if p.short else 1), 1)
+    td['sl'] = td.minr < 1 - p.stop_loss
+    td['maxr'] = np.where(td.signal == 'Buy', td.high / td.open, np.NaN)
+    td['maxr'] = np.where(td.signal == 'Sell', (2 - td.low / td.open) if p.short else 1, td.maxr)
+    td['tp'] = td.maxr > 1 + p.take_profit
+    # New trade if signal changes or SL/TP was triggered before
+    td['new'] = np.where(td.sl.shift(1) | td.tp.shift(1), True, False)  
+    td['new'] = np.where(td.signal != td.signal.shift(1), True, td.new)
+    # Add open fee for each new trade
+    td['open_fee'] = np.where(td.new, 1 - p.fee, 1)
+    td['close_fee'] = np.where(td.new.shift(-1), 1 - p.fee, 1)
+    if not p.short:
+        td['open_fee'] = np.where(td.new & (td.signal == 'Sell'), 1, td.open_fee)
+        td['close_fee'] = np.where(td.new.shift(-1) & (td.signal == 'Sell'), 1, td.close_fee)
     td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
-    td['SR'] = np.where(td['signal'] == 'Buy', td['TR'], np.NaN)
-    td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['TR']) if p.short else 1, td.SR)
-    td['SR'] = np.where(td.sl, p.stop_loss, td.SR)
-    td['SR'] = td['SR'] * td['fee'] * td['margin']
-    td['CMR'] = np.cumprod(td['TR'])
-    td['CSR'] = np.cumprod(td['SR'])
-    
+    td['SR'] = np.where(td['signal'] == 'Buy', td['DR'], np.NaN)
+    td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['DR']) if p.short else 1, td.SR)
+    # FIXME: When SL and TP happen for same trade - take SL. But this should be based on actual timing
+    td['SR'] = np.where(td.tp, 1 + p.take_profit, td.SR)
+    td['SR'] = np.where(td.sl, 1 - p.stop_loss, td.SR)
+    td['SR'] = td['SR'] * td['open_fee'] * td['close_fee'] * td['margin']
+    td['CMR'] = np.cumprod(td['DR'])
+    td['CSR'] = np.cumprod(td['SR'])    
+
     def my_agg(x):
         names = {
             'SRAvg': x['SR'].mean(),
             'SRTotal': x['SR'].prod(),
             'Price_Rise_Prob': x['Price_Rise'].mean(),
-            'YPredCount': x['TR'].count()
+            'YPredCount': x['y_pred_id'].count()
         }
     
         return pd.Series(names)
@@ -235,7 +196,7 @@ def runNN(conf):
     # Calculate Monthly Stats
     def my_agg(x):
         names = {
-            'MR': x['TR'].prod(),
+            'MR': x['DR'].prod(),
             'SR': x['SR'].prod()
         }
     
@@ -245,11 +206,36 @@ def runNN(conf):
     stats_mon['CMR'] = np.cumprod(stats_mon['MR'])
     stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
     
+    # Generate Trade List
+    td['trade_id'] = np.where(td.new, td.index, np.NaN)
+    td = td.fillna(method='ffill')
+
+    def trade_agg(x):
+        names = {
+            'action': x.signal.iloc[0],    
+            'open_ts': x.date.iloc[0],
+            'close_ts': x.date_to.iloc[-1],
+            'open': x.open.iloc[0],
+            'close': x.close.iloc[-1],
+            'sl': x.sl.max(),
+            'tp': x.tp.max(),
+            'high': x.high.max(),
+            'low': x.low.min(),
+            'margin': x.margin.prod(),
+            'mr': x.DR.prod(),
+            'sr': x.SR.prod()            
+        }
+    
+        return pd.Series(names)
+
+    trades = td.groupby(td.trade_id).apply(trade_agg)
+    trades['cmr'] = np.cumprod(trades['mr'])
+    trades['csr'] = np.cumprod(trades['sr'])
+    trades = trades.dropna()
+    
     if p.charts: plot_chart(td, model, 'date')
     
     if p.stats:
-        # FIXME: Calculate Loss and Win in $. 
-        # Currently assumed that trade size is fixed, no compounding
         avg_loss = 1 - td[td.SR < 1].SR.mean()
         avg_win = td[td.SR >= 1].SR.mean() - 1
         r2r = avg_win / avg_loss
@@ -258,7 +244,7 @@ def runNN(conf):
         trade_freq = 1
         adr = trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
         exp = 365 * adr
-        exp_adj = exp / (100 * (1 - p.stop_loss))
+        rar = exp / (100 * p.stop_loss)
         sr = s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
         print('Market Return: %.2f'   % td.CMR.iloc[-1])
@@ -269,8 +255,9 @@ def runNN(conf):
         print('Avg Loss: %.2f' % avg_loss)
         print('Risk to Reward: %.2f' % r2r)
         print('Stop Loss: %.2f' % p.stop_loss)
+        print('Take Profit: %.2f' % p.take_profit)
         print('Expectancy: %.2f' % exp)
-        print('Expectancy SL Adj: %.2f' % exp_adj)
+        print('Risk Adjusted Return: %.2f' % rar)
         print('Sharpe Ratio: %.2f' % sr)
         print('Average Daily Return: %.3f' % adr)
         

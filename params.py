@@ -87,7 +87,7 @@ def load_config(config):
     global train_goal
     train_goal = 'R' # Maximize Return
     global fee # Exchange fee
-    fee = 0.0026 # Max Kraken fee
+    fee = 0.002 # Kraken fee
     global margin # Daily Margin fee for short positions
     margin = 0.0012 # Kraken daily rollover fee
     global ratio
@@ -112,10 +112,14 @@ def load_config(config):
     ignore_signals = None # list of y_pred_id to ignore. None to disable 
     global min_data_size # Minimum records expected from Cryptocompare API
     min_data_size = 100
-    global stop_loss # Stop Loss: Minimum Return %
-    stop_loss = 0 
-    global take_profit # Take Profit: Max Return %
+    global stop_loss # Stop Loss % Default 1 which is 100%
+    stop_loss = 1
+    global take_profit # Take Profit %
     take_profit = 100
+    global sl_hh_period # Stop Loss Highest High period
+    sl_hh_period = 3
+    global sl_ll_period # Stop Loss Lowest Low period
+    sl_ll_period = 3
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -151,21 +155,22 @@ def load_config(config):
         model = cfgdir+'/model.top'
     elif conf == 'BTCUSDNN':
 #        train = True
-#        short = True
+        short = True
         units = 32
         epochs = 30
         stop_loss = 0.5
-        take_profit = 1000
+        take_profit = 10
         ignore_signals = [4]
         plot_bars = 365
         model = cfgdir+'/model.top'
+#        model = 'data/ETHUSDNN/model32.top'
         order_size = 1.097
     elif conf == 'XRPUSDNN':
 #        train = True
         units = 32
         epochs = 30
 #        short = True
-        stop_loss = 0.6
+        stop_loss = 0.4
         ignore_signals = [4]
         plot_bars = 365
         order_size = 15354
@@ -174,7 +179,7 @@ def load_config(config):
         units = 32
         epochs = 30
         short = True
-        stop_loss = 0.6
+        stop_loss = 0.4
 #        ignore_signals = [4]
         model = cfgdir+'/model.top'
         plot_bars = 365
@@ -184,7 +189,7 @@ def load_config(config):
         units = 32
         epochs = 30
         short = True
-        stop_loss = 0.6
+        stop_loss = 0.4
         ignore_signals = [4]
         plot_bars = 365
         order_size = 1302
@@ -196,8 +201,11 @@ def load_config(config):
         short = True
         plot_bars = 365
         model = cfgdir+'/model32.top'
-        stop_loss = 0.5
+        stop_loss = 0.4 # Best 0.03       
+        take_profit = 0.2  # Best 0.2
         order_size = 125
+        execute = True
+#        reload = True
         
     if train:
         charts = True

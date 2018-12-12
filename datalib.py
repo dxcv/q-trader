@@ -45,6 +45,8 @@ def load_data():
             print("Incomplete price data. Retrying ...")
     df = df.set_index('time')
     df['date'] = pd.to_datetime(df.index, unit='s')
+
+    if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
     print('Loaded Prices from '+p.exchange+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))

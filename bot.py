@@ -40,9 +40,10 @@ def execute(conf):
     ticker = conf[0:3]+'/'+conf[3:6]
  
     send(ticker, True)
-    if s['new']:
-        # Send details about old position
-        send('Closing ' + nn.get_signal_str(-2), True)
+    # Send details about previous and current positions
+    send('Yesterday ' + nn.get_signal_str(-2), True)
+    send('Today ' + nn.get_signal_str(), True)
+    if p.execute and s['new']:
         if s['action'] == 'Buy':
             if p.short:
                 res = x.market_order('Buy', True)
@@ -55,11 +56,7 @@ def execute(conf):
             if p.short:
                 res = x.market_order('Sell', True)
                 send_results(res, 'Opened Short Position')
-    else:
-        send('No action is required')
 
-    # Send details about new / current position
-    send('Current '+nn.get_signal_str(), True)
 
 def run_model(conf):
     try:

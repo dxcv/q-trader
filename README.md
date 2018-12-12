@@ -1,7 +1,5 @@
 # q-trader
 
-#TODO: Calculate Expectancy Ratio: http://www.newtraderu.com/2017/11/27/formula-profitable-trading/
-
 # https://linuxacademy.com/blog/amazon-web-services-2/deploying-a-containerized-flask-application-with-aws-ecs-and-docker/
 # Install AWS CLI for Mac
 xcode-select --install 
@@ -21,12 +19,27 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# TODO: Daily Trades with SL/TP
+
+# TODO: HH/LL Stop Loss
+# TODO: Tune SL/TP
+
+# TODO: Refactoring
 
 # TODO: Generic MA Trading System
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
+
+# TODO: Implement SL/TP on exchange
+# Stop Loss / Take Profit / Position Sizing
+http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
+
+# TODO: Limit Orders instead Market Orders 
+
+# The Ocean Algo Trading
+https://medium.com/the-ocean-trade/the-ocean-x-algo-trading-lesson-1-time-series-analysis-fa3b76f1d4a3
 
 # Moon Ingress
 https://www.astro.com/swisseph/ing_mo.txt
@@ -50,12 +63,6 @@ https://towardsdatascience.com/https-medium-com-skuttruf-machine-learning-in-fin
 # TODO: Use ephemeris for price prediction
 
 # TODO: Predict price rise for 1 week / month. Use weekly / monthly market return
-
-# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
-# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
-
-# TODO: Implement Stop Loss / Take Profit / Position Sizing
-http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
 
 # Time Series Forecasting
 https://machinelearningmastery.com/how-to-use-the-timeseriesgenerator-for-time-series-forecasting-in-keras/
