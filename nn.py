@@ -77,10 +77,8 @@ def runNN(conf):
     ds.iloc[-1, ds.columns.get_loc('date_to')] = ds.iloc[-1, ds.columns.get_loc('date')] + dt.timedelta(minutes=p.trade_interval)
     # Calculate Features
     ds['VOL'] = ds['volumeto']/ds['volumeto'].rolling(window = p.vol_period).mean()
-    ds['HH'] = ds['high'].rolling(window = p.sl_hh_period).max()
-    ds['LL'] = ds['low'].rolling(window = p.sl_ll_period).min()
-    ds['H2H'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
-    ds['L2L'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
+    ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
+    ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
     ds['DR'] = ds['close']/ds['close'].shift(1)
     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
@@ -91,7 +89,7 @@ def runNN(conf):
     ds = ds.dropna()
     
     # Separate input from output. Exclude last row
-    X = ds[['VOL','H2H','L2L','DR','MA','MA2','Std_dev','RSI','Williams %R']][:-1]
+    X = ds[['VOL','HH','LL','DR','MA','MA2','Std_dev','RSI','Williams %R']][:-1]
     y = ds[['Price_Rise']].shift(-1)[:-1]
     
     # Separate train from test

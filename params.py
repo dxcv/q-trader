@@ -116,10 +116,6 @@ def load_config(config):
     stop_loss = 1
     global take_profit # Take Profit %
     take_profit = 100
-    global sl_hh_period # Stop Loss Highest High period
-    sl_hh_period = 3
-    global sl_ll_period # Stop Loss Lowest Low period
-    sl_ll_period = 3
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -201,12 +197,14 @@ def load_config(config):
         short = True
         plot_bars = 365
         model = cfgdir+'/model32.top'
-        stop_loss = 0.4 # Best 0.03       
-        take_profit = 0.2  # Best 0.2
+        stop_loss = 0.44 # Best High Risk: 0.44 / Low Risk: 0.02 rar: 0.92       
+        take_profit = 0.2 # Best 0.2
         order_size = 125
         execute = True
+        exchange = 'KRAKEN'
+        ignore_signals = [2]
 #        reload = True
-        
+
     if train:
         charts = True
         stats = True

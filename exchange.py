@@ -74,8 +74,8 @@ def market_order(action, leverage=False):
     if action == 'Buy':
         if leverage:
             # Closing Short Position
-            # TODO: Try using 0 for order_size to close whole position 
-            ex.create_market_buy_order(pair, p.order_size, {'leverage': 2})
+            # Using 0 for order_size to close whole position 
+            ex.create_market_buy_order(pair, 0, {'leverage': 2})
         else:
             # Placing Market Buy Order
             ex.create_market_buy_order(pair, p.order_size)
@@ -110,3 +110,48 @@ def market_order(action, leverage=False):
               }
 
     return result
+
+def test():
+    # Currently Advanced Order types are disabled
+    # So can only set either SL or TP, not both
+    # SL For Sell Position. 
+    # Volume 0 means close whole position (works only for leveraged position)
+    order = ex.create_market_buy_order('ETH/USD', 0, 
+                                       { 
+                                        'ordertype': 'stop-loss',
+                                        'price': '#3%',
+                                        'leverage': 2
+                                        }
+                                       )
+    
+    # TP for Sell Position
+    order = ex.create_market_buy_order('ETH/USD', 0, 
+                                       { 
+                                        'ordertype': 'take-profit',
+                                        'price': '#3%',
+                                        'leverage': 2
+                                        }
+                                       )
+    
+    # SL for Buy Position
+    order = ex.create_market_sell_order('ETH/USD', 0.02,
+                                       { 
+                                        'ordertype': 'stop-loss',
+                                        'price': '#3%'
+                                        }
+                                       )
+    
+    # TP for Buy Position
+    order = ex.create_market_sell_order('ETH/USD', 0.02,
+                                       { 
+                                        'ordertype': 'take-profit',
+                                        'price': '#3%'
+                                        }
+                                       )
+    
+    
+    # Fetch Open Orders for ETH/USD
+    orders = ex.fetchOpenOrders('ETH/USD')
+    
+    # Cancel Open Orders
+    for order in orders: ex.cancelOrder(order['id'])

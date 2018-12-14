@@ -20,10 +20,8 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-# TODO: HH/LL Stop Loss
-# TODO: Tune SL/TP
-
-# TODO: Refactoring
+# TODO: Refactoring / SL / KRAKEN
+# Automate TP only
 
 # TODO: Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
@@ -169,3 +167,7 @@ https://github.com/dominiktraxl/pykrakenapi
 
 # Stop Iterating when Model Converges (define converge criteria)
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
+
+# ********************** Results *************************************
+
+# HH/LL Stop Loss is not better than % SL
