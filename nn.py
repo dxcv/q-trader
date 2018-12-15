@@ -33,6 +33,7 @@ def get_signal_str(offset=-1):
     txt = ''
     if s['tp']: txt = '!!!TAKE PROFIT!!! '
     if s['sl']: txt = '!!!STOP LOSS!!! '
+    if s['new']: txt += 'NEW SIGNAL! '  
     txt += 'Action: '+s['action']
     txt += ' Open: '+str(s['open'])
     txt +=' Close: '+str(s['close'])

@@ -77,8 +77,8 @@ def market_order(action, pair='', size = 0, sl = False, leverage=False):
 
     if leverage: opt['leverage'] = p.leverage
     if sl:
-        opt['close[ordertype]'] = 'stop-loss'
-        opt['close[price]'] = '#'+str(p.stop_loss * 100)+'%'
+        opt['ordertype'] = 'stop-loss'
+        opt['price'] = '#'+str(p.stop_loss * 100)+'%'
         
     if len(opt) > 0: params = params + (opt,)
 

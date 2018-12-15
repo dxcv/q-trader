@@ -43,21 +43,31 @@ def execute(conf):
     # Send details about previous and current positions
     send('Yesterday ' + nn.get_signal_str(-2), True)
     send('Today ' + nn.get_signal_str(), True)
-    if p.execute and s['new']:
-        # Cancel SL Orders
+    if p.execute: 
+        # Cancel SL Order
         x.cancel_orders()
+        if s['new']:
+            if s['action'] == 'Buy':
+                if p.short:
+                    res = x.market_order('Buy', leverage=True)
+                    send_results(res, 'Closed Short Position')
+                res = x.market_order('Buy')
+                send_results(res, 'Opened Long Position')
+            elif s['action'] == 'Sell':
+                res = x.market_order('Sell')
+                send_results(res, 'Closed Long Position')
+                if p.short:
+                    res = x.market_order('Sell', leverage=True)
+                    send_results(res, 'Opened Short Position')
+
+        # Set Stop Loss for current position (new or old)
         if s['action'] == 'Buy':
-            if p.short:
-                res = x.market_order('Buy', leverage=True)
-                send_results(res, 'Closed Short Position')
-            res = x.market_order('Buy', sl=True)
-            send_results(res, 'Opened Long Position with SL')
-        elif s['action'] == 'Sell':
-            res = x.market_order('Sell')
-            send_results(res, 'Closed Long Position')
-            if p.short:
-                res = x.market_order('Sell', leverage=True, sl=True)
-                send_results(res, 'Opened Short Position with SL')
+            res = x.market_order('Sell', sl=True)
+            send_results(res, 'Set SL for Long Position')
+        elif s['action'] == 'Sell' and p.short:
+            res = x.market_order('Buy', sl=True, leverage=True)
+            send_results(res, 'Set SL for Short Position')
+
 
 
 def run_model(conf):
