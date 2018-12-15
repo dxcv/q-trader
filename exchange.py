@@ -68,27 +68,28 @@ def get_balance():
 #    print(balance)
     return balance
 
-def market_order(action, leverage=False):
-    pair = p.ticker+'/'+p.currency
+def market_order(action, pair='', size = 0, sl = False, leverage=False):
+    if pair == '': pair = p.ticker+'/'+p.currency
+    if size == 0: size = p.order_size
+    
+    params = (pair, size)
+    opt = {}
+
+    if leverage: opt['leverage'] = p.leverage
+    if sl:
+        opt['close[ordertype]'] = 'stop-loss'
+        opt['close[price]'] = '#'+str(p.stop_loss * 100)+'%'
         
+    if len(opt) > 0: params = params + (opt,)
+
     if action == 'Buy':
-        if leverage:
-            # Closing Short Position
-            # Using 0 for order_size to close whole position 
-            ex.create_market_buy_order(pair, 0, {'leverage': 2})
-        else:
-            # Placing Market Buy Order
-            ex.create_market_buy_order(pair, p.order_size)
+        ex.create_market_buy_order(*params)
     elif action == 'Sell':
-        if leverage:
-            # Open Short Position with leverage 2
-            ex.create_market_sell_order(pair, p.order_size, {'leverage': 2})
-        else:
-            # Placing Market Sell Order
-            ex.create_market_sell_order(pair, p.order_size)
+        ex.create_market_sell_order(*params)
 
     # Wait till order is executed
-    while len(ex.fetch_open_orders(symbol=pair)) > 0: time.sleep(p.order_wait)
+    # FIXME: Need to check order status using order id
+    time.sleep(p.order_wait)
     
     trade = ex.fetch_my_trades(pair)[-1]
     print('***** Order Executed *****')
@@ -111,21 +112,18 @@ def market_order(action, leverage=False):
 
     return result
 
-def test():
-    # Currently Advanced Order types are disabled
-    # So can only set either SL or TP, not both
-    # SL For Sell Position. 
-    # Volume 0 means close whole position (works only for leveraged position)
-    order = ex.create_market_buy_order('ETH/USD', 0, 
-                                       { 
-                                        'ordertype': 'stop-loss',
-                                        'price': '#3%',
-                                        'leverage': 2
-                                        }
-                                       )
-    
+def cancel_orders(pair='', types=['stop-loss']):
+    if pair == '': pair = p.ticker+'/'+p.currency
+    orders = ex.fetchOpenOrders(pair)
+    for order in orders:
+        if order['type'] in types:
+            print("Cancelling Order:")
+            print(order)
+            ex.cancelOrder(order['id'])    
+
+def test_order():
     # TP for Sell Position
-    order = ex.create_market_buy_order('ETH/USD', 0, 
+    ex.create_market_buy_order('ETH/USD', 0, 
                                        { 
                                         'ordertype': 'take-profit',
                                         'price': '#3%',
@@ -133,25 +131,32 @@ def test():
                                         }
                                        )
     
-    # SL for Buy Position
-    order = ex.create_market_sell_order('ETH/USD', 0.02,
-                                       { 
-                                        'ordertype': 'stop-loss',
-                                        'price': '#3%'
-                                        }
-                                       )
     
     # TP for Buy Position
-    order = ex.create_market_sell_order('ETH/USD', 0.02,
+    ex.create_market_sell_order('ETH/USD', 0.02,
                                        { 
                                         'ordertype': 'take-profit',
                                         'price': '#3%'
                                         }
                                        )
     
+def test_order1():
+    p.load_config('ETHUSDNN')
+    p.order_size = 0.02
     
-    # Fetch Open Orders for ETH/USD
-    orders = ex.fetchOpenOrders('ETH/USD')
+    # Buy with
+    market_order('Buy')
+    ex.fetch_balance()['free']
+    # Close SL Order
+    cancel_orders()
+    # Sell
+    market_order('Sell')
+    ex.fetch_balance()['free']
     
-    # Cancel Open Orders
-    for order in orders: ex.cancelOrder(order['id'])
+    # Sell short with sl = 1000
+    market_order('Sell', sl = 1000, leverage=True)
+    ex.fetchOpenOrders('ETH/USD')
+    # Close SL Order
+    cancel_orders()
+    # Close Short
+    market_order('Buy', leverage=True)

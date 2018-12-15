@@ -116,6 +116,8 @@ def load_config(config):
     stop_loss = 1
     global take_profit # Take Profit %
     take_profit = 100
+    global leverage # Leverage used for margin trading. 0 means - no leverage
+    leverage = 2
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True

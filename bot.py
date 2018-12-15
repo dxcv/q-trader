@@ -44,18 +44,20 @@ def execute(conf):
     send('Yesterday ' + nn.get_signal_str(-2), True)
     send('Today ' + nn.get_signal_str(), True)
     if p.execute and s['new']:
+        # Cancel SL Orders
+        x.cancel_orders()
         if s['action'] == 'Buy':
             if p.short:
-                res = x.market_order('Buy', True)
+                res = x.market_order('Buy', leverage=True)
                 send_results(res, 'Closed Short Position')
-            res = x.market_order('Buy')
-            send_results(res, 'Opened Long Position')
+            res = x.market_order('Buy', sl=True)
+            send_results(res, 'Opened Long Position with SL')
         elif s['action'] == 'Sell':
             res = x.market_order('Sell')
             send_results(res, 'Closed Long Position')
             if p.short:
-                res = x.market_order('Sell', True)
-                send_results(res, 'Opened Short Position')
+                res = x.market_order('Sell', leverage=True, sl=True)
+                send_results(res, 'Opened Short Position with SL')
 
 
 def run_model(conf):

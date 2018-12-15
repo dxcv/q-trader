@@ -20,8 +20,8 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-# TODO: Refactoring / SL / KRAKEN
-# Automate TP only
+# Automate SL only
+# TODO: Refactoring / SL
 
 # TODO: Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
