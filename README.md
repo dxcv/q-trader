@@ -20,8 +20,10 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-# TODO: SL Automation
-# Trailing SL based on daily open price
+# TODO: 
+# SL Automation
+# Position Sizing based on % of balance
+# Set SL based on daily open price
 
 # TODO: Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below

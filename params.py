@@ -46,6 +46,8 @@ def load_config(config):
     ticker = conf[0:3]
     global currency
     currency = conf[3:6]
+    global pair # Used for Exchange
+    pair = ticker+'/'+currency
     global cfgdir
     cfgdir = 'data/'+conf
     global version
@@ -199,8 +201,8 @@ def load_config(config):
         short = True
         plot_bars = 365
         model = cfgdir+'/model32.top'
-        stop_loss = 0.44 # Best High Risk: 0.44 / Low Risk: 0.02 rar: 0.92       
-        take_profit = 0.2 # Best 0.2
+        stop_loss = 0.02 # Best High Risk: 0.44 / Low Risk: 0.02 rar: 0.92       
+        take_profit = 0.18 # Best 0.18 rar: 0.92
         order_size = 125
         execute = True
         exchange = 'KRAKEN'

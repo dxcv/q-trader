@@ -24,20 +24,21 @@ def get_signal(offset=-1):
     s = td.iloc[offset]
     pnl = round(100*(s.SR - 1), 2)
     
-    return {'new':s.new, 'action':s.signal, 'open':s.open, 'open_ts':s.date, 
+    return {'new_signal':s.new_signal, 'new_trade':s.new_trade, 'action':s.signal, 
+            'open':s.open, 'open_ts':s.date, 
             'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 'sl':s.sl, 'tp':s.tp}
 
 def get_signal_str(offset=-1):
     s = get_signal(offset)
     
     txt = ''
-    if s['tp']: txt = '!!!TAKE PROFIT!!! '
-    if s['sl']: txt = '!!!STOP LOSS!!! '
-    txt += 'NEW ' if s['new'] else 'SAME '  
+    txt += 'NEW ' if s['new_signal'] else 'SAME '  
     txt += 'Signal: '+s['action']
     txt += ' Open: '+str(s['open'])
     txt +=' Close: '+str(s['close'])
     txt +=' PnL: '+str(s['pnl'])+'%'
+    if s['tp']: txt += ' TAKE PROFIT! '
+    if s['sl']: txt += ' STOP LOSS! '
     
     return txt
  
@@ -161,14 +162,14 @@ def runNN(conf):
     td['maxr'] = np.where(td.signal == 'Sell', (2 - td.low / td.open) if p.short else 1, td.maxr)
     td['tp'] = td.maxr > 1 + p.take_profit
     # New trade if signal changes or SL/TP was triggered before
-    td['new'] = np.where(td.sl.shift(1) | td.tp.shift(1), True, False)  
-    td['new'] = np.where(td.signal != td.signal.shift(1), True, td.new)
+    td['new_signal'] = td.signal != td.signal.shift(1)
+    td['new_trade'] = td.new_signal | td.sl.shift(1) | td.tp.shift(1)  
     # Add open fee for each new trade
-    td['open_fee'] = np.where(td.new, 1 - p.fee, 1)
-    td['close_fee'] = np.where(td.new.shift(-1), 1 - p.fee, 1)
+    td['open_fee'] = np.where(td.new_trade, 1 - p.fee, 1)
+    td['close_fee'] = np.where(td.new_trade.shift(-1), 1 - p.fee, 1)
     if not p.short:
-        td['open_fee'] = np.where(td.new & (td.signal == 'Sell'), 1, td.open_fee)
-        td['close_fee'] = np.where(td.new.shift(-1) & (td.signal == 'Sell'), 1, td.close_fee)
+        td['open_fee'] = np.where(td.new_trade & (td.signal == 'Sell'), 1, td.open_fee)
+        td['close_fee'] = np.where(td.new_trade.shift(-1) & (td.signal == 'Sell'), 1, td.close_fee)
     td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
     td['SR'] = np.where(td['signal'] == 'Buy', td['DR'], np.NaN)
     td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['DR']) if p.short else 1, td.SR)
@@ -206,7 +207,7 @@ def runNN(conf):
     stats_mon['CSR'] = np.cumprod(stats_mon['SR'])
     
     # Generate Trade List
-    td['trade_id'] = np.where(td.new, td.index, np.NaN)
+    td['trade_id'] = np.where(td.new_trade, td.index, np.NaN)
     td = td.fillna(method='ffill')
 
     def trade_agg(x):
