@@ -18,7 +18,6 @@ ex = ccxt.kraken({
     'session': cfscrape.create_scraper() # To avoid Cloudflare block
 })
 
-
 '''
 hitbtc = ccxt.hitbtc({'verbose': True})
 bitmex = ccxt.bitmex()
@@ -68,7 +67,7 @@ def get_balance():
 #    print(balance)
     return balance
 
-def market_order(action, pair='', size = 0, sl = False, leverage=False):
+def create_order(action, ordertype='market', pair='', size = 0, leverage=False):
     if pair == '': pair = p.ticker+'/'+p.currency
     if size == 0: size = p.order_size
     
@@ -76,21 +75,28 @@ def market_order(action, pair='', size = 0, sl = False, leverage=False):
     opt = {}
 
     if leverage: opt['leverage'] = p.leverage
-    if sl:
-        opt['ordertype'] = 'stop-loss'
+    if ordertype == 'stop-loss':
+        opt['ordertype'] = ordertype
         opt['price'] = '#'+str(p.stop_loss * 100)+'%'
         
     if len(opt) > 0: params = params + (opt,)
 
     if action == 'Buy':
-        ex.create_market_buy_order(*params)
+        order = ex.create_market_buy_order(*params)
     elif action == 'Sell':
-        ex.create_market_sell_order(*params)
-
-    # Wait till order is executed
-    # FIXME: Need to check order status using order id
-    time.sleep(p.order_wait)
+        order = ex.create_market_sell_order(*params)
     
+    return order
+
+def wait_order(order_id):
+    while len(list(filter(lambda t: t['id'] == order_id, ex.fetchOpenOrders()))) > 0:
+        time.sleep(p.order_wait)
+
+def market_order(action, pair='', size = 0, leverage=False):
+    order = create_order(action, 'market', pair, size, leverage)
+    # Wait till order is executed
+    wait_order(order['id'])
+
     trade = ex.fetch_my_trades(pair)[-1]
     print('***** Order Executed *****')
     print(trade)
@@ -112,6 +118,16 @@ def market_order(action, pair='', size = 0, sl = False, leverage=False):
 
     return result
 
+def stop_loss_order(action, pair='', size = 0, leverage=False):
+    order = create_order(action, 'stop-loss', pair, size, leverage)
+    print('***** SL Order Created *****')
+    print(order)
+    result = {'price': order['price'],
+              'amount': order['amount']
+              }
+    
+    return result
+    
 def cancel_orders(pair='', types=['stop-loss']):
     if pair == '': pair = p.ticker+'/'+p.currency
     orders = ex.fetchOpenOrders(pair)
@@ -144,8 +160,9 @@ def test_order1():
     p.load_config('ETHUSDNN')
     p.order_size = 0.02
     
-    # Buy with
+    # Buy
     market_order('Buy')
+    market_order('Buy', sl=True)
     ex.fetch_balance()['free']
     # Close SL Order
     cancel_orders()
@@ -155,8 +172,9 @@ def test_order1():
     
     # Sell short with sl = 1000
     market_order('Sell', sl = 1000, leverage=True)
-    ex.fetchOpenOrders('ETH/USD')
+    ex.fetchOpenOrders()
     # Close SL Order
     cancel_orders()
     # Close Short
     market_order('Buy', leverage=True)
+         

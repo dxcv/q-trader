@@ -37,9 +37,8 @@ def send_results(res, msg):
 
 def execute(conf):
     s = get_signal(conf)
-    ticker = conf[0:3]+'/'+conf[3:6]
  
-    send(ticker, True)
+    send(p.ticker+'/'+p.currency, True)
     # Send details about previous and current positions
     send('Yesterday ' + nn.get_signal_str(-2), True)
     send('Today ' + nn.get_signal_str(), True)
@@ -62,12 +61,11 @@ def execute(conf):
 
         # Set Stop Loss for current position (new or old)
         if s['action'] == 'Buy':
-            res = x.market_order('Sell', sl=True)
-            send_results(res, 'Set SL for Long Position')
+            res = x.stop_loss_order('Sell')
+            send('SL set at '+res['price'])
         elif s['action'] == 'Sell' and p.short:
-            res = x.market_order('Buy', sl=True, leverage=True)
-            send_results(res, 'Set SL for Short Position')
-
+            res = x.stop_loss_order('Buy', leverage=True)
+            send('SL set at '+res['price'])
 
 
 def run_model(conf):
