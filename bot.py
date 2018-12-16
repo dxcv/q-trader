@@ -40,8 +40,8 @@ def execute(conf):
  
     send(p.ticker+'/'+p.currency, True)
     # Send details about previous and current positions
-    send('Yesterday ' + nn.get_signal_str(-2), True)
-    send('Today ' + nn.get_signal_str(), True)
+    send('Yesterday: ' + nn.get_signal_str(-2), True)
+    send('Today: ' + nn.get_signal_str(), True)
     if p.execute: 
         # Cancel SL Order
         x.cancel_orders()
@@ -62,11 +62,11 @@ def execute(conf):
         # Set Stop Loss for current position (new or old)
         if s['action'] == 'Buy':
             res = x.stop_loss_order('Sell')
-            send('SL set at '+res['price'])
+            send(res)
         elif s['action'] == 'Sell' and p.short:
             res = x.stop_loss_order('Buy', leverage=True)
-            send('SL set at '+res['price'])
-
+            send(res)
+ 
 
 def run_model(conf):
     try:

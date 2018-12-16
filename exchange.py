@@ -92,6 +92,13 @@ def wait_order(order_id):
     while len(list(filter(lambda t: t['id'] == order_id, ex.fetchOpenOrders()))) > 0:
         time.sleep(p.order_wait)
 
+def fetch_order(order_id):
+    result = {}
+    for rec in ex.fetchOpenOrders():
+        if rec['id'] == order_id: result = rec
+    
+    return result     
+    
 def market_order(action, pair='', size = 0, leverage=False):
     order = create_order(action, 'market', pair, size, leverage)
     # Wait till order is executed
@@ -120,14 +127,11 @@ def market_order(action, pair='', size = 0, leverage=False):
 
 def stop_loss_order(action, pair='', size = 0, leverage=False):
     order = create_order(action, 'stop-loss', pair, size, leverage)
+    result = fetch_order(order['id'])
     print('***** SL Order Created *****')
-    print(order)
-    result = {'price': order['price'],
-              'amount': order['amount']
-              }
-    
-    return result
-    
+    print(result)
+    return result['info']['descr']['order']
+        
 def cancel_orders(pair='', types=['stop-loss']):
     if pair == '': pair = p.ticker+'/'+p.currency
     orders = ex.fetchOpenOrders(pair)
@@ -172,9 +176,11 @@ def test_order1():
     
     # Sell short with sl = 1000
     market_order('Sell', sl = 1000, leverage=True)
-    ex.fetchOpenOrders()
     # Close SL Order
     cancel_orders()
     # Close Short
     market_order('Buy', leverage=True)
-         
+    
+    stop_loss_order('Buy', 'ETH/USD', 0.02)
+
+    ex.fetchOpenOrders()
