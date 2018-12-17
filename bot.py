@@ -33,7 +33,7 @@ def get_signal(conf):
 
 def send_results(res, msg):
     send(msg+' of '+str(res['size'])+' '+p.pair+' with price '+str(res['price']))
-    send('New Balance: ' + str(res['balance']))
+    send('Balance: ' + str(res['balance']))
 
 def execute(conf):
     s = get_signal(conf)
@@ -45,19 +45,28 @@ def execute(conf):
     if p.execute:
         action = s['action']
         is_open = True
+# FIXME: triggering both SL and TP should be handled / avoided
         if x.has_sl_order():
             x.cancel_sl()
         else:
             is_open = False
-            send('Stop Loss Has Executed!')
+            send('Stop Loss triggered!')
+            send('Balance: '+str(x.get_balance))
+        
+        if x.has_tp_order():
+            x.cancel_tp()
+        else:
+            is_open = False
+            send('Take Profit triggered!')
+            send('Balance: '+str(x.get_balance))
         
         # Close position if signal has changed and it is still open
         if s['new_signal'] and is_open:
             if action == 'Buy' and p.short:
-                res = x.market_order('Buy', leverage=True)
+                res = x.market_order('Buy', 0)
                 send_results(res, 'Closed Short Position')
             elif action == 'Sell':
-                res = x.market_order('Sell')
+                res = x.market_order('Sell', 0)
                 send_results(res, 'Closed Long Position')
             is_open = False
         
@@ -66,16 +75,16 @@ def execute(conf):
                 res = x.market_order('Buy')
                 send_results(res, 'Opened Long Position')
             elif action == 'Sell' and p.short:
-                res = x.market_order('Sell', leverage=True)
+                res = x.market_order('Sell')
                 send_results(res, 'Opened Short Position')
 
-        # Set Stop Loss for current position (new or old)
+        # Set Stop Loss and Take Profit for current position
         if action == 'Buy':
-            res = x.sl_order('Sell')
-            send(res)
+            send(x.sl_order('Sell'))
+            send(x.tp_order('Sell'))
         elif action == 'Sell' and p.short:
-            res = x.sl_order('Buy', leverage=True)
-            send(res)
+            send(x.sl_order('Buy'))
+            send(x.tp_order('Buy'))
  
 
 def run_model(conf):

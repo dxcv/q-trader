@@ -61,29 +61,27 @@ def get_price():
     ticker = ex.fetch_ticker(p.pair)
     return ticker['last']
 
-def get_balance():
+def get_balance(asset=''):
+    if asset == '': asset = p.currency
     balance = ex.fetch_balance()['free']
-#    print('***** Current Balance *****')
-#    print(balance)
-    return balance
+    return balance[asset]
 
-def create_order(action, ordertype='market', leverage=False):
-    params = (p.pair, p.order_size)
-    opt = {}
-
-    if leverage: opt['leverage'] = p.leverage
-    if ordertype == 'stop-loss':
-        opt['ordertype'] = ordertype
-        opt['price'] = '#'+str(p.stop_loss * 100)+'%'
-        
-    if len(opt) > 0: params = params + (opt,)
+def create_order(action, ordertype, volume, opt={}):
+    params = (p.pair, volume)
+    opt['ordertype'] = ordertype
+    opt['leverage'] = p.leverage        
+    params = params + (opt,)
 
     if action == 'Buy':
         order = ex.create_market_buy_order(*params)
     elif action == 'Sell':
         order = ex.create_market_sell_order(*params)
     
-    return order
+    result = fetch_order(order['id'])
+    print('***** '+ordertype+' Order Created *****')
+    print(result)
+
+    return result
 
 def wait_order(order_id):
     while len(list(filter(lambda t: t['id'] == order_id, ex.fetchOpenOrders(p.pair)))) > 0:
@@ -96,8 +94,13 @@ def fetch_order(order_id):
     
     return result     
 
-def market_order(action, leverage=False):
-    order = create_order(action, 'market', leverage)
+#def get_order_price(order_type):
+#    orders = ex.fetchClosedOrders(p.pair)
+#    return orders[0]['info']['price']
+
+def market_order(action, volume=-1):
+    if volume == -1: volume = p.order_size
+    order = create_order(action, 'market', volume)
     # Wait till order is executed
     wait_order(order['id'])
 
@@ -110,7 +113,7 @@ def market_order(action, leverage=False):
     cost = trade['cost']
     size = trade['amount']
     price = round((cost + fee) / size, 4)
-    balance = dict((k, get_balance()[k]) for k in (p.ticker, p.currency))
+    balance = get_balance()
         
     result = {'size': size,
               'price': price,
@@ -122,12 +125,18 @@ def market_order(action, leverage=False):
     return result
 
 # Place Stop Loss Order
-def sl_order(action, leverage=False):
-    order = create_order(action, 'stop-loss', leverage)
-    result = fetch_order(order['id'])
-    print('***** SL Order Created *****')
-    print(result)
-    return result['info']['descr']['order']
+def sl_order(action):
+    opt = {}
+    opt['price'] = '#'+str(p.stop_loss * 100)+'%'
+    order = create_order(action, 'stop-loss', p.order_size, opt)
+    return 'SL: '+str(order['info']['descr']['price'])
+
+# Place Take Profit Order
+def tp_order(action):
+    opt = {}
+    opt['price'] = '#'+str(p.take_profit * 100)+'%'
+    order = create_order(action, 'take-profit', p.order_size, opt)
+    return 'TP: '+str(order['info']['descr']['price'])
         
 def has_orders(types):
     for order in ex.fetchOpenOrders(p.pair):
@@ -137,6 +146,9 @@ def has_orders(types):
 def has_sl_order():
     return has_orders(['stop-loss'])
     
+def has_tp_order():
+    return has_orders(['take-profit'])
+
 def cancel_orders(types):
     for order in ex.fetchOpenOrders(p.pair):
         if order['type'] in types:
@@ -146,6 +158,9 @@ def cancel_orders(types):
 
 def cancel_sl():
     cancel_orders(['stop-loss'])
+
+def cancel_tp():
+    cancel_orders(['take-profit'])
 
 def test_order():
     # TP for Sell Position
@@ -180,12 +195,12 @@ def test_order1():
     market_order('Sell')
     ex.fetch_balance()['free']
     
-    # Sell short with sl = 1000
-    market_order('Sell', sl = 1000, leverage=True)
+    # Sell short
+    market_order('Sell')
     # Close SL Order
     cancel_orders()
     # Close Short
-    market_order('Buy', leverage=True)
+    market_order('Buy')
     
     sl_order('Buy')
 

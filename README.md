@@ -21,7 +21,7 @@ export AWS_REGION=You AWS  Region
 
 
 # TODO: 
-# Use Leverage Orders / SL / TP
+# Use Leveraged Orders / SL / TP
 
 # Position Sizing based on % of balance
 # Set SL based on daily open price
