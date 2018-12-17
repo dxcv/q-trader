@@ -51,14 +51,14 @@ def execute(conf):
         else:
             is_open = False
             send('Stop Loss triggered!')
-            send('Balance: '+str(x.get_balance))
+            send('Balance: '+str(x.get_balance()))
         
         if x.has_tp_order():
             x.cancel_tp()
         else:
             is_open = False
             send('Take Profit triggered!')
-            send('Balance: '+str(x.get_balance))
+            send('Balance: '+str(x.get_balance()))
         
         # Close position if signal has changed and it is still open
         if s['new_signal'] and is_open:

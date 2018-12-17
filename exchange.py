@@ -77,7 +77,7 @@ def create_order(action, ordertype, volume, opt={}):
     elif action == 'Sell':
         order = ex.create_market_sell_order(*params)
     
-    result = fetch_order(order['id'])
+    result = ex.fetchOrder(order['id'])
     print('***** '+ordertype+' Order Created *****')
     print(result)
 
@@ -86,13 +86,6 @@ def create_order(action, ordertype, volume, opt={}):
 def wait_order(order_id):
     while len(list(filter(lambda t: t['id'] == order_id, ex.fetchOpenOrders(p.pair)))) > 0:
         time.sleep(p.order_wait)
-
-def fetch_order(order_id):
-    result = {}
-    for rec in ex.fetchOpenOrders(p.pair):
-        if rec['id'] == order_id: result = rec
-    
-    return result     
 
 #def get_order_price(order_type):
 #    orders = ex.fetchClosedOrders(p.pair)
@@ -104,21 +97,15 @@ def market_order(action, volume=-1):
     # Wait till order is executed
     wait_order(order['id'])
 
-    trade = ex.fetch_my_trades(p.pair)[-1]
-    print('***** Order Executed *****')
-    print(trade)
-
     # Get new balance
-    fee = trade['fee']['cost']
-    cost = trade['cost']
-    size = trade['amount']
-    price = round((cost + fee) / size, 4)
+    fee = order['fee']['cost']
+    size = order['amount']
+    price = order['price']
     balance = get_balance()
         
     result = {'size': size,
               'price': price,
               'fee': fee,
-              'trade': trade,
               'balance': balance
               }
 
