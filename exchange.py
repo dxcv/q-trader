@@ -187,6 +187,9 @@ def test_order1():
     # Close Short
     market_order('Buy', leverage=True)
     
-    stop_loss_order('Buy')
+    sl_order('Buy')
 
     ex.fetchOpenOrders()
+    
+    orders = ex.fetchClosedOrders('ETH/USD')
+    order = orders[0]

@@ -158,7 +158,7 @@ def load_config(config):
         short = True
         units = 32
         epochs = 30
-        stop_loss = 0.5
+        stop_loss = 0.6
         take_profit = 10
         ignore_signals = [4]
         plot_bars = 365
@@ -203,7 +203,7 @@ def load_config(config):
         model = cfgdir+'/model32.top'
         stop_loss = 0.02 # Best High Risk: 0.44 / Low Risk: 0.02 rar: 0.92       
         take_profit = 0.18 # Best 0.18 rar: 0.92
-        order_size = 125
+        order_size = 157
         execute = True
         exchange = 'KRAKEN'
         ignore_signals = [2]
