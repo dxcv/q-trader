@@ -21,10 +21,14 @@ export AWS_REGION=You AWS  Region
 
 
 # TODO: 
-# Use Leveraged Orders / SL / TP
+# Fix Margin Calculation: now applied for Long as well
+
+# Refactoring
+# Feature Engineering
+
+# Move execution closer to 0am so that trading is done with day open price
 
 # Position Sizing based on % of balance
-# Set SL based on daily open price
 
 # TODO: Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
@@ -33,7 +37,6 @@ export AWS_REGION=You AWS  Region
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
-# TODO: Implement SL/TP on exchange
 # Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
 

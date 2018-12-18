@@ -109,7 +109,7 @@ def load_config(config):
     global trade_interval
     trade_interval = 60*24 # Trade interval in minutes
     global sleep_interval
-    sleep_interval = 60*30 # Bot sleep interval in seconds when waiting for new signal 
+    sleep_interval = 60*5 # Bot sleep interval in seconds when waiting for new signal 
     global ignore_signals
     ignore_signals = None # list of y_pred_id to ignore. None to disable 
     global min_data_size # Minimum records expected from Cryptocompare API
@@ -195,19 +195,34 @@ def load_config(config):
         order_size = 1302
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
+    #Strategy Return: 33706.30 (MAX: 53114.78)
+    #Market Return: 104.03
+    #Trade Frequency: 1.00
+    #Accuracy: 0.60
+    #Win Ratio: 0.59
+    #Avg Win: 0.05
+    #Avg Loss: 0.04
+    #Risk to Reward: 1.15
+    #Stop Loss: 0.40
+    #Take Profit: 0.18
+    #Expectancy: 4.19
+    #Risk Adjusted Return: 0.10
+    #Sharpe Ratio: 0.17
+    #Average Daily Return: 0.011
+        
 #        train = True
         units = 32
         epochs = 30
         short = True
         plot_bars = 365
-        model = cfgdir+'/model32.top'
-        stop_loss = 0.02 # Best High Risk: 0.44 / Low Risk: 0.02 rar: 0.92       
+#        model = cfgdir+'/model32.top'
+        model = cfgdir+'/model.top'
+        stop_loss = 0.4 # Best High Risk: 0.4 / Low Risk: 0.02 rar: 0.94       
         take_profit = 0.18 # Best 0.18 rar: 0.92
         order_size = 157
         execute = True
         exchange = 'KRAKEN'
-        ignore_signals = [2]
-#        reload = True
+        ignore_signals = [1, 4]
 
     if train:
         charts = True

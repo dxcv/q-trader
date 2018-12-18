@@ -18,18 +18,14 @@ def send(msg, public=False):
     t.send_msg(str(msg), public)
 
 def get_signal(conf):
-    no_signal = True
-
-    while no_signal:
+    while True:
         nn.runNN(conf)
         signal = nn.get_signal()
         if dt.datetime.today() > signal['close_ts']:
             send('Signal has expired. Waiting for new one ...')
             time.sleep(p.sleep_interval)
         else:
-            no_signal = False
-
-    return signal
+            return signal
 
 def send_results(res, msg):
     send(msg+' of '+str(res['size'])+' '+p.pair+' with price '+str(res['price']))

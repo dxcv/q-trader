@@ -78,7 +78,7 @@ def runNN(conf):
     # Set date_to to next date
     ds.iloc[-1, ds.columns.get_loc('date_to')] = ds.iloc[-1, ds.columns.get_loc('date')] + dt.timedelta(minutes=p.trade_interval)
     # Calculate Features
-    ds['VOL'] = ds['volumeto']/ds['volumeto'].rolling(window = p.vol_period).mean()
+    ds['VOL'] = ds['volumefrom']/ds['volumefrom'].rolling(window = p.vol_period).mean()
     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
     ds['DR'] = ds['close']/ds['close'].shift(1)
@@ -266,6 +266,3 @@ def runNN(conf):
 
 #runNN('BTCUSDNN')
 #runNN('ETHUSDNN')
-#runNN('XRPUSDNN')
-#runNN('XMRUSDNN')
-#runNN('ETCUSDNN')
