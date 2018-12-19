@@ -228,28 +228,29 @@ def load_config(config):
         execute = True
         ignore_signals = [1,4]
     elif conf == 'ETHUSDNN1':
-#Strategy Return: 125915.61
-#Market Return: 122.89
-#Trades Per Week: 3
-#Accuracy: 0.60
-#Win Ratio: 0.69
-#Avg Win: 0.03
-#Avg Loss: 0.04
-#Risk to Reward: 0.91
-#Stop Loss: 1.00
-#Take Profit: 0.19
-#Expectancy: 4.38
-#Risk Adjusted Return: 0.04
-#Sharpe Ratio: 0.21
-#Average Daily Return: 0.012
+    #Strategy Return: 22675.68
+    #Market Return: 122.89
+    #Trades Per Week: 1
+    #Accuracy: 0.58
+    #Win Ratio: 0.56
+    #Avg Win: 0.05
+    #Avg Loss: 0.04
+    #Risk to Reward: 1.31
+    #Stop Loss: 0.80
+    #Take Profit: 0.19
+    #Expectancy: 4.03
+    #Risk Adjusted Return: 0.05
+    #Sharpe Ratio: 0.17
+    #Average Daily Return: 0.011
 #        train = True
+#        test_pct = 1
 #        reload = True
         feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32
-        epochs = 30
+        epochs = 10
         short = True
-        model = cfgdir+'/model.top'
-        stop_loss = 0.8
+        model = cfgdir+'/model.215'
+        stop_loss = 0.03
         take_profit = 0.19
 #        ignore_signals = [6]
 #        hold_signals = [6]

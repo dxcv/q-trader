@@ -58,6 +58,12 @@ def plot_chart(df, title, date_col='date'):
     plt.title(title)
     plt.show()
 
+def train_model():
+    print('Training')
+    
+def test_model():
+    print('Testing')
+
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
 def runNN(conf):
