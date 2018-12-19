@@ -254,6 +254,8 @@ def load_config(config):
         take_profit = 0.19
 #        ignore_signals = [6]
 #        hold_signals = [6]
+        order_size = 200
+        execute = True
 
     global file
     file = cfgdir+'/price.pkl'
