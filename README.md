@@ -19,8 +19,11 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# TODO: Generic MA Trading System
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
+# HOLD when signal is weak
 
-# TODO: 
 # Fix Margin Calculation: now applied for Long as well
 
 # Refactoring
@@ -30,12 +33,11 @@ export AWS_REGION=You AWS  Region
 
 # Position Sizing based on % of balance
 
-# TODO: Generic MA Trading System
-# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
-# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
-
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
+# Most used indicators
+https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
+
 
 # Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
@@ -177,3 +179,6 @@ https://github.com/dominiktraxl/pykrakenapi
 # ********************** Results *************************************
 
 # HH/LL Stop Loss is not better than % SL
+
+# Historical Results which were used for training cannot be trusted
+# Only Test Results can be trusted

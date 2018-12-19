@@ -171,6 +171,8 @@ def test_order():
 def test_order1():
     p.load_config('ETHUSDNN')
     p.order_size = 0.02
+    # Print available API methods
+    print(dir(ex))
     
     # Buy
     market_order('Buy')
@@ -195,3 +197,6 @@ def test_order1():
     
     orders = ex.fetchClosedOrders('ETH/USD')
     order = orders[0]
+
+    ex.privatePostOpenPositions()
+    

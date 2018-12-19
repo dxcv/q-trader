@@ -28,9 +28,8 @@ def get_signal(offset=-1):
             'open':s.open, 'open_ts':s.date, 
             'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 'sl':s.sl, 'tp':s.tp}
 
-def get_signal_str(offset=-1):
-    s = get_signal(offset)
-    
+def get_signal_str(s=''):
+    if s == '': s = get_signal()
     txt = ''
     txt += 'NEW ' if s['new_signal'] else 'SAME '  
     txt += 'Signal: '+s['action']
@@ -73,7 +72,6 @@ def runNN(conf):
     ds = dl.load_data()
 #    ds = q.load_prices()
     
-    #  Most used indicators: https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
     ds['date_to'] = ds['date'].shift(-1)
     # Set date_to to next date
     ds.iloc[-1, ds.columns.get_loc('date_to')] = ds.iloc[-1, ds.columns.get_loc('date')] + dt.timedelta(minutes=p.trade_interval)
@@ -84,14 +82,16 @@ def runNN(conf):
     ds['DR'] = ds['close']/ds['close'].shift(1)
     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
-    ds['Std_dev']= ds['close'].rolling(p.std_period).std()/ds['close']
+    ds['STD']= ds['close'].rolling(p.std_period).std()/ds['close']
     ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
-    ds['Williams %R'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
+    ds['WR'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
+    ds['DMA'] = ds.MA/ds.MA.shift(1)
+    ds['MAR'] = ds.MA/ds.MA2
     ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
     ds = ds.dropna()
     
     # Separate input from output. Exclude last row
-    X = ds[['VOL','HH','LL','DR','MA','MA2','Std_dev','RSI','Williams %R']][:-1]
+    X = ds[p.feature_list][:-1]
     y = ds[['Price_Rise']].shift(-1)[:-1]
     
     # Separate train from test
@@ -155,24 +155,33 @@ def runNN(conf):
     if p.ignore_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.ignore_signals), np.NaN, td.signal)
         td['signal'] = td.signal.fillna(method='ffill')
+    if p.hold_signals is not None:
+        td['signal'] = np.where(np.isin(td.y_pred_id, p.hold_signals), 'Hold', td.signal)
     td['minr'] = np.where(td.signal == 'Buy', td.low / td.open, np.NaN)
     td['minr'] = np.where(td.signal == 'Sell', (2 - td.high / td.open) if p.short else 1, td.minr)
-    td['sl'] = td.minr < 1 - p.stop_loss
+    td['minr'] = np.where(td.signal == 'Hold', 1, td.minr)
+    td['sl'] = td.minr <= 1 - p.stop_loss
     td['maxr'] = np.where(td.signal == 'Buy', td.high / td.open, np.NaN)
     td['maxr'] = np.where(td.signal == 'Sell', (2 - td.low / td.open) if p.short else 1, td.maxr)
-    td['tp'] = td.maxr > 1 + p.take_profit
+    td['maxr'] = np.where(td.signal == 'Hold', 1, td.maxr)
+    td['tp'] = td.maxr >= 1 + p.take_profit
     # New trade if signal changes or SL/TP was triggered before
     td['new_signal'] = td.signal != td.signal.shift(1)
     td['new_trade'] = td.new_signal | td.sl.shift(1) | td.tp.shift(1)  
     # Add open fee for each new trade
-    td['open_fee'] = np.where(td.new_trade, 1 - p.fee, 1)
-    td['close_fee'] = np.where(td.new_trade.shift(-1), 1 - p.fee, 1)
+    td['open_fee'] = np.where(td.new_trade & (td.signal != 'Hold'), 1 - p.fee, 1)
+    td['close_fee'] = np.where(td.new_trade.shift(-1) & (td.signal != 'Hold'), 1 - p.fee, 1)
     if not p.short:
-        td['open_fee'] = np.where(td.new_trade & (td.signal == 'Sell'), 1, td.open_fee)
-        td['close_fee'] = np.where(td.new_trade.shift(-1) & (td.signal == 'Sell'), 1, td.close_fee)
-    td['margin'] = np.where(p.short and td['signal'] == 'Sell',  1 - p.margin, 1)
+        td['open_fee'] = np.where(td.signal == 'Sell', 1, td.open_fee)
+        td['close_fee'] = np.where(td.signal == 'Sell', 1, td.close_fee)
+    td['margin'] = 1
+    if p.leverage > 1:    
+        td['margin'] = np.where(td['signal'] == 'Buy',  1 - p.margin, td.margin)
+    if p.short:
+        td['margin'] = np.where(td['signal'] == 'Sell',  1 - p.margin, td.margin)
     td['SR'] = np.where(td['signal'] == 'Buy', td['DR'], np.NaN)
     td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['DR']) if p.short else 1, td.SR)
+    td['SR'] = np.where(td['signal'] == 'Hold', 1, td.SR)
     # FIXME: When SL and TP happen for same trade - take SL. But this should be based on actual timing
     td['SR'] = np.where(td.tp, 1 + p.take_profit, td.SR)
     td['SR'] = np.where(td.sl, 1 - p.stop_loss, td.SR)
@@ -237,18 +246,17 @@ def runNN(conf):
     
     if p.stats:
         avg_loss = 1 - td[td.SR < 1].SR.mean()
-        avg_win = td[td.SR >= 1].SR.mean() - 1
+        avg_win = td[td.SR > 1].SR.mean() - 1
         r2r = avg_win / avg_loss
-        win_ratio = len(td[td.SR >= 1]) / len(td)
-#        trade_freq = len(trades) / (trades.close_ts.max() - trades.open_ts.min()).days
-        trade_freq = 1
-        adr = trade_freq * (win_ratio * avg_win - (1 - win_ratio)*avg_loss)
+        win_ratio = len(td[td.SR > 1]) / len(td[td.SR != 1])
+        trade_freq = 7*len(trades[trades.action!='Hold'])/len(td)
+        adr = win_ratio * avg_win - (1 - win_ratio)*avg_loss
         exp = 365 * adr
         rar = exp / (100 * p.stop_loss)
         sr = s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
         print('Market Return: %.2f'   % td.CMR.iloc[-1])
-        print('Trade Frequency: %.2f' % trade_freq)
+        print('Trades Per Week: %.0f' % trade_freq)
         print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
         print('Win Ratio: %.2f' % win_ratio)
         print('Avg Win: %.2f' % avg_win)
@@ -265,4 +273,4 @@ def runNN(conf):
     print(str(get_signal_str()))
 
 #runNN('BTCUSDNN')
-#runNN('ETHUSDNN')
+#runNN('ETHUSDNN1')

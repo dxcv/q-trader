@@ -14,7 +14,7 @@ def load_config(config):
     global start_balance
     start_balance = 1.0
     global short
-    short = False # Short calculation is currently incorrect hense disabled
+    short = False # Short trading
     global actions
     actions = 2 # Number of actions (% of stock holdings) 2 for long only, 3 to add short
     # α ∈ [0, 1] (alpha) is the learning rate used to vary the weight given to new experiences compared with past Q-values.
@@ -112,6 +112,8 @@ def load_config(config):
     sleep_interval = 60*5 # Bot sleep interval in seconds when waiting for new signal 
     global ignore_signals
     ignore_signals = None # list of y_pred_id to ignore. None to disable 
+    global hold_signals # list of y_pred_id to HOLD. None to disable
+    hold_signals = None
     global min_data_size # Minimum records expected from Cryptocompare API
     min_data_size = 100
     global stop_loss # Stop Loss % Default 1 which is 100%
@@ -120,6 +122,8 @@ def load_config(config):
     take_profit = 100
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 2
+    global feature_list # List of features to use for NN
+    feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR']
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -195,41 +199,61 @@ def load_config(config):
         order_size = 1302
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
-    #Strategy Return: 33706.30 (MAX: 53114.78)
-    #Market Return: 104.03
+    #Strategy Return: 18686.42
+    #Market Return: 121.30
     #Trade Frequency: 1.00
     #Accuracy: 0.60
     #Win Ratio: 0.59
     #Avg Win: 0.05
     #Avg Loss: 0.04
-    #Risk to Reward: 1.15
+    #Risk to Reward: 1.14
     #Stop Loss: 0.40
     #Take Profit: 0.18
-    #Expectancy: 4.19
+    #Expectancy: 4.00
     #Risk Adjusted Return: 0.10
-    #Sharpe Ratio: 0.17
+    #Sharpe Ratio: 0.16
     #Average Daily Return: 0.011
-        
 #        train = True
+#        reload = True
+        exchange = 'KRAKEN'
         units = 32
         epochs = 30
         short = True
         plot_bars = 365
 #        model = cfgdir+'/model32.top'
         model = cfgdir+'/model.top'
-        stop_loss = 0.4 # Best High Risk: 0.4 / Low Risk: 0.02 rar: 0.94       
+        stop_loss = 0.4 # Best High Risk: 0.4 exp: 4.00 / Low Risk: 0.02 exp: 1.77       
         take_profit = 0.18 # Best 0.18 rar: 0.92
         order_size = 157
         execute = True
-        exchange = 'KRAKEN'
-        ignore_signals = [1, 4]
+        ignore_signals = [1,4]
+    elif conf == 'ETHUSDNN1':
+#Strategy Return: 125915.61
+#Market Return: 122.89
+#Trades Per Week: 3
+#Accuracy: 0.60
+#Win Ratio: 0.69
+#Avg Win: 0.03
+#Avg Loss: 0.04
+#Risk to Reward: 0.91
+#Stop Loss: 1.00
+#Take Profit: 0.19
+#Expectancy: 4.38
+#Risk Adjusted Return: 0.04
+#Sharpe Ratio: 0.21
+#Average Daily Return: 0.012
+#        train = True
+#        reload = True
+        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
+        units = 32
+        epochs = 30
+        short = True
+        model = cfgdir+'/model.top'
+        stop_loss = 0.8
+        take_profit = 0.19
+#        ignore_signals = [6]
+#        hold_signals = [6]
 
-    if train:
-        charts = True
-        stats = True
-    else:
-        test_pct = 1
-        
     global file
     file = cfgdir+'/price.pkl'
     global q

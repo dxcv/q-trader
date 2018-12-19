@@ -33,15 +33,17 @@ def send_results(res, msg):
 
 def execute(conf):
     s = get_signal(conf)
+    s0 = nn.get_signal(-2)
  
     send(p.pair, True)
     # Send details about previous and current positions
-    send('Yesterday: ' + nn.get_signal_str(-2), True)
-    send('Today: ' + nn.get_signal_str(), True)
+    send('Yesterday: ' + nn.get_signal_str(s0), True)
+    send('Today: ' + nn.get_signal_str(s), True)
     if p.execute:
         action = s['action']
+        prev_action = s0['action']
         is_open = True
-# FIXME: triggering both SL and TP should be handled / avoided
+        # FIXME: triggering both SL and TP should be handled / avoided
         if x.has_sl_order():
             x.cancel_sl()
         else:
@@ -58,13 +60,14 @@ def execute(conf):
         
         # Close position if signal has changed and it is still open
         if s['new_signal'] and is_open:
-            if action == 'Buy' and p.short:
+            if p.short and prev_action == 'Sell':
                 res = x.market_order('Buy', 0)
                 send_results(res, 'Closed Short Position')
-            elif action == 'Sell':
+                is_open = False
+            elif prev_action == 'Buy':
                 res = x.market_order('Sell', 0)
                 send_results(res, 'Closed Long Position')
-            is_open = False
+                is_open = False
         
         if not is_open:
             if action == 'Buy':
@@ -90,5 +93,5 @@ def run_model(conf):
         send('An error has occured. Please investigate!')
         send(e)
     
-run_model('ETHUSDNN')
+run_model('ETHUSDNN1')
 t.cleanup()
