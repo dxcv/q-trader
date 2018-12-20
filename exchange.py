@@ -116,6 +116,7 @@ def execute_order(action, ordertype='', volume=-1, price=0, wait=False):
 
 # Place Stop Loss Order
 def sl_order(action):
+    if p.stop_loss >= 1: return 'Stop Loss is disabled'
     opt = {}
     opt['price'] = '#'+str(p.stop_loss * 100)+'%'
     order = create_order(action, 'stop-loss', p.order_size, opt)
@@ -123,6 +124,7 @@ def sl_order(action):
 
 # Place Take Profit Order
 def tp_order(action):
+    if p.take_profit == 0: return 'Take Profit is disabled'
     opt = {}
     opt['price'] = '#'+str(p.take_profit * 100)+'%'
     order = create_order(action, 'take-profit', p.order_size, opt)
@@ -183,11 +185,10 @@ def test_order1():
     
     ex.fetchOpenOrders()
     
-    orders = ex.fetchClosedOrders('ETH/USD')
-    order = orders[0]
+    ex.fetchClosedOrders('ETH/USD')
 
     # Get Open Positions
-    ex.privatePostOpenPositions()
+    pos = ex.privatePostOpenPositions()
 
     # Limit Order with current price
     create_order('Buy', 'limit', 0.02, {'price':'0%'})

@@ -43,11 +43,11 @@ def execute(conf):
         prev_action = s0['action']
         is_open = True
         # FIXME: triggering both SL and TP should be handled / avoided
-        if not x.has_sl_order():
+        if p.stop_loss < 1 and not x.has_sl_order():
             is_open = False
             send('Stop Loss triggered!')
         
-        if not x.has_tp_order():
+        if p.take_profit > 0 and not x.has_tp_order():
             is_open = False
             send('Take Profit triggered!')
         
