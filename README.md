@@ -19,25 +19,29 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# TODO: Fixed SL: test if any better
-
-# TODO: Generic MA Trading System
-# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
-# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
-# HOLD when signal is weak
 
 # Refactoring
+
+# TODO: Practice with Hourly Data
+
+# TODO: Fixed SL: test if any better
+
+# Most used indicators
+https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
+
 # Feature Engineering
+https://towardsdatascience.com/why-automated-feature-engineering-will-change-the-way-you-do-machine-learning-5c15bf188b96
+
+# Feature Selection Tool
+https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
 # Move execution closer to 0am so that trading is done with day open price
 
 # Position Sizing based on % of balance
 
-# Feature Selection Tool
-https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
-# Most used indicators
-https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
-
+# Generic MA Trading System
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 
 # Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
@@ -108,9 +112,6 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Cloud Based Trading
 # https://www.quantinsti.com/blog/epat-project-automated-trading-maxime-fages-derek-wong/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
 
-# Kraken API
-https://github.com/dominiktraxl/pykrakenapi
-
 # Read: Прогнозирование финансовых временных рядов с MLP в Keras
 # https://habr.com/post/327022/
 
@@ -173,6 +174,8 @@ https://github.com/dominiktraxl/pykrakenapi
 
 # Stop Iterating when Model Converges (define converge criteria)
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
+
+# ********************** Features ************************************
 
 # ********************** Results *************************************
 

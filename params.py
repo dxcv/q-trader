@@ -256,7 +256,7 @@ def load_config(config):
         take_profit = 0.19
 #        ignore_signals = [6]
 #        hold_signals = [6]
-        order_size = 200
+        order_size = 100
         execute = True
         order_type = 'limit'
 

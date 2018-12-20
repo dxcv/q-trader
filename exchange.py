@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+# Kraken API
+# https://github.com/dominiktraxl/pykrakenapi
+
+# CCXT API
+# https://github.com/ccxt/ccxt/wiki/Manual#overriding-unified-api-params
+
 """
 Created on Mon Dec 25 18:06:07 2017
 
