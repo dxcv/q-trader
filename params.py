@@ -76,8 +76,10 @@ def load_config(config):
     order_size = 0 # Maximum order size in equity
     global result_size
     result_size = 0
-    global order_wait
-    order_wait = 10
+    global order_wait # Wait time in seconds for order to be filled
+    order_wait = 60
+    global order_type # Order Type: market or limit 
+    order_type = 'market'
     global min_cash
     min_cash = 1
     global min_equity
@@ -256,6 +258,7 @@ def load_config(config):
 #        hold_signals = [6]
         order_size = 200
         execute = True
+        order_type = 'limit'
 
     global file
     file = cfgdir+'/price.pkl'

@@ -260,6 +260,7 @@ def runNN(conf):
         exp = 365 * adr
         rar = exp / (100 * p.stop_loss)
         sr = s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
+        false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
         print('Strategy Return: %.2f' % td.CSR.iloc[-1])
         print('Market Return: %.2f'   % td.CMR.iloc[-1])
         print('Trades Per Week: %.0f' % trade_freq)
@@ -274,7 +275,7 @@ def runNN(conf):
         print('Risk Adjusted Return: %.2f' % rar)
         print('Sharpe Ratio: %.2f' % sr)
         print('Average Daily Return: %.3f' % adr)
-        
+        print('False Stops: %.2f' % false_stop)
 
     print(str(get_signal_str()))
 

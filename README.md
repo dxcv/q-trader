@@ -19,12 +19,12 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# TODO: Fixed SL: test if any better
+
 # TODO: Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
 # Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 # HOLD when signal is weak
-
-# Fix Margin Calculation: now applied for Long as well
 
 # Refactoring
 # Feature Engineering
@@ -41,8 +41,6 @@ https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
 
 # Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
-
-# TODO: Limit Orders instead Market Orders 
 
 # The Ocean Algo Trading
 https://medium.com/the-ocean-trade/the-ocean-x-algo-trading-lesson-1-time-series-analysis-fa3b76f1d4a3

@@ -29,7 +29,6 @@ def get_signal(conf):
 
 def send_results(res, msg):
     send(msg+' of '+str(res['size'])+' '+p.pair+' with price '+str(res['price']))
-    send('Balance: ' + str(res['balance']))
 
 def execute(conf):
     s = get_signal(conf)
@@ -44,47 +43,40 @@ def execute(conf):
         prev_action = s0['action']
         is_open = True
         # FIXME: triggering both SL and TP should be handled / avoided
-        if x.has_sl_order():
-            x.cancel_sl()
-        else:
+        if not x.has_sl_order():
             is_open = False
             send('Stop Loss triggered!')
-            send('Balance: '+str(x.get_balance()))
         
-        if x.has_tp_order():
-            x.cancel_tp()
-        else:
+        if not x.has_tp_order():
             is_open = False
             send('Take Profit triggered!')
-            send('Balance: '+str(x.get_balance()))
         
-        # Close position if signal has changed and it is still open
-        if s['new_signal'] and is_open:
-            if p.short and prev_action == 'Sell':
-                res = x.market_order('Buy', 0)
-                send_results(res, 'Closed Short Position')
-                is_open = False
-            elif prev_action == 'Buy':
-                res = x.market_order('Sell', 0)
-                send_results(res, 'Closed Long Position')
-                is_open = False
-        
-        if not is_open:
-            if action == 'Buy':
-                res = x.market_order('Buy')
-                send_results(res, 'Opened Long Position')
-            elif action == 'Sell' and p.short:
-                res = x.market_order('Sell')
-                send_results(res, 'Opened Short Position')
-
-        # Set Stop Loss and Take Profit for current position
+        # Update Stop Loss and Take Profit
+        x.cancel_orders()
         if action == 'Buy':
             send(x.sl_order('Sell'))
             send(x.tp_order('Sell'))
         elif action == 'Sell' and p.short:
             send(x.sl_order('Buy'))
             send(x.tp_order('Buy'))
- 
+        
+        # Close position if signal has changed and it is still open
+        if is_open and s['new_signal'] and (p.short and prev_action == 'Sell' or prev_action == 'Buy'):
+            res = x.close_position(prev_action)
+            send_results(res, 'Closing '+prev_action+' Position')
+            is_open = False
+        
+        if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
+            res = x.execute_order(action, wait=True)
+            send_results(res, 'Opened '+action+' Position')
+
+        if x.has_orders(): 
+            send('Some orders are still open. Waiting ...')
+            x.wait_orders()
+            send('All orders have executed.')
+
+        send('Balance: '+str(x.get_balance()))
+            
 
 def run_model(conf):
     try:
