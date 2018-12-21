@@ -20,6 +20,8 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# TODO: Remove Leverage
+
 # Refactoring
 
 # TODO: Practice with Hourly Data
@@ -181,8 +183,10 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # ********************** Features ************************************
 
 # ********************** Results *************************************
+Short trade SR Calculation should be based on original price.
+Daily open/close position is recommended for short trade. Then daily DR can be used for SR calculation
 
-# HH/LL Stop Loss is not better than % SL
+HH/LL Stop Loss is not better than % SL
 
-# Historical Results which were used for training cannot be trusted
-# Only Test Results can be trusted
+Historical Results which were used for training cannot be trusted
+Only Test Results can be trusted

@@ -121,9 +121,9 @@ def load_config(config):
     global stop_loss # Stop Loss % Default 1 which is 100%
     stop_loss = 1
     global take_profit # Take Profit %
-    take_profit = 100
+    take_profit = 0
     global leverage # Leverage used for margin trading. 0 means - no leverage
-    leverage = 2
+    leverage = 0
     global feature_list # List of features to use for NN
     feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR']
 

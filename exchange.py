@@ -76,7 +76,7 @@ def get_balance(asset=''):
 def create_order(action, ordertype, volume, opt={}):
     params = (p.pair, volume)
     opt['ordertype'] = ordertype
-    opt['leverage'] = p.leverage        
+    if p.leverage > 1: opt['leverage'] = p.leverage        
     params = params + (opt,)
 
     if action == 'Buy':
@@ -103,7 +103,7 @@ def wait_order(order_id):
 #    orders = ex.fetchClosedOrders(p.pair)
 #    return orders[0]['info']['price']
 
-def execute_order(action, ordertype='', volume=-1, price=0, wait=False):
+def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
     opt = {}
     if ordertype == '': ordertype = p.order_type
     if volume == -1: volume = p.order_size
@@ -131,7 +131,7 @@ def sl_order(action):
 
 # Place Take Profit Order
 def tp_order(action):
-    if p.take_profit == 0: return 'Take Profit is disabled'
+    if p.take_profit <= 0: return 'Take Profit is disabled'
     opt = {}
     opt['price'] = '#'+str(p.take_profit * 100)+'%'
     order = create_order(action, 'take-profit', p.order_size, opt)
@@ -169,14 +169,15 @@ def cancel_tp():
 
 def close_position(pos_type):
     res = ''
+    vol = 0 if p.leverage > 1 else p.order_size
     if pos_type == 'Sell':
-        res = execute_order('Buy', volume=0)
+        res = execute_order('Buy', volume=vol)
     elif pos_type == 'Buy':
-        res = execute_order('Sell', volume=0)
+        res = execute_order('Sell', volume=vol)
     return res
 
 def test_order1():
-    p.load_config('ETHUSDNN')
+    p.load_config('ETHUSDNN1')
     p.order_size = 0.02
     # Print available API methods
     print(dir(ex))
@@ -195,7 +196,7 @@ def test_order1():
     ex.fetchClosedOrders('ETH/USD')
 
     # Get Open Positions
-    pos = ex.privatePostOpenPositions()
+    ex.privatePostOpenPositions()
 
     # Limit Order with current price
     create_order('Buy', 'limit', 0.02, {'price':'0%'})

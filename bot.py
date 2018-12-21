@@ -52,8 +52,27 @@ def execute(conf):
             is_open = False
             send('Take Profit triggered!')
         
-        # Update Stop Loss and Take Profit
+        # Cancel any SL / TP orders
         x.cancel_orders()
+        
+        # Close position if signal has changed and it is still open
+        if is_open and s['new_signal']:
+            res = x.close_position(prev_action)
+            send_results(res, 'Closed '+prev_action+' Position')
+            is_open = False
+        
+        if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
+            res = x.execute_order(action)
+            send_results(res, 'Opened '+action+' Position')
+
+        """ Disabled as orders are waited by default
+        if x.has_orders(): 
+            send('Some orders are still open. Waiting ...')
+            x.wait_orders()
+            send('All orders have executed.')
+        """
+        
+        """ SL/TP can only be set AFTER order is executed if margin is not used """
         if action == 'Buy':
             send(x.sl_order('Sell'))
             send(x.tp_order('Sell'))
@@ -61,21 +80,6 @@ def execute(conf):
             send(x.sl_order('Buy'))
             send(x.tp_order('Buy'))
         
-        # Close position if signal has changed and it is still open
-        if is_open and s['new_signal']:
-            res = x.close_position(prev_action)
-            send_results(res, 'Closing '+prev_action+' Position')
-            is_open = False
-        
-        if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
-            res = x.execute_order(action, wait=True)
-            send_results(res, 'Opened '+action+' Position')
-
-        if x.has_orders(): 
-            send('Some orders are still open. Waiting ...')
-            x.wait_orders()
-            send('All orders have executed.')
-
         send('Balance: '+str(x.get_balance()))
             
 

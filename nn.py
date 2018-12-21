@@ -173,25 +173,25 @@ def runNN(conf):
     td['tp'] = td.maxr >= 1 + p.take_profit
     # New trade if signal changes or SL/TP was triggered before
     td['new_signal'] = td.signal != td.signal.shift(1)
-    td['new_trade'] = td.new_signal | td.sl.shift(1) | td.tp.shift(1)  
+    td['new_trade'] = td.new_signal | td.sl.shift(1) | td.tp.shift(1) | (p.short and (td.signal == 'Sell'))
     # Add open fee for each new trade
-    td['open_fee'] = np.where(td.new_trade & (td.signal != 'Hold'), 1 - p.fee, 1)
-    td['close_fee'] = np.where(td.new_trade.shift(-1) & (td.signal != 'Hold'), 1 - p.fee, 1)
+    td['open_fee'] = np.where(td.new_trade & (td.signal != 'Hold'), p.fee, 0)
+    td['close_fee'] = np.where(td.new_trade.shift(-1) & (td.signal != 'Hold'), p.fee, 0)
     if not p.short:
-        td['open_fee'] = np.where(td.signal == 'Sell', 1, td.open_fee)
-        td['close_fee'] = np.where(td.signal == 'Sell', 1, td.close_fee)
-    td['margin'] = 1
+        td['open_fee'] = np.where(td.signal == 'Sell', 0, td.open_fee)
+        td['close_fee'] = np.where(td.signal == 'Sell', 0, td.close_fee)
+    td['margin'] = 0
     if p.leverage > 1:    
-        td['margin'] = np.where(td['signal'] == 'Buy',  1 - p.margin, td.margin)
+        td['margin'] = np.where(td['signal'] == 'Buy',  p.margin, td.margin)
     if p.short:
-        td['margin'] = np.where(td['signal'] == 'Sell',  1 - p.margin, td.margin)
-    td['SR'] = np.where(td['signal'] == 'Buy', td['DR'], np.NaN)
-    td['SR'] = np.where(td['signal'] == 'Sell', (2 - td['DR']) if p.short else 1, td.SR)
-    td['SR'] = np.where(td['signal'] == 'Hold', 1, td.SR)
+        td['margin'] = np.where(td['signal'] == 'Sell',  p.margin, td.margin)
+    td['TR'] = np.where(td['signal'] == 'Buy', td['DR'], np.NaN)
+    td['TR'] = np.where(td['signal'] == 'Sell', (2 - td['DR']) if p.short else 1, td.TR)
+    td['TR'] = np.where(td['signal'] == 'Hold', 1, td.TR)
     # FIXME: When SL and TP happen for same trade - take SL. But this should be based on actual timing
-    td['SR'] = np.where(td.tp, 1 + p.take_profit, td.SR)
-    td['SR'] = np.where(td.sl, 1 - p.stop_loss, td.SR)
-    td['SR'] = td['SR'] * td['open_fee'] * td['close_fee'] * td['margin']
+    td['TR'] = np.where(td.tp, 1 + p.take_profit, td.TR)
+    td['TR'] = np.where(td.sl, 1 - p.stop_loss, td.TR)
+    td['SR'] = td['TR'] - td['open_fee'] - td['TR']*td['close_fee'] - td['margin']
     td['CMR'] = np.cumprod(td['DR'])
     td['CSR'] = np.cumprod(td['SR'])    
 
