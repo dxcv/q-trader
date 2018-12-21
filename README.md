@@ -26,6 +26,9 @@ export AWS_REGION=You AWS  Region
 
 # TODO: Fixed SL: test if any better
 
+# Google Colaboratory:
+https://colab.research.google.com/notebooks/welcome.ipynb
+
 # Most used indicators
 https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
 

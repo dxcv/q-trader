@@ -250,13 +250,13 @@ def load_config(config):
         feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32
         epochs = 10
-        short = True
+#        short = True
         model = cfgdir+'/model.215'
-        stop_loss = 0.03
+#        stop_loss = 0.03
         take_profit = 0.19
 #        ignore_signals = [6]
 #        hold_signals = [6]
-        order_size = 100
+        order_size = 200
         execute = True
         order_type = 'limit'
 

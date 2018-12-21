@@ -41,7 +41,8 @@ def execute(conf):
     if p.execute:
         action = s['action']
         prev_action = s0['action']
-        is_open = True
+        is_open = (prev_action == 'Buy' or p.short and prev_action == 'Sell')
+        
         # FIXME: triggering both SL and TP should be handled / avoided
         if p.stop_loss < 1 and not x.has_sl_order():
             is_open = False
@@ -61,7 +62,7 @@ def execute(conf):
             send(x.tp_order('Buy'))
         
         # Close position if signal has changed and it is still open
-        if is_open and s['new_signal'] and (p.short and prev_action == 'Sell' or prev_action == 'Buy'):
+        if is_open and s['new_signal']:
             res = x.close_position(prev_action)
             send_results(res, 'Closing '+prev_action+' Position')
             is_open = False
