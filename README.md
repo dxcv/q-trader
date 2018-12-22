@@ -20,9 +20,10 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-# TODO: Remove Leverage
-
 # Refactoring
+# Try LSTM
+
+# Position sizing based on % of balance
 
 # TODO: Practice with Hourly Data
 
@@ -41,8 +42,6 @@ https://towardsdatascience.com/why-automated-feature-engineering-will-change-the
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
 # Move execution closer to 0am so that trading is done with day open price
-
-# Position Sizing based on % of balance
 
 # Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
@@ -179,6 +178,10 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 
 # Stop Iterating when Model Converges (define converge criteria)
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
+
+# ********************** Useful Links ************************************
+High Frequency Trading Architecture
+https://towardsdatascience.com/assembling-an-entry-level-high-frequency-trading-hft-system-e7538545b2a9
 
 # ********************** Features ************************************
 

@@ -121,8 +121,9 @@ def runNN(conf):
         # Early stopping  
         #es = EarlyStopping(monitor='val_acc', min_delta=0, patience=100, verbose=1, mode='max')
         model = p.cfgdir+'/model.nn'
-        cp = ModelCheckpoint(model, monitor='val_acc', verbose=0, save_best_only=True, mode='max')
-        classifier.compile(optimizer = 'adam', loss = 'mse', metrics = ['accuracy'])
+        cp = ModelCheckpoint(model, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+#        cp = ModelCheckpoint(model, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+        classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
         history = classifier.fit(X_train, y_train, batch_size = 10, 
                                  epochs = p.epochs, callbacks=[cp], 
                                  validation_data=(X_test, y_test), 
@@ -251,19 +252,19 @@ def runNN(conf):
     if p.charts: plot_chart(td, model, 'date')
     
     if p.stats:
-        avg_loss = 1 - td[td.SR < 1].SR.mean()
-        avg_win = td[td.SR > 1].SR.mean() - 1
+        avg_loss = 1 - trades[trades.sr < 1].sr.mean()
+        avg_win = trades[trades.sr >= 1].sr.mean() - 1
         r2r = avg_win / avg_loss
-        win_ratio = len(td[td.SR > 1]) / len(td[td.SR != 1])
-        trade_freq = 7*len(trades[trades.action!='Hold'])/len(td)
-        adr = win_ratio * avg_win - (1 - win_ratio)*avg_loss
+        win_ratio = len(trades[trades.sr >= 1]) / len(trades)
+        trade_freq = len(trades)/len(td)
+        adr = trade_freq*(win_ratio * avg_win - (1 - win_ratio)*avg_loss)
         exp = 365 * adr
         rar = exp / (100 * p.stop_loss)
-        sr = s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
+        sr = s.sharpe_ratio((trades.sr - 1).mean(), trades.sr - 1, 0)
         false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
-        print('Strategy Return: %.2f' % td.CSR.iloc[-1])
-        print('Market Return: %.2f'   % td.CMR.iloc[-1])
-        print('Trades Per Week: %.0f' % trade_freq)
+        print('Strategy Return: %.2f' % trades.csr.iloc[-1])
+        print('Market Return: %.2f'   % trades.cmr.iloc[-1])
+        print('Trades Per Week: %.0f' % (7*trade_freq))
         print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
         print('Win Ratio: %.2f' % win_ratio)
         print('Avg Win: %.2f' % avg_win)

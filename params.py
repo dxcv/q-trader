@@ -230,35 +230,37 @@ def load_config(config):
         execute = True
         ignore_signals = [1,4]
     elif conf == 'ETHUSDNN1':
-    #Strategy Return: 22675.68
-    #Market Return: 122.89
-    #Trades Per Week: 1
-    #Accuracy: 0.58
-    #Win Ratio: 0.56
-    #Avg Win: 0.05
-    #Avg Loss: 0.04
-    #Risk to Reward: 1.31
-    #Stop Loss: 0.80
-    #Take Profit: 0.19
-    #Expectancy: 4.03
-    #Risk Adjusted Return: 0.05
-    #Sharpe Ratio: 0.17
-    #Average Daily Return: 0.011
+#Strategy Return: 10829.55
+#Market Return: 124.48
+#Trades Per Week: 1
+#Accuracy: 0.58
+#Win Ratio: 0.81
+#Avg Win: 0.09
+#Avg Loss: 0.03
+#Risk to Reward: 2.74
+#Stop Loss: 1.00
+#Take Profit: 0.30
+#Expectancy: 4.09
+#Risk Adjusted Return: 0.04
+#Sharpe Ratio: 0.28
+#Average Daily Return: 0.011
+#False Stops: 0.00
 #        train = True
 #        test_pct = 1
 #        reload = True
         feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32
-        epochs = 10
+        epochs = 30
 #        short = True
         model = cfgdir+'/model.215'
-#        stop_loss = 0.03
-        take_profit = 0.19
+#        stop_loss = 1
+        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
 #        ignore_signals = [6]
 #        hold_signals = [6]
-        order_size = 200
+        order_size = 220
         execute = True
         order_type = 'limit'
+        fee = 0.0008 # Maker fee
 
     global file
     file = cfgdir+'/price.pkl'
@@ -268,5 +270,6 @@ def load_config(config):
     tl = cfgdir+'/tl.pkl'
     print('')
     print('**************** Loaded Config for '+conf+' ****************')
+
 
 #load_config('')
