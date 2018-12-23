@@ -72,8 +72,12 @@ def load_config(config):
     exchange = 'CCCAGG' # Average price from all exchanges
     global execute
     execute = False
-    global order_size
-    order_size = 0 # Maximum order size in equity
+    global order_size # Order size in equity. 0 means to use order_pct
+    order_size = 0
+    global order_pct # Percent of balance to trade 
+    order_pct = 1
+    global order_precision # Number of digits after decimal for order size
+    order_precision = 0
     global result_size
     result_size = 0
     global order_wait # Wait time in seconds for order to be filled
@@ -257,7 +261,8 @@ def load_config(config):
         take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
 #        ignore_signals = [6]
 #        hold_signals = [6]
-        order_size = 220
+#        order_size = 220
+        order_pct = 1
         execute = True
         order_type = 'limit'
         fee = 0.0008 # Maker fee

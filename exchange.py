@@ -14,6 +14,7 @@ Created on Mon Dec 25 18:06:07 2017
 """
 import ccxt
 import time
+import math
 import params as p
 import secrets as s
 import cfscrape
@@ -73,6 +74,20 @@ def get_balance(asset=''):
     balance = ex.fetch_balance()['free']
     return balance[asset]
 
+def truncate(n, digits):
+    return math.trunc(n*(10**digits))/(10**digits)
+
+# Returns Order Size based on order_pct parameter
+# For margin trading p.order_size must be set
+def get_order_size(action):
+    if p.order_size > 0: return p.order_size
+    if action == 'Sell': return get_balance(p.ticker) # Sell whole position
+    price = get_price()
+    balance = get_balance()
+    amount = balance * p.order_pct 
+    size = truncate(amount/price, p.order_precision)
+    return size
+
 def create_order(action, ordertype, volume, opt={}):
     params = (p.pair, volume)
     opt['ordertype'] = ordertype
@@ -106,7 +121,7 @@ def wait_order(order_id):
 def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
     opt = {}
     if ordertype == '': ordertype = p.order_type
-    if volume == -1: volume = p.order_size
+    if volume == -1: volume = get_order_size(action)
     if price == 0: price = '#0%' 
     if ordertype == 'limit': opt = {'price': price}
 
@@ -126,7 +141,7 @@ def sl_order(action):
     if p.stop_loss >= 1: return 'Stop Loss is disabled'
     opt = {}
     opt['price'] = '#'+str(p.stop_loss * 100)+'%'
-    order = create_order(action, 'stop-loss', p.order_size, opt)
+    order = create_order(action, 'stop-loss', get_order_size(action), opt)
     return action+' Stop Loss at '+str(order['info']['descr']['price'])
 
 # Place Take Profit Order
@@ -134,7 +149,7 @@ def tp_order(action):
     if p.take_profit <= 0: return 'Take Profit is disabled'
     opt = {}
     opt['price'] = '#'+str(p.take_profit * 100)+'%'
-    order = create_order(action, 'take-profit', p.order_size, opt)
+    order = create_order(action, 'take-profit', get_order_size(action), opt)
     return action+' Take Profit at '+str(order['info']['descr']['price'])
         
 def has_orders(types=[]):
@@ -168,12 +183,13 @@ def cancel_tp():
     cancel_orders(['take-profit'])
 
 def close_position(pos_type):
-    res = ''
-    vol = 0 if p.leverage > 1 else p.order_size
     if pos_type == 'Sell':
-        res = execute_order('Buy', volume=vol)
+        action = 'Buy'
     elif pos_type == 'Buy':
-        res = execute_order('Sell', volume=vol)
+        action = 'Sell'
+
+    vol = 0 if p.leverage > 1 else get_order_size(action)
+    res = execute_order(action, volume=vol)
     return res
 
 def test_order1():
