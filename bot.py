@@ -44,15 +44,16 @@ def execute(conf):
         is_open = (prev_action == 'Buy' or p.short and prev_action == 'Sell')
         
         # FIXME: triggering both SL and TP should be handled / avoided
-        if p.stop_loss < 1 and not x.has_sl_order():
-            is_open = False
-            send('Stop Loss triggered!')
+        if is_open:
+            if p.stop_loss < 1 and not x.has_sl_order():
+                is_open = False
+                send('Stop Loss triggered!')
+            
+            if p.take_profit > 0 and not x.has_tp_order():
+                is_open = False
+                send('Take Profit triggered!')
         
-        if p.take_profit > 0 and not x.has_tp_order():
-            is_open = False
-            send('Take Profit triggered!')
-        
-        # Cancel any SL / TP orders
+        # Cancel any open orders
         x.cancel_orders()
         
         # Close position if signal has changed and it is still open
@@ -65,13 +66,6 @@ def execute(conf):
             res = x.execute_order(action)
             send_results(res, 'Opened '+action+' Position')
 
-        """ Disabled as orders are waited by default
-        if x.has_orders(): 
-            send('Some orders are still open. Waiting ...')
-            x.wait_orders()
-            send('All orders have executed.')
-        """
-        
         """ SL/TP can only be set AFTER order is executed if margin is not used """
         if action == 'Buy':
             send(x.sl_order('Sell'))

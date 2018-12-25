@@ -233,6 +233,7 @@ def runNN(conf):
             'close_ts': x.date_to.iloc[-1],
             'open': x.open.iloc[0],
             'close': x.close.iloc[-1],
+            'duration': x.date.count(),
             'sl': x.sl.max(),
             'tp': x.tp.max(),
             'high': x.high.max(),

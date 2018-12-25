@@ -74,20 +74,6 @@ def get_balance(asset=''):
     balance = ex.fetch_balance()['free']
     return balance[asset]
 
-def truncate(n, digits):
-    return math.trunc(n*(10**digits))/(10**digits)
-
-# Returns Order Size based on order_pct parameter
-# For margin trading p.order_size must be set
-def get_order_size(action):
-    if p.order_size > 0: return p.order_size
-    if action == 'Sell': return get_balance(p.ticker) # Sell whole position
-    price = get_price()
-    balance = get_balance()
-    amount = balance * p.order_pct 
-    size = truncate(amount/price, p.order_precision)
-    return size
-
 def create_order(action, ordertype, volume, opt={}):
     params = (p.pair, volume)
     opt['ordertype'] = ordertype
@@ -118,6 +104,20 @@ def wait_order(order_id):
 #    orders = ex.fetchClosedOrders(p.pair)
 #    return orders[0]['info']['price']
 
+def truncate(n, digits):
+    return math.trunc(n*(10**digits))/(10**digits)
+
+# Returns Order Size based on order_pct parameter
+# For margin trading p.order_size parameter is used
+def get_order_size(action):
+    if p.order_size > 0: return p.order_size
+    if action == 'Sell': return get_balance(p.ticker) # Sell whole position
+    price = get_price()
+    balance = get_balance()
+    amount = balance * p.order_pct 
+    size = truncate(amount/price, p.order_precision)
+    return size
+
 def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
     opt = {}
     if ordertype == '': ordertype = p.order_type
@@ -138,19 +138,19 @@ def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
 
 # Place Stop Loss Order
 def sl_order(action):
-    if p.stop_loss >= 1: return 'Stop Loss is disabled'
+    if p.stop_loss >= 1: return 'Stop Loss: None'
     opt = {}
     opt['price'] = '#'+str(p.stop_loss * 100)+'%'
     order = create_order(action, 'stop-loss', get_order_size(action), opt)
-    return action+' Stop Loss at '+str(order['info']['descr']['price'])
+    return 'Stop Loss: '+str(order['info']['descr']['price'])
 
 # Place Take Profit Order
 def tp_order(action):
-    if p.take_profit <= 0: return 'Take Profit is disabled'
+    if p.take_profit <= 0: return 'Take Profit: None'
     opt = {}
     opt['price'] = '#'+str(p.take_profit * 100)+'%'
     order = create_order(action, 'take-profit', get_order_size(action), opt)
-    return action+' Take Profit at '+str(order['info']['descr']['price'])
+    return 'Take Profit: '+str(order['info']['descr']['price'])
         
 def has_orders(types=[]):
     if types == []: types = [p.order_type]

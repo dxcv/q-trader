@@ -72,7 +72,7 @@ def load_config(config):
     exchange = 'CCCAGG' # Average price from all exchanges
     global execute
     execute = False
-    global order_size # Order size in equity. 0 means to use order_pct
+    global order_size # Order size in equity. 0 means to use order_pct. For margin trading this parameter must be set
     order_size = 0
     global order_pct # Percent of balance to trade 
     order_pct = 1

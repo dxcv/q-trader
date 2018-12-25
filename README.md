@@ -19,9 +19,12 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-
 # Refactoring
 # Try LSTM
+
+# Generic MA Trading System
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 
 # Position sizing based on % of balance
 
@@ -42,10 +45,6 @@ https://towardsdatascience.com/why-automated-feature-engineering-will-change-the
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
 # Move execution closer to 0am so that trading is done with day open price
-
-# Generic MA Trading System
-# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
-# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 
 # Stop Loss / Take Profit / Position Sizing
 http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
@@ -184,6 +183,8 @@ High Frequency Trading Architecture
 https://towardsdatascience.com/assembling-an-entry-level-high-frequency-trading-hft-system-e7538545b2a9
 
 # ********************** Features ************************************
+Fixed position sizing
+Dynamic Position Sizing based on balance %
 
 # ********************** Results *************************************
 Short trade SR Calculation should be based on original price.
