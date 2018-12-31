@@ -266,6 +266,14 @@ def load_config(config):
         execute = True
         order_type = 'limit'
         fee = 0.0008 # Maker fee
+    elif conf == 'BTCUSDNN1':
+        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
+        units = 32
+        model = 'data/ETHUSDNN1/model.215'
+        fee = 0.0008 # Maker fee
+        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
+        test_pct = 1
+
 
     global file
     file = cfgdir+'/price.pkl'

@@ -246,6 +246,7 @@ def runNN(conf):
         return pd.Series(names)
 
     trades = td.groupby(td.trade_id).apply(trade_agg)
+    trades['win'] = (trades.sr > 1) | ((trades.sr == 1) & (trades.mr < 1))
     trades['cmr'] = np.cumprod(trades['mr'])
     trades['csr'] = np.cumprod(trades['sr'])
     trades = trades.dropna()
@@ -262,10 +263,12 @@ def runNN(conf):
         exp = 365 * adr
         rar = exp / (100 * p.stop_loss)
         sr = s.sharpe_ratio((trades.sr - 1).mean(), trades.sr - 1, 0)
+        dur = trades.duration.mean()
         false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
         print('Strategy Return: %.2f' % trades.csr.iloc[-1])
         print('Market Return: %.2f'   % trades.cmr.iloc[-1])
         print('Trades Per Week: %.0f' % (7*trade_freq))
+        print('Days in Trade: %.0f' % dur)
         print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
         print('Win Ratio: %.2f' % win_ratio)
         print('Avg Win: %.2f' % avg_win)
@@ -281,5 +284,5 @@ def runNN(conf):
 
     print(str(get_signal_str()))
 
-#runNN('BTCUSDNN')
+#runNN('BTCUSDNN1')
 #runNN('ETHUSDNN1')

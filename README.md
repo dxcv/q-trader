@@ -22,6 +22,9 @@ export AWS_REGION=You AWS  Region
 # Refactoring
 # Try LSTM
 
+# Precision, Relall, ROC, AUC
+https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
+
 # Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
 # Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise

@@ -122,7 +122,7 @@ def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
     opt = {}
     if ordertype == '': ordertype = p.order_type
     if volume == -1: volume = get_order_size(action)
-    if price == 0: price = '#0%' 
+    if price == 0: price = get_price()
     if ordertype == 'limit': opt = {'price': price}
 
     order = create_order(action, ordertype, volume, opt)
