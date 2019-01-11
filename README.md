@@ -28,6 +28,8 @@ https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
 # Generic MA Trading System
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
 # Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
+# 50 MA Trading Systems
+https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
 
 # Position sizing based on % of balance
 
@@ -46,6 +48,10 @@ https://towardsdatascience.com/why-automated-feature-engineering-will-change-the
 
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
+
+# Hyperparameter Tuning
+https://en.wikipedia.org/wiki/Hyperparameter_optimization
+https://medium.freecodecamp.org/an-introduction-to-high-dimensional-hyper-parameter-tuning-df5c0106e5a4
 
 # Move execution closer to 0am so that trading is done with day open price
 
@@ -88,9 +94,6 @@ https://www.kaggle.com/learn/overview
 https://towardsdatascience.com/cross-validation-in-machine-learning-72924a69872f
 Keras: https://machinelearningmastery.com/use-keras-deep-learning-models-scikit-learn-python/
 https://towardsdatascience.com/time-series-nested-cross-validation-76adba623eb9
-
-# Hyperparameter Optimization
-https://en.wikipedia.org/wiki/Hyperparameter_optimization
 
 # Turning Machine Learning Models into APIs in Python
 https://www.datacamp.com/community/tutorials/machine-learning-models-api-python
@@ -189,7 +192,11 @@ https://towardsdatascience.com/assembling-an-entry-level-high-frequency-trading-
 Fixed position sizing
 Dynamic Position Sizing based on balance %
 
-# ********************** Results *************************************
+# ********************** Lessons Learned *************************************
+Do not put all your eggs in one basket. Diversify.
+
+Trade as soon as signal is produced. Late entry is better than no entry
+
 Short trade SR Calculation should be based on original price.
 Daily open/close position is recommended for short trade. Then daily DR can be used for SR calculation
 

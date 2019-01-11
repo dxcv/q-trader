@@ -224,15 +224,16 @@ def load_config(config):
         exchange = 'KRAKEN'
         units = 32
         epochs = 30
-        short = True
-        plot_bars = 365
+        test_pct = 1
+#        short = True
+#        plot_bars = 365
 #        model = cfgdir+'/model32.top'
-        model = cfgdir+'/model.top'
-        stop_loss = 0.4 # Best High Risk: 0.4 exp: 4.00 / Low Risk: 0.02 exp: 1.77       
-        take_profit = 0.18 # Best 0.18 rar: 0.92
+#        model = cfgdir+'/model.top'
+#        stop_loss = 0.2 # Best High Risk: 0.4 exp: 4.00 / Low Risk: 0.02 exp: 1.77       
+        take_profit = 1 # Best 0.18 rar: 0.92
         order_size = 157
         execute = True
-        ignore_signals = [1,4]
+#        ignore_signals = [1,4]
     elif conf == 'ETHUSDNN1':
 #Strategy Return: 10829.55
 #Market Return: 124.48
@@ -255,17 +256,14 @@ def load_config(config):
         feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32
         epochs = 30
-#        short = True
         model = cfgdir+'/model.215'
 #        stop_loss = 1
         take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
-#        ignore_signals = [6]
-#        hold_signals = [6]
-#        order_size = 220
         order_pct = 1
         execute = True
         order_type = 'limit'
         fee = 0.0008 # Maker fee
+#        fee = 0.0095 # eToro spread
     elif conf == 'BTCUSDNN1':
         feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32

@@ -20,11 +20,16 @@ import secrets as s
 import cfscrape
 
 ex = ccxt.kraken({
+    'verbose': True,    
     'apiKey': s.exchange_api_key,
     'secret': s.exchange_sk,
     'timeout': 20000,
-    'session': cfscrape.create_scraper() # To avoid Cloudflare block
+    'session': cfscrape.create_scraper(), # To avoid Cloudflare block
+    'enableRateLimit': True,
+    'rateLimit': 3000 # Rate Limit set to 3 sec to avoid issues
 })
+
+markets = ex.load_markets()
 
 '''
 hitbtc = ccxt.hitbtc({'verbose': True})
@@ -125,6 +130,10 @@ def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
     if price == 0: price = get_price()
     if ordertype == 'limit': opt = {'price': price}
 
+    # If order size < min order size -> return empty order
+    if volume < markets[p.pair]['limits']['amount']['min']:
+        return {'size': 0, 'price': price, 'fee': 0}
+    
     order = create_order(action, ordertype, volume, opt)
     # Wait till order is executed
     if wait: order = wait_order(order['id'])
