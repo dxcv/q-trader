@@ -20,13 +20,13 @@ import secrets as s
 import cfscrape
 
 ex = ccxt.kraken({
-    'verbose': True,    
+#    'verbose': True,    
     'apiKey': s.exchange_api_key,
     'secret': s.exchange_sk,
     'timeout': 20000,
     'session': cfscrape.create_scraper(), # To avoid Cloudflare block
     'enableRateLimit': True,
-    'rateLimit': 3000 # Rate Limit set to 3 sec to avoid issues
+    'rateLimit': 1000 # Rate Limit set to 1 sec to avoid issues
 })
 
 markets = ex.load_markets()
@@ -96,14 +96,24 @@ def create_order(action, ordertype, volume, opt={}):
 
     return result
 
+def fetchOrder(order_id):
+    order = {}
+    try:
+        order = ex.fetchOrder(order_id)
+    except Exception as e:
+        print(e)
+    
+    return order
+
 def wait_order(order_id):
     print('Waiting for order '+order_id+' to be executed ...')
-    while ex.fetchOrder(order_id)['status'] != 'closed':
+    while True:
+        order = fetchOrder(order_id)
+        if order != {} and order['status'] == 'closed':
+            print('***** Order Executed *****')
+            print(order)
+            return order
         time.sleep(p.order_wait)
-    order = ex.fetchOrder(order_id)
-    print('***** Order Executed *****')
-    print(order)
-    return order
 
 #def get_order_price(order_type):
 #    orders = ex.fetchClosedOrders(p.pair)
@@ -127,12 +137,12 @@ def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
     opt = {}
     if ordertype == '': ordertype = p.order_type
     if volume == -1: volume = get_order_size(action)
-    if price == 0: price = get_price()
+    if price == 0: price = '#0%'
     if ordertype == 'limit': opt = {'price': price}
 
     # If order size < min order size -> return empty order
     if volume < markets[p.pair]['limits']['amount']['min']:
-        return {'size': 0, 'price': price, 'fee': 0}
+        return {'size': 0, 'price': 0, 'fee': 0}
     
     order = create_order(action, ordertype, volume, opt)
     # Wait till order is executed
