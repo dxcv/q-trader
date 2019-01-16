@@ -129,7 +129,7 @@ def load_config(config):
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 0
     global feature_list # List of features to use for NN
-    feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR']
+    feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -152,10 +152,6 @@ def load_config(config):
         ll_period = 20
         rsi_period = 15
         model = cfgdir+'/model62.nn'
-    elif conf == 'DIGUSDNN':
-#        train = True
-        units = 10
-        model = cfgdir+'/model77.nn'
     elif conf == 'ETHEURNN':
 #        train = True
         fee = 0.006
@@ -184,16 +180,6 @@ def load_config(config):
         ignore_signals = [4]
         plot_bars = 365
         order_size = 15354
-    elif conf == 'XMRUSDNN':
-#        train = True
-        units = 32
-        epochs = 30
-        short = True
-        stop_loss = 0.4
-#        ignore_signals = [4]
-        model = cfgdir+'/model.top'
-        plot_bars = 365
-        order_size = 104
     elif conf == 'ETCUSDNN':
 #        train = True
         units = 32
@@ -253,7 +239,6 @@ def load_config(config):
 #        train = True
 #        test_pct = 1
 #        reload = True
-        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
@@ -265,12 +250,15 @@ def load_config(config):
         fee = 0.0008 # Maker fee
 #        fee = 0.0095 # eToro spread
     elif conf == 'BTCUSDNN1':
-        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
         units = 32
         model = 'data/ETHUSDNN1/model.215'
         fee = 0.0008 # Maker fee
         take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
-        test_pct = 1
+    elif conf == 'BCHUSDNN':
+        units = 32
+        model = 'data/ETHUSDNN1/model.215'
+        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
+        fee = 0.0008 # Maker fee
 
 
     global file

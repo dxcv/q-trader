@@ -286,3 +286,4 @@ def runNN(conf):
 
 #runNN('BTCUSDNN1')
 #runNN('ETHUSDNN1')
+#runNN('BCHUSDNN')
