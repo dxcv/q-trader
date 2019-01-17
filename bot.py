@@ -83,8 +83,7 @@ def run_model(conf):
     except Exception as e:
         send('An error has occured. Please investigate!')
         send(e)
-    
-run_model('BTCUSDNN1')
-run_model('BCHUSDNN')
+
 run_model('ETHUSDNN1')
+
 t.cleanup()
