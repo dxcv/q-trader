@@ -14,6 +14,9 @@ import params as p
 import os
 import pickle
 import pandas as pd
+import pandas_datareader.data as web
+import quandl
+import numpy as np
 
 
 # Load Historical Price Data from Cryptocompare
@@ -44,6 +47,7 @@ def load_data():
         else:
             print("Incomplete price data. Retrying ...")
     df = df.set_index('time')
+    df = df.rename(columns={'volumefrom': 'volume'})
     df['date'] = pd.to_datetime(df.index, unit='s')
 
     if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
@@ -85,6 +89,7 @@ def load_prices():
 
     df = pd.read_csv(file)
     df = df.set_index('time')
+    df = df.rename(columns={'volumefrom': 'volume'})
     df = df[df.close > 0]  
     df['date'] = pd.to_datetime(df.index, unit='s')
     if p.time_lag > 0:
@@ -94,6 +99,82 @@ def load_prices():
             'volumefrom': 'sum', 'volumeto': 'sum'})
     print('Price Rows: '+str(len(df))+' Last Timestamp: '+str(df.date.max()))
     return df
+
+def load_prices_dr():
+    df = web.DataReader(name='AMZN', data_source='iex', start='2014-01-01', end='2020-01-01')
+    df['date'] = pd.to_datetime(df.index, infer_datetime_format=True)
+    
+    if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
+    os.makedirs(os.path.dirname(p.file), exist_ok=True)
+    pickle.dump(df, open(p.file, "wb" ))
+    print('Loaded Prices from IEX Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    print('Last complete '+p.bar_period+' close: '+str(df.close.iloc[-2]))
+    
+    return df
+
+def quandl_stocks(symbol='AAPL', start_date=(2000, 1, 1), end_date=None):
+    quandl.ApiConfig.api_key = 'VLDEEtzXYTk78e8UKcSm'
+ 
+    """
+    symbol is a string representing a stock symbol, e.g. 'AAPL'
+ 
+    start_date and end_date are tuples of integers representing the year, month,
+    and day
+ 
+    end_date defaults to the current date when None
+    """
+
+    if not p.reload: 
+        df = pickle.load(open(p.file, "rb" ))
+        print('Using loaded prices')
+        return df
+ 
+    query_list = ['WIKI' + '/' + symbol + '.' + str(k) for k in range(8, 13)]
+ 
+    start_date = dt.date(*start_date)
+ 
+    if end_date:
+        end_date = dt.date(*end_date)
+    else:
+        end_date = dt.date.today()
+ 
+    df = quandl.get(query_list, 
+            returns='pandas', 
+            start_date=start_date,
+            end_date=end_date,
+            collapse='daily',
+            order='asc'
+            )
+    
+    df.columns = ['open', 'high', 'low', 'close', 'volume'] 
+    df['date'] = pd.to_datetime(df.index, infer_datetime_format=True)
+    df = df.set_index(np.arange(len(df)))
+    
+    if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
+    os.makedirs(os.path.dirname(p.file), exist_ok=True)
+    pickle.dump(df, open(p.file, "wb" ))
+    print('Loaded Prices from Quandl Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    print('Last complete '+p.bar_period+' close: '+str(df.close.iloc[-2]))
+    
+    return df
+ 
+
+def load_price_data():
+    """
+    Main Procedure to load price data
+    """
+    print('*** Loading Data ***')
+    if p.datasource == 'cc':
+        if p.time_lag == 0:
+            ds = load_data()
+        else:
+            ds = load_prices()
+    elif p.datasource == 'dr':
+        ds = load_prices_dr()
+    elif p.datasource == 'ql':
+        ds = quandl_stocks()
+    
+    return ds
 
 # Map feature values to bins (numbers)
 # Each bin has same number of feature values

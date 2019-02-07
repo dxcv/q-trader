@@ -58,11 +58,14 @@ def plot_chart(df, title, date_col='date'):
     plt.title(title)
     plt.show()
 
+def add_features():
+    print('*** Adding Features ***')
+
 def train_model():
-    print('Training')
+    print('*** Training ***')
     
 def test_model():
-    print('Testing')
+    print('*** Testing ***')
 
 # Source:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
@@ -75,14 +78,13 @@ def runNN(conf):
     global trades
     
     p.load_config(conf)
-    ds = dl.load_data()
-#    ds = q.load_prices()
+    ds = dl.load_price_data()
     
     ds['date_to'] = ds['date'].shift(-1)
     # Set date_to to next date
     ds.iloc[-1, ds.columns.get_loc('date_to')] = ds.iloc[-1, ds.columns.get_loc('date')] + dt.timedelta(minutes=p.trade_interval)
     # Calculate Features
-    ds['VOL'] = ds['volumefrom']/ds['volumefrom'].rolling(window = p.vol_period).mean()
+    ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
     ds['DR'] = ds['close']/ds['close'].shift(1)
@@ -123,7 +125,7 @@ def runNN(conf):
         model = p.cfgdir+'/model.nn'
         cp = ModelCheckpoint(model, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 #        cp = ModelCheckpoint(model, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-        classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+        classifier.compile(optimizer = 'adam', loss = p.loss, metrics = ['accuracy'])
         history = classifier.fit(X_train, y_train, batch_size = 10, 
                                  epochs = p.epochs, callbacks=[cp], 
                                  validation_data=(X_test, y_test), 
@@ -147,7 +149,7 @@ def runNN(conf):
     print('Loaded Best Model From: '+model)
     
     # Compile model (required to make predictions)
-    classifier.compile(optimizer = 'adam', loss = 'mse', metrics = ['accuracy'])
+    classifier.compile(optimizer = 'adam', loss = p.loss, metrics = ['accuracy'])
     
     # Predicting The Price
     y_pred_val = classifier.predict(X_test)
@@ -255,10 +257,10 @@ def runNN(conf):
     
     if p.stats:
         avg_loss = 1 - trades[trades.sr < 1].sr.mean()
-        avg_win = trades[trades.sr >= 1].sr.mean() - 1
+        avg_win = trades[trades.sr > 1].sr.mean() - 1
         r2r = avg_win / avg_loss
-        win_ratio = len(trades[trades.sr >= 1]) / len(trades)
-        trade_freq = len(trades)/len(td)
+        win_ratio = len(trades[trades.sr > 1]) / len(trades[trades.sr != 1])
+        trade_freq = len(trades[trades.sr != 1])/len(td)
         adr = trade_freq*(win_ratio * avg_win - (1 - win_ratio)*avg_loss)
         exp = 365 * adr
         rar = exp / (100 * p.stop_loss)
@@ -285,5 +287,5 @@ def runNN(conf):
     print(str(get_signal_str()))
 
 #runNN('BTCUSDNN1')
-#runNN('BCHUSDNN')
-#runNN('ETHUSDNN1')
+#runNN('ETHUSDNN')
+#runNN('AAPL')

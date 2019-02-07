@@ -19,10 +19,12 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Hourly Trading
+
 # Refactoring
 # Try LSTM
 
-# Precision, Relall, ROC, AUC
+# Precision, Recall, ROC, AUC
 https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
 
 # Generic MA Trading System
@@ -30,8 +32,7 @@ https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
 # Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 # 50 MA Trading Systems
 https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
-
-# Position sizing based on % of balance
+# Top 5 indicators: http://www.newtraderu.com/2019/01/04/the-top-5-effective-technical-indicators/
 
 # TODO: Practice with Hourly Data
 
@@ -185,14 +186,23 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+Telegram Bot Development
+https://groosha.gitbooks.io/telegram-bot-lessons/content/
+
 High Frequency Trading Architecture
 https://towardsdatascience.com/assembling-an-entry-level-high-frequency-trading-hft-system-e7538545b2a9
+
+Deep Reinforcement Learning: https://habr.com/ru/post/437020/
+
+LEAN Trading Engine: https://github.com/QuantConnect/Lean
 
 # ********************** Features ************************************
 Fixed position sizing
 Dynamic Position Sizing based on balance %
 
 # ********************** Lessons Learned *************************************
+Do not trust signals if you cannot test them on historical data
+
 Do not put all your eggs in one basket. Diversify.
 
 Trade as soon as signal is produced. Late entry is better than no entry

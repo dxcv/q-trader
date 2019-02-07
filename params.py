@@ -35,7 +35,7 @@ def load_config(config):
     global stats
     stats = True # Show model stats
     global epochs
-    epochs = 100 # Number of iterations for training (best 50)
+    epochs = 30 # Number of iterations for training (best 50)
     global features
     features = 4 # Number of features in state for Q table
     global feature_bins
@@ -53,7 +53,7 @@ def load_config(config):
     global version
     version = 2 # Model version
     global sma_period
-    sma_period = 50 # Best: 50
+    sma_period = 50 # Best: 50 Alternative: 21, 55, 89, 144, 233 / 50, 100, 200
     global adr_period
     adr_period = 20 # Average Daily Return period
     global hh_period
@@ -130,6 +130,10 @@ def load_config(config):
     leverage = 0
     global feature_list # List of features to use for NN
     feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
+    global datasource # Data Source for price data. Options cc: CryptoCompare, dr: DataReader, ql: Quandl
+    datasource = 'cc'
+    global loss # Loss function for NN: mse, binary_crossentropy
+    loss = 'mse'
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -140,126 +144,37 @@ def load_config(config):
         max_r = 6508
 #        train = True
 #        epsilon = 0
-    elif conf == 'ETHBTC': # R: 1020.86 SR: 0.148 QL/BH R: 36.71 QL/BH SR: 1.81
-        # 918 / 1.29
-        version = 1
-        max_r = 1020
-    elif conf == 'ETHBTCNN': # 847 / 2.26
-#        train = True
-        units = 10
-        sma_period = 15
-        hh_period = 20
-        ll_period = 20
-        rsi_period = 15
-        model = cfgdir+'/model62.nn'
-    elif conf == 'ETHEURNN':
-#        train = True
-        fee = 0.006
-#        epochs = 300
-#        short = True
-        plot_bars = 300
-        model = cfgdir+'/model.top'
     elif conf == 'BTCUSDNN':
 #        train = True
-        short = True
         units = 32
-        epochs = 30
-        stop_loss = 0.6
-        take_profit = 10
-        ignore_signals = [4]
-        plot_bars = 365
-        model = cfgdir+'/model.top'
-#        model = 'data/ETHUSDNN/model32.top'
-        order_size = 1.097
-    elif conf == 'XRPUSDNN':
-#        train = True
+        model = 'data/ETHUSDNN/model.215'
+        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
+#        fee = 0.0008 # Maker fee
+        fee = 0.00375 # eToro
+#        test_pct = 1
+    elif conf == 'AAPL':
+        datasource = 'ql'
+        reload = False
         units = 32
+        train = True
+        take_profit = 1
         epochs = 30
-#        short = True
-        stop_loss = 0.4
-        ignore_signals = [4]
-        plot_bars = 365
-        order_size = 15354
-    elif conf == 'ETCUSDNN':
-#        train = True
-        units = 32
-        epochs = 30
-        short = True
-        stop_loss = 0.4
-        ignore_signals = [4]
-        plot_bars = 365
-        order_size = 1302
+        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
-    #Strategy Return: 18686.42
-    #Market Return: 121.30
-    #Trade Frequency: 1.00
-    #Accuracy: 0.60
-    #Win Ratio: 0.59
-    #Avg Win: 0.05
-    #Avg Loss: 0.04
-    #Risk to Reward: 1.14
-    #Stop Loss: 0.40
-    #Take Profit: 0.18
-    #Expectancy: 4.00
-    #Risk Adjusted Return: 0.10
-    #Sharpe Ratio: 0.16
-    #Average Daily Return: 0.011
-#        train = True
-#        reload = True
-        exchange = 'KRAKEN'
-        units = 32
-        epochs = 30
-        test_pct = 1
-#        short = True
-#        plot_bars = 365
-#        model = cfgdir+'/model32.top'
-#        model = cfgdir+'/model.top'
-#        stop_loss = 0.2 # Best High Risk: 0.4 exp: 4.00 / Low Risk: 0.02 exp: 1.77       
-        take_profit = 1 # Best 0.18 rar: 0.92
-        order_size = 157
-        execute = True
-#        ignore_signals = [1,4]
-    elif conf == 'ETHUSDNN1':
-#Strategy Return: 10829.55
-#Market Return: 124.48
-#Trades Per Week: 1
-#Accuracy: 0.58
-#Win Ratio: 0.81
-#Avg Win: 0.09
-#Avg Loss: 0.03
-#Risk to Reward: 2.74
-#Stop Loss: 1.00
-#Take Profit: 0.30
-#Expectancy: 4.09
-#Risk Adjusted Return: 0.04
-#Sharpe Ratio: 0.28
-#Average Daily Return: 0.011
-#False Stops: 0.00
+    # Strategy Return: 10829.55
 #        train = True
 #        test_pct = 1
 #        reload = True
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
-#        stop_loss = 1
         take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
         order_pct = 1
         execute = True
         order_type = 'limit'
         fee = 0.0008 # Maker fee
 #        fee = 0.0095 # eToro spread
-    elif conf == 'BTCUSDNN1':
-        units = 32
-        model = 'data/ETHUSDNN1/model.215'
-        fee = 0.0008 # Maker fee
-        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
-    elif conf == 'BCHUSDNN':
-        units = 32
-        model = 'data/ETHUSDNN1/model.215'
-        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
-        fee = 0.0008 # Maker fee
-
 
     global file
     file = cfgdir+'/price.pkl'
