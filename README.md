@@ -19,10 +19,16 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Hourly Trading
+# Option to set SL and TP on trade level
+# Use leverage for short only
 
-# Refactoring
-# Try LSTM
+# LSTM
+https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
+https://www.datacamp.com/community/tutorials/lstm-python-stock-market
+
+# Automated Machine Learning
+
+# Hourly Trading
 
 # Precision, Recall, ROC, AUC
 https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
@@ -53,11 +59,6 @@ https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-
 # Hyperparameter Tuning
 https://en.wikipedia.org/wiki/Hyperparameter_optimization
 https://medium.freecodecamp.org/an-introduction-to-high-dimensional-hyper-parameter-tuning-df5c0106e5a4
-
-# Move execution closer to 0am so that trading is done with day open price
-
-# Stop Loss / Take Profit / Position Sizing
-http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
 
 # The Ocean Algo Trading
 https://medium.com/the-ocean-trade/the-ocean-x-algo-trading-lesson-1-time-series-analysis-fa3b76f1d4a3
@@ -114,9 +115,6 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Deploy Docker to AWS ECS and Fargate using Terraform scripts
 # https://thecode.pub/easy-deploy-your-docker-applications-to-aws-using-ecs-and-fargate-a988a1cc842f
 
-# Deploy Docker to AWS
-# https://dzone.com/articles/deploying-docker-containers-to-aws-ecs
-
 # XGBOOST: https://www.kaggle.com/shreyams/stock-price-prediction-94-xgboost
 
 # Cloud Based Trading
@@ -127,8 +125,6 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 
 # Read: Deep Learning – Artificial Neural Network Using TensorFlow In Python 
 # https://www.quantinsti.com/blog/deep-learning-artificial-neural-network-tensorflow-python/?utm_campaign=News&utm_medium=Community&utm_source=DataCamp.com
-
-#TODO: Calculate daily price with time shift using hourly data
 
 #TODO: AutoKeras: Build optimal NN architecture: https://towardsdatascience.com/autokeras-the-killer-of-googles-automl-9e84c552a319
 
@@ -186,6 +182,28 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+Using the latest advancements in deep learning to predict stock price movements
+https://towardsdatascience.com/aifortrading-2edd6fac689d
+https://github.com/borisbanushev/stockpredictionai
+
+*** From Evgeny Tartakovsy
+Google Cloud
+AutoKeras, RL, 
+DEAP: https://deap.readthedocs.io/en/master/ 
+skit-learn, 
+TPOT: https://automl.info/tpot/
+Убрать гетеростатистичность - бары не по времени а по объему / трейдам
+
+Evolution Strategies
+https://blog.openai.com/evolution-strategies/
+https://arxiv.org/pdf/1703.03864.pdf
+
+Predicting Ethereum prices with Long Short Term Memory (LSTM)
+https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
+
+AI for algorithmic trading: 7 mistakes that could make me broke
+https://medium.com/@alexrachnog/ai-for-algorithmic-trading-7-mistakes-that-could-make-me-broke-a41f94048b8c
+
 Telegram Bot Development
 https://groosha.gitbooks.io/telegram-bot-lessons/content/
 
@@ -196,11 +214,19 @@ Deep Reinforcement Learning: https://habr.com/ru/post/437020/
 
 LEAN Trading Engine: https://github.com/QuantConnect/Lean
 
+Stop Loss / Take Profit / Position Sizing
+http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
+
+Deploy Docker to AWS
+https://dzone.com/articles/deploying-docker-containers-to-aws-ecs
+
 # ********************** Features ************************************
 Fixed position sizing
 Dynamic Position Sizing based on balance %
 
 # ********************** Lessons Learned *************************************
+Predict DR for several days => not any better
+
 Do not trust signals if you cannot test them on historical data
 
 Do not put all your eggs in one basket. Diversify.

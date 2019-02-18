@@ -212,7 +212,7 @@ def close_position(pos_type):
     return res
 
 def test_order1():
-    p.load_config('ETHUSDNN1')
+    p.load_config('ETHUSDNN')
     p.order_size = 0.02
     # Print available API methods
     print(dir(ex))

@@ -47,6 +47,7 @@ def load_data():
         else:
             print("Incomplete price data. Retrying ...")
     df = df.set_index('time')
+    df = df.sort_index()
     df = df.rename(columns={'volumefrom': 'volume'})
     df['date'] = pd.to_datetime(df.index, unit='s')
 
@@ -58,25 +59,24 @@ def load_data():
     return df
 
 def load_prices():
-    """ Loads hourly historical prices and converts them to daily usung p.time_offset
-        Stores hourly prices in price.csv
-        Returns DataFrame with daily price data
+    """ Loads historical price data and saves it in price.csv
     """
-    has_data = True
-    min_time = 0
-    first_call = True
+    period = 'histo'+p.bar_period
     file = p.cfgdir+'/price.csv'
     if p.reload or not os.path.isfile(file):
+        os.makedirs(os.path.dirname(p.file), exist_ok=True)
+        has_data = True
+        min_time = 0
+        first_call = True
         while has_data:
-            url = ('https://min-api.cryptocompare.com/data/histohour'
+            url = ('https://min-api.cryptocompare.com/data/'+period
                 +'?fsym='+p.ticker+'&tsym='+p.currency
                 +'&e='+p.exchange
-                +'&limit=10000'
+                +'&limit=1000'
                 +'&api_key='+s.cryptocompare_key
                 +('' if first_call else '&toTs='+str(min_time)))
                              
-            r = requests.get(url)
-            df = pd.DataFrame(r.json()['Data'])
+            df = pd.DataFrame(requests.get(url).json()['Data'])
             if df.close.max() == 0 or len(df) == 0:
                 has_data = False
             else:
@@ -85,20 +85,25 @@ def load_prices():
                     df.to_csv(f, header=first_call, index = False)
             
             if first_call: first_call = False
-        print('Loaded Hourly Prices in UTC')
+        print('Loaded '+p.bar_period+' price data in UTC')
 
     df = pd.read_csv(file)
-    df = df.set_index('time')
-    df = df.rename(columns={'volumefrom': 'volume'})
     df = df[df.close > 0]  
-    df['date'] = pd.to_datetime(df.index, unit='s')
+    df.index = df.time
+    df = df.sort_index()
+    df['date'] = pd.to_datetime(df.time, unit='s')
+    df = df.resample(p.bar_period, on='date').agg({
+        'time':'first', 
+        'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 
+        'volumefrom': 'sum', 'volumeto': 'sum'})
+    df = df.rename(columns={'volumefrom': 'volume'})
+    df['date'] = df.index
+    df = df.set_index('time')
     if p.time_lag > 0:
         df['date'] = df.date - dt.timedelta(hours=p.time_lag)
-        df = df.resample('D').agg({
-            'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 
-            'volumefrom': 'sum', 'volumeto': 'sum'})
     print('Price Rows: '+str(len(df))+' Last Timestamp: '+str(df.date.max()))
     return df
+    
 
 def load_prices_dr():
     df = web.DataReader(name='AMZN', data_source='iex', start='2014-01-01', end='2020-01-01')
@@ -112,8 +117,8 @@ def load_prices_dr():
     
     return df
 
-def quandl_stocks(symbol='AAPL', start_date=(2000, 1, 1), end_date=None):
-    quandl.ApiConfig.api_key = 'VLDEEtzXYTk78e8UKcSm'
+def quandl_stocks(symbol='NVDA', start_date=(2000, 1, 1), end_date=None):
+    quandl.ApiConfig.api_key = s.quandl_key
  
     """
     symbol is a string representing a stock symbol, e.g. 'AAPL'
@@ -165,7 +170,7 @@ def load_price_data():
     """
     print('*** Loading Data ***')
     if p.datasource == 'cc':
-        if p.time_lag == 0:
+        if p.bar_period == 'day':
             ds = load_data()
         else:
             ds = load_prices()

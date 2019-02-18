@@ -69,7 +69,8 @@ def load_config(config):
     global wil_period
     wil_period = 7
     global exchange
-    exchange = 'CCCAGG' # Average price from all exchanges
+#    exchange = 'CCCAGG' # Average price from all exchanges
+    exchange = 'KRAKEN'
     global execute
     execute = False
     global order_size # Order size in equity. 0 means to use order_pct. For margin trading this parameter must be set
@@ -95,9 +96,12 @@ def load_config(config):
     global train_goal
     train_goal = 'R' # Maximize Return
     global fee # Exchange fee
-    fee = 0.002 # Kraken fee
+#    fee = 0.002 # Kraken Taker fee
+    fee = 0.0008 # Kraken Maker fee
     global margin # Daily Margin fee for short positions
-    margin = 0.0012 # Kraken daily rollover fee
+    margin = 0.0012 # Kraken 24 margin fee
+    global margin_open # Kraken Margin Open fee
+    margin_open = 0.0002
     global ratio
     ratio = 0 # Min ratio for Q table to take an action
     global units
@@ -125,15 +129,19 @@ def load_config(config):
     global stop_loss # Stop Loss % Default 1 which is 100%
     stop_loss = 1
     global take_profit # Take Profit %
-    take_profit = 0
+    take_profit = 1
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 0
     global feature_list # List of features to use for NN
     feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
     global datasource # Data Source for price data. Options cc: CryptoCompare, dr: DataReader, ql: Quandl
     datasource = 'cc'
-    global loss # Loss function for NN: mse, binary_crossentropy
+    global loss # Loss function for NN: mse, binary_crossentropy, mean_absolute_error etc
     loss = 'mse'
+    global signal_threshold
+    signal_threshold = 0.5
+    global model_type # Model Type to run: NN, LSTM
+    model_type = 'NN'
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -151,15 +159,21 @@ def load_config(config):
         take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
 #        fee = 0.0008 # Maker fee
         fee = 0.00375 # eToro
-#        test_pct = 1
-    elif conf == 'AAPL':
+        test_pct = 1
+    elif conf == 'NVDA':
         datasource = 'ql'
-        reload = False
+#        reload = True
+#        test_pct = 1
         units = 32
         train = True
         take_profit = 1
         epochs = 30
-        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
+        feature_list = ['MA','MA2','RSI','HH','LL','DMA','MAR','VOL']
+        sma_period = 50
+        rsi_period = 21
+        hh_period = 50
+        ll_period = 50
+        vol_period = 50
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
     # Strategy Return: 10829.55
@@ -173,8 +187,20 @@ def load_config(config):
         order_pct = 1
         execute = True
         order_type = 'limit'
-        fee = 0.0008 # Maker fee
 #        fee = 0.0095 # eToro spread
+    elif conf == 'ETHUSDNNH':
+        model_type = 'LSTM'
+#        test_pct = 1
+#        reload = True
+#        train = True
+#        fee = 0.0095 # eToro spread
+        signal_threshold = 1
+        units = 32
+        epochs = 50
+        model = cfgdir+'/model.top'
+#        model = cfgdir+'/model.lstm'
+        take_profit = 0.20
+        short = True
 
     global file
     file = cfgdir+'/price.pkl'

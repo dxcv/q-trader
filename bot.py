@@ -19,7 +19,7 @@ def send(msg, public=False):
 
 def get_signal(conf):
     while True:
-        nn.runNN(conf)
+        nn.runModel(conf)
         signal = nn.get_signal()
         if dt.datetime.today() > signal['close_ts']:
             send('Signal has expired. Waiting for new one ...')
@@ -34,10 +34,8 @@ def execute(conf):
     s = get_signal(conf)
     s0 = nn.get_signal(-2)
  
-    send(p.pair, True)
-    # Send details about previous and current positions
-    send('Yesterday: ' + nn.get_signal_str(s0), True)
-    send('Today: ' + nn.get_signal_str(s), True)
+    # Send signal for today
+    send(p.pair + ': ' + nn.get_signal_str(s), True)
     if p.execute:
         action = s['action']
         prev_action = s0['action']
@@ -57,7 +55,7 @@ def execute(conf):
         x.cancel_orders()
         
         # Close position if signal has changed and it is still open
-        if is_open and s['new_signal']:
+        if is_open and s['new_trade']:
             res = x.close_position(prev_action)
             send_results(res, 'Closed '+prev_action+' Position')
             is_open = False
@@ -84,6 +82,6 @@ def run_model(conf):
         send('An error has occured. Please investigate!')
         send(e)
 
-run_model('ETHUSDNN1')
+run_model('ETHUSDNN')
 
 t.cleanup()

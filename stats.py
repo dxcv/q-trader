@@ -143,7 +143,7 @@ def treynor_ratio(er, returns, market, rf):
 
 
 def sharpe_ratio(er, returns, rf):
-    return (er - rf) / vol(returns)
+    return (er - rf) / (vol(returns) + 0.000000000000001)
 
 
 def information_ratio(returns, benchmark):
