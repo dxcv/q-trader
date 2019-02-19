@@ -177,6 +177,7 @@ def load_config(config):
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
     # Strategy Return: 10829.55
+#        fee = 0.0095 # eToro spread
 #        train = True
 #        test_pct = 1
 #        reload = True
@@ -187,20 +188,21 @@ def load_config(config):
         order_pct = 1
         execute = True
         order_type = 'limit'
+    elif conf == 'ETHUSDLSTM':
+#   100 Epochs SR: 5.36, 3.09 on eToro
 #        fee = 0.0095 # eToro spread
-    elif conf == 'ETHUSDNNH':
-        model_type = 'LSTM'
 #        test_pct = 1
 #        reload = True
 #        train = True
-#        fee = 0.0095 # eToro spread
+        short = True
+        model_type = 'LSTM'
         signal_threshold = 1
-        units = 32
-        epochs = 50
+        units = 16
+        epochs = 100
         model = cfgdir+'/model.top'
 #        model = cfgdir+'/model.lstm'
         take_profit = 0.20
-        short = True
+#        stop_loss = 0.15
 
     global file
     file = cfgdir+'/price.pkl'

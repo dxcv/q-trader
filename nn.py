@@ -12,7 +12,7 @@ import talib
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential, load_model
-from keras.layers import Dense, LSTM, Activation
+from keras.layers import Dense, LSTM, Activation, Dropout
 from sklearn.preprocessing import StandardScaler
 #from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
@@ -369,10 +369,16 @@ def runLSTM():
         file = p.cfgdir+'/model.lstm'
         K.clear_session()
         nn = Sequential()
-        nn.add(LSTM(p.units, input_shape=(1, lag), return_sequences=False))
+        nn.add(LSTM(p.units, input_shape=(1, lag), return_sequences=True))
+        nn.add(Dropout(0.2))
+
+        nn.add(LSTM(p.units, return_sequences=False))
+        nn.add(Dropout(0.2))
+
         nn.add(Dense(1))
         
         optimizer = RMSprop(lr=0.005, clipvalue=1.)
+#        optimizer = 'adam'
         nn.compile(loss=p.loss, optimizer=optimizer)
         
         cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
@@ -401,4 +407,4 @@ def runModel(conf):
 #runModel('BTCUSDNN')
 
 #runModel('ETHUSDNN')
-#runModel('ETHUSDNNH')
+#runModel('ETHUSDLSTM')

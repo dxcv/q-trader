@@ -20,7 +20,10 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 # Option to set SL and TP on trade level
+# Set SL and TP based on stats (y_pred_id)
 # Use leverage for short only
+
+# Train model on S&P500 / NASDAQ and apply to ETH
 
 # LSTM
 https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
@@ -225,6 +228,8 @@ Fixed position sizing
 Dynamic Position Sizing based on balance %
 
 # ********************** Lessons Learned *************************************
+Model is as good as train data. Model needs to be trained on variety of data
+
 Predict DR for several days => not any better
 
 Do not trust signals if you cannot test them on historical data

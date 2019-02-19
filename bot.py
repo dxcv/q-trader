@@ -82,6 +82,10 @@ def run_model(conf):
         send('An error has occured. Please investigate!')
         send(e)
 
+send('Current Model:', True)
 run_model('ETHUSDNN')
+
+send('New Model:', True)
+run_model('ETHUSDLSTM')
 
 t.cleanup()
