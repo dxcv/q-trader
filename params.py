@@ -189,7 +189,7 @@ def load_config(config):
         execute = True
         order_type = 'limit'
     elif conf == 'ETHUSDLSTM':
-#   100 Epochs SR: 5.36, 3.09 on eToro
+#   100 Epochs SR: 7.27 (SL), 5.74 (no SL), 3.31 on eToro (no SL)
 #        fee = 0.0095 # eToro spread
 #        test_pct = 1
 #        reload = True
@@ -202,7 +202,8 @@ def load_config(config):
         model = cfgdir+'/model.top'
 #        model = cfgdir+'/model.lstm'
         take_profit = 0.20
-#        stop_loss = 0.15
+#       Best SL: 0.03 (Test only, not good for full data)
+#        stop_loss = 0.03
 
     global file
     file = cfgdir+'/price.pkl'

@@ -9,6 +9,7 @@ Created on Fri Nov  9 20:28:17 2018
 import datetime as dt
 import params as p
 import talib
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential, load_model
@@ -74,6 +75,18 @@ def get_train_test(X, y):
     
     return X_train, X_test, y_train, y_test
 
+def plot_fit_history(h):
+    # Plot model history
+    # Accuracy: % of correct predictions 
+    plt.plot(h.history['acc'], label='Train Accuracy')
+    plt.plot(h.history['val_acc'], label='Test Accuracy')
+    plt.plot(h.history['loss'], label='Train Loss')
+    plt.plot(h.history['val_loss'], label='Test Loss')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 def train_model(X_train, X_test, y_train, y_test, file):
     print('*** Training model with '+str(p.units)+' units per layer ***')
     nn = Sequential()
@@ -89,15 +102,7 @@ def train_model(X_train, X_test, y_train, y_test, file):
                              verbose=0)
 
     # Plot model history
-    # Accuracy: % of correct predictions 
-    plt.plot(history.history['acc'], label='Train Accuracy')
-    plt.plot(history.history['val_acc'], label='Test Accuracy')
-    plt.plot(history.history['loss'], label='Train Loss')
-    plt.plot(history.history['val_loss'], label='Test Loss')
-    plt.xlabel('Epoch')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    plot_fit_history(history)
 
     # Load Best Model
     nn = load_model(file) 
@@ -287,11 +292,13 @@ def show_stats(td, trades):
     adr = trade_freq*(win_ratio * avg_win - (1 - win_ratio)*avg_loss)
     exp = 365 * adr
     rar = exp / (100 * p.stop_loss)
-    sr = s.sharpe_ratio((trades.sr - 1).mean(), trades.sr - 1, 0)
+    sr = math.sqrt(365) * s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
+    srt = math.sqrt(365) * s.sortino_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     dur = trades.duration.mean()
     false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
     print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
     print('Market Return: %.2f'   % trades.CMR.iloc[-1])
+    print('Sortino Ratio: %.2f' % srt)
     print('Bars in Trade: %.0f' % dur)
     print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
     print('Win Ratio: %.2f' % win_ratio)
@@ -303,7 +310,6 @@ def show_stats(td, trades):
     print('Sharpe Ratio: %.2f' % sr)
     print('Average Daily Return: %.3f' % adr)
     print('False Stops: %.2f' % false_stop)
-    
 
 # Inspired by:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
@@ -340,7 +346,8 @@ def runNN():
 
     print(str(get_signal_str()))
 
-# See: https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
+# See: 
+# https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
 def runLSTM():
     global ds
     global td
@@ -379,11 +386,13 @@ def runLSTM():
         
         optimizer = RMSprop(lr=0.005, clipvalue=1.)
 #        optimizer = 'adam'
-        nn.compile(loss=p.loss, optimizer=optimizer)
+        nn.compile(loss=p.loss, optimizer=optimizer, metrics = ['accuracy'])
         
         cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-        nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, 
+        h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, 
                              verbose=1, callbacks=[cp], validation_data=(X_test_t, y_test))
+        
+        plot_fit_history(h)
     
     # Load Best Model
     nn = load_model(file)

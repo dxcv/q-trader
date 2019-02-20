@@ -19,9 +19,15 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Set SL and TP based on stats (y_pred_id, minr, maxr)
+Hypothesis: SL = td.minr.mean() - 1
+
 # Option to set SL and TP on trade level
-# Set SL and TP based on stats (y_pred_id)
+
 # Use leverage for short only
+
+# Use volume bars
+https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
 
 # Train model on S&P500 / NASDAQ and apply to ETH
 
@@ -222,6 +228,9 @@ http://www.newtraderu.com/2018/10/27/the-ultimate-guide-to-risk-managment/
 
 Deploy Docker to AWS
 https://dzone.com/articles/deploying-docker-containers-to-aws-ecs
+
+Top 6 Risk Ratios You must Know!
+https://www.wallstreetmojo.com/risk-adjusted-returns/
 
 # ********************** Features ************************************
 Fixed position sizing
