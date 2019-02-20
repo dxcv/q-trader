@@ -176,7 +176,7 @@ def load_config(config):
         vol_period = 50
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
-    # Strategy Return: 10829.55
+    # Sortino Ratio: 4.01 (Short)
 #        fee = 0.0095 # eToro spread
 #        train = True
 #        test_pct = 1
@@ -188,6 +188,7 @@ def load_config(config):
         order_pct = 1
         execute = True
         order_type = 'limit'
+        short = True
     elif conf == 'ETHUSDLSTM':
 #   100 Epochs SR: 7.27 (SL), 5.74 (no SL), 3.31 on eToro (no SL)
 #        fee = 0.0095 # eToro spread
