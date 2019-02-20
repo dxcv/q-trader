@@ -35,7 +35,8 @@ def get_signal_str(s=''):
     if s == '': s = get_signal()
     txt = ''
     txt += 'NEW ' if s['new_trade'] else 'SAME '  
-    txt += 'Trade: '+s['action']
+    txt += 'Trade: '+s['action'] 
+    if p.short and s['action'] == 'Sell': txt += ' SHORT'
     txt += ' Open: '+str(s['open'])
     txt +=' Close: '+str(s['close'])
     txt +=' PnL: '+str(s['pnl'])+'%'

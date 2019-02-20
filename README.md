@@ -19,12 +19,12 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Use leverage for short only
+
 # Set SL and TP based on stats (y_pred_id, minr, maxr)
 Hypothesis: SL = td.minr.mean() - 1
 
 # Option to set SL and TP on trade level
-
-# Use leverage for short only
 
 # Use volume bars
 https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
