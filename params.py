@@ -195,7 +195,7 @@ def load_config(config):
         order_pct = 1
         execute = True
         order_type = 'limit'
-        short = True
+#        short = True
 #       3: 3.79
 #        stop_loss = 0.09
     elif conf == 'ETHUSDLSTM':
