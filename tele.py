@@ -10,10 +10,9 @@ Created on Wed Oct 31 14:34:25 2018
 from typing import Any, Callable
 from telegram import Bot, Update
 from telegram.ext import Updater
-from telegram.ext import CommandHandler
+#from telegram.ext import CommandHandler
 import logging
 import secrets as s
-import qlib as q
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger()
@@ -47,12 +46,8 @@ def authorized_only(command_handler: Callable[[Any, Bot, Update], None]) -> Call
 
     return wrapper
 
-@authorized_only
-def status(bot: Bot, update: Update) -> None:
-    send_msg('Signal: ' + q.get_signal())
-
 updater = Updater(token=s.telegram_token, workers=0)
-updater.dispatcher.add_handler(CommandHandler('status', status))
+#updater.dispatcher.add_handler(CommandHandler('status', status))
 updater.start_polling(clean=True, bootstrap_retries=-1, timeout=300, read_latency=60)
 
 def send_msg(msg, public=False):

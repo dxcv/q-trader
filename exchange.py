@@ -14,17 +14,17 @@ Created on Mon Dec 25 18:06:07 2017
 """
 import ccxt
 import time
-import math
 import params as p
 import secrets as s
-import cfscrape
+#import cfscrape
+import math
 
 ex = ccxt.kraken({
 #    'verbose': True,    
     'apiKey': s.exchange_api_key,
     'secret': s.exchange_sk,
     'timeout': 20000,
-    'session': cfscrape.create_scraper(), # To avoid Cloudflare block
+#    'session': cfscrape.create_scraper(), # To avoid Cloudflare block => still fails with 520 Origin Error
     'enableRateLimit': True,
     'rateLimit': 1000 # Rate Limit set to 1 sec to avoid issues
 })
@@ -79,22 +79,21 @@ def get_balance(asset=''):
     balance = ex.fetch_balance()['free']
     return balance[asset]
 
-def create_order(action, ordertype, volume, opt={}):
-    params = (p.pair, volume)
-    opt['ordertype'] = ordertype
-    if p.leverage > 1: opt['leverage'] = p.leverage        
-    params = params + (opt,)
+def create_order(side, amount=0, price=0, ordertype='', leverage=1, wait=True):
+    params = {}
+    if ordertype == '': ordertype = p.order_type
+    if leverage > 1: params['leverage'] = leverage
+    if price == 0 and ordertype == 'limit': params['price'] = '#0%'
 
-    if action == 'Buy':
-        order = ex.create_market_buy_order(*params)
-    elif action == 'Sell':
-        order = ex.create_market_sell_order(*params)
-    
-    result = ex.fetchOrder(order['id'])
-    print('***** '+ordertype+' Order Created *****')
-    print(result)
+    order = ex.create_order(p.pair, ordertype, side, amount, price, params)    
+    order = ex.fetchOrder(order['id'])
+    print('***** Order Created *****')
+    print(order)
 
-    return result
+    # Wait till order is executed
+    if wait: order = wait_order(order['id'])
+
+    return order
 
 def fetchOrder(order_id):
     order = {}
@@ -124,52 +123,45 @@ def truncate(n, digits):
 
 # Returns Order Size based on order_pct parameter
 # For margin trading p.order_size parameter is used
-def get_order_size(action):
+def get_order_size():
     if p.order_size > 0: return p.order_size
-    if action == 'Sell': return get_balance(p.ticker) # Sell whole position
     price = get_price()
     balance = get_balance()
     amount = balance * p.order_pct 
     size = truncate(amount/price, p.order_precision)
     return size
 
-def execute_order(action, ordertype='', volume=-1, price=0, wait=True):
-    opt = {}
+def close_position(action, amount=0, price=0, ordertype='', wait=True):
+    res = {}
     if ordertype == '': ordertype = p.order_type
-    if volume == -1: volume = get_order_size(action)
-    if price == 0: price = '#0%'
-    if ordertype == 'limit': opt = {'price': price}
-
-    # If order size < min order size -> return empty order
-    if volume < markets[p.pair]['limits']['amount']['min']:
-        return {'size': 0, 'price': 0, 'fee': 0}
+    if amount == 0: amount = p.order_size
     
-    order = create_order(action, ordertype, volume, opt)
-    # Wait till order is executed
-    if wait: order = wait_order(order['id'])
+    if action == 'Sell':
+        res = create_order('buy', amount, price, ordertype, p.leverage, wait)
+    elif action == 'Buy':
+        if amount == 0: amount = get_balance(p.ticker)
+        res = create_order('sell', amount, price, ordertype, 1, wait)
 
-    fee = order['fee']['cost']
-    size = order['amount']
-    price = order['price']
-        
-    result = {'size': size, 'price': price, 'fee': fee}
-    return result
+    return res
 
-# Place Stop Loss Order
-def sl_order(action):
-    if p.stop_loss >= 1: return 'Stop Loss: None'
-    opt = {}
-    opt['price'] = '#'+str(p.stop_loss * 100)+'%'
-    order = create_order(action, 'stop-loss', get_order_size(action), opt)
-    return 'Stop Loss: '+str(order['info']['descr']['price'])
+def take_profit(action, price):
+    res = close_position(action, ordertype='take-profit', price=price, wait=False)
+    return res
 
-# Place Take Profit Order
-def tp_order(action):
-    if p.take_profit <= 0: return 'Take Profit: None'
-    opt = {}
-    opt['price'] = '#'+str(p.take_profit * 100)+'%'
-    order = create_order(action, 'take-profit', get_order_size(action), opt)
-    return 'Take Profit: '+str(order['info']['descr']['price'])
+def stop_loss(action, price):
+    res = close_position(action, ordertype='stop-loss', price=price, wait=False)
+    return res
+
+def open_position(action):
+    res = {}
+    amount = get_order_size()
+
+    if action == 'Sell':
+        res = create_order('sell', amount, leverage=p.leverage)
+    elif action == 'Buy':
+        res = create_order('buy', amount)
+
+    return res
         
 def has_orders(types=[]):
     if types == []: types = [p.order_type]
@@ -188,6 +180,14 @@ def has_sl_order():
 def has_tp_order():
     return has_orders(['take-profit'])
 
+def has_open_position():
+    if get_balance(p.ticker) > 0: return True
+        
+    res = ex.privatePostOpenPositions()
+    if len(res['result']) > 0: return True
+    
+    return False
+
 def cancel_orders(types=[]):
     for order in ex.fetchOpenOrders(p.pair):
         if types == [] or order['type'] in types:
@@ -201,16 +201,6 @@ def cancel_sl():
 def cancel_tp():
     cancel_orders(['take-profit'])
 
-def close_position(pos_type):
-    if pos_type == 'Sell':
-        action = 'Buy'
-    elif pos_type == 'Buy':
-        action = 'Sell'
-
-    vol = 0 if p.leverage > 1 else get_order_size(action)
-    res = execute_order(action, volume=vol)
-    return res
-
 def test_order1():
     p.load_config('ETHUSDNN')
     p.order_size = 0.02
@@ -218,13 +208,9 @@ def test_order1():
     print(dir(ex))
     
     # Buy
-    execute_order('Buy')
     ex.fetch_balance()['free']
     # Close SL Order
     cancel_orders()
-    # Sell
-    execute_order('Sell')
-    ex.fetch_balance()['free']
     
     ex.fetchOpenOrders()
     
@@ -234,9 +220,51 @@ def test_order1():
     ex.privatePostOpenPositions()
 
     # Limit Order with current price
-    create_order('Buy', 'limit', 0.02, {'price':'0%'})
+    create_order('Buy', 'limit', 0.02, {'price':'+0%'})
     
     ex.createOrder('ETH/USD', 'market', 'buy', 0.02)
+
+def test_order2():
+    p.load_config('ETHUSDNN')
+
+    # Create Market Order
+    ex.createOrder('ETH/USD', 'market', 'buy', 0.02)
+    ex.createOrder('ETH/USD', 'market', 'sell', 0.02)
+    ex.createOrder('ETH/USD', 'market', 'buy', 0.02, 0) # Price is ignored
+
+    # Create Limit Order for fixed price
+    ex.createOrder('ETH/USD', 'limit', 'buy', 0.02, 100)
+    # Create Limit Order for -1% to market price
+    ex.createOrder('ETH/USD', 'limit', 'buy', 0.02, 0, {'price':'-1%'})
+
+    # Fetch Open Orders
+    orders = ex.fetchOpenOrders()
+    # Order Size
+    orders[0]['amount']
+
+    ex.fetchBalance()['ETH']
+
+def test_order3():
+    p.load_config('ETHUSDNN')
+    p.order_size = 0.02
+    p.order_wait = 10
+    open_position('Buy')
+    print(get_balance())
     
-    execute_order('Sell', 'market', volume=0.02)
-    
+    res = take_profit('Buy', 200)
+    res = stop_loss('Buy', 100)
+    res = close_position('Buy', wait=False)
+    get_balance('ETH')
+    ex.fetchOpenOrders()
+    cancel_sl()
+    cancel_tp()
+    cancel_orders()
+    get_price()
+
+    res = ex.privatePostOpenPositions()
+    len(res['result'])
+    open_position('Sell')
+    close_position('Sell', wait=False)
+    ex.fetchOpenOrders()
+    get_price()
+        

@@ -96,8 +96,8 @@ def load_config(config):
     global train_goal
     train_goal = 'R' # Maximize Return
     global fee # Exchange fee
-#    fee = 0.002 # Kraken Taker fee
-    fee = 0.0008 # Kraken Maker fee
+#    fee = 0.0022 # Kraken Taker fee
+    fee = 0.0012 # Kraken Maker fee
     global margin # Daily Margin fee for short positions
     margin = 0.0012 # Kraken 24 margin fee
     global margin_open # Kraken Margin Open fee
@@ -131,7 +131,7 @@ def load_config(config):
     global take_profit # Take Profit %
     take_profit = 1
     global leverage # Leverage used for margin trading. 0 means - no leverage
-    leverage = 0
+    leverage = 2
     global feature_list # List of features to use for NN
     feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
     global datasource # Data Source for price data. Options cc: CryptoCompare, dr: DataReader, ql: Quandl
@@ -215,5 +215,3 @@ def load_config(config):
     print('')
     print('**************** Loaded Config for '+conf+' ****************')
 
-
-#load_config('')

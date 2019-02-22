@@ -29,17 +29,18 @@ def get_signal(offset=-1):
     
     return {'new_trade':s.new_trade, 'action':s.signal, 
             'open':s.open_price, 'open_ts':s.date, 
-            'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 'sl':s.sl, 'tp':s.tp}
+            'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 
+            'sl':s.sl, 'sl_price':s.sl_price, 'tp':s.tp, 'tp_price':s.tp_price}
 
 def get_signal_str(s=''):
     if s == '': s = get_signal()
-    txt = ''
+    txt = p.pair + ': '
     txt += 'NEW ' if s['new_trade'] else 'SAME '  
     txt += 'Trade: '+s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
-    txt += ' Open: '+str(s['open'])
-    txt +=' Close: '+str(s['close'])
-    txt +=' PnL: '+str(s['pnl'])+'%'
+    txt += ' SL: '+str(s['sl_price'])
+    txt += ' TP: '+str(s['tp_price'])
+    txt += ' PnL: '+str(s['pnl'])+'%'
     if s['tp']: txt += ' TAKE PROFIT! '
     if s['sl']: txt += ' STOP LOSS! '
     

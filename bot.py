@@ -28,64 +28,82 @@ def get_signal(conf):
             return signal
 
 def send_results(res, msg):
-    send(msg+' of '+str(res['size'])+' '+p.pair+' with price '+str(res['price']))
+    send(msg+' of '+str(res['amount'])+' '+p.pair+' with price '+str(res['price']))
 
-def execute(conf):
-    s = get_signal(conf)
-    s0 = nn.get_signal(-2)
- 
-    # Send signal for today
-    send(p.pair + ': ' + nn.get_signal_str(s), True)
-    if p.execute:
-        action = s['action']
-        prev_action = s0['action']
-        is_open = (prev_action == 'Buy' or p.short and prev_action == 'Sell')
+
+def execute(s, s0):
+    action = s['action']
+    prev_action = s0['action']
+    
+    # Check position on exchange
+    is_open = x.has_open_position()
+    
+    if not is_open:
+        if p.stop_loss < 1 and not x.has_sl_order():
+            send('Stop Loss triggered!')
         
-        # FIXME: triggering both SL and TP should be handled / avoided
-        if is_open:
-            if p.stop_loss < 1 and not x.has_sl_order():
-                is_open = False
-                send('Stop Loss triggered!')
+        if p.take_profit > 0 and not x.has_tp_order():
+            send('Take Profit triggered!')
+    
+    # Cancel any open SL and TP orders
+    x.cancel_orders()
+    
+    # Close position if it is open and new trade or SL / TP triggered 
+    if is_open and (s['new_trade'] or s['tp'] or s['sl']):
+        res = x.close_position(prev_action)
+        send_results(res, 'Closed '+prev_action+' Position')
+        is_open = False
+    
+    # Do not open new trade if SL or TP already triggered for current day
+    if s['tp'] or s['sl']:
+        return
+
+    if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
+        res = x.open_position(action)
+        send_results(res, 'Opened '+action+' Position')
+        is_open = True
+
+    """ SL/TP can only be set AFTER order is executed if margin is not used """
+    if is_open:
+        if p.take_profit > 0: x.take_profit(action, s['tp_price'])
+        if p.stop_loss < 1: x.stop_loss(action, s['sl_price'])
             
-            if p.take_profit > 0 and not x.has_tp_order():
-                is_open = False
-                send('Take Profit triggered!')
-        
-        # Cancel any open orders
-        x.cancel_orders()
-        
-        # Close position if signal has changed and it is still open
-        if is_open and s['new_trade']:
-            res = x.close_position(prev_action)
-            send_results(res, 'Closed '+prev_action+' Position')
-            is_open = False
-        
-        if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
-            res = x.execute_order(action)
-            send_results(res, 'Opened '+action+' Position')
-
-        """ SL/TP can only be set AFTER order is executed if margin is not used """
-        if action == 'Buy':
-            send(x.sl_order('Sell'))
-            send(x.tp_order('Sell'))
-        elif action == 'Sell' and p.short:
-            send(x.sl_order('Buy'))
-            send(x.tp_order('Buy'))
-        
-        send('Balance: '+str(x.get_balance()))
-            
-
 def run_model(conf):
-    try:
-        execute(conf)
-    except Exception as e:
-        send('An error has occured. Please investigate!')
-        send(e)
+        s = get_signal(conf)
+        s0 = nn.get_signal(-2)
+     
+        # Send signal
+        send(nn.get_signal_str(s), True)
+        
+        if p.execute: 
+            try:
+                execute(s, s0)
+                send('Balance: '+str(x.get_balance()))
+            except Exception as e:
+                send('An error has occured. Please investigate!')
+                send(e)
+        
+def test_execute():
+    p.load_config('ETHUSDNN')
+    p.order_size = 0.02
+    s = {}
+    s0 = {}
+    s['action'] = 'Buy'
+    s0['action'] = 'Buy'
+    s['new_trade'] = False
+    s['sl'] = False
+    s['tp'] = False
+    s['sl_price'] = 100
+    s['tp_price'] = 200
+    
+    execute(s, s0)
+
 
 send('Current Model:', True)
 run_model('ETHUSDNN')
 
 send('New Model:', True)
 run_model('ETHUSDLSTM')
-
+#
 t.cleanup()
+
