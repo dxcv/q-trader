@@ -6,6 +6,11 @@ Created on Mon Dec 25 20:40:08 2017
 @author: imonahov
 """
 
+import math
+
+def truncate(n, digits):
+    return math.trunc(n*(10**digits))/(10**digits)
+
 def load_config(config):
     global conf
     conf = config
@@ -142,6 +147,8 @@ def load_config(config):
     signal_threshold = 0.5
     global model_type # Model Type to run: NN, LSTM
     model_type = 'NN'
+    global price_precision # Number of decimals for price
+    price_precision = 2
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -189,6 +196,8 @@ def load_config(config):
         execute = True
         order_type = 'limit'
         short = True
+#       3: 3.79
+#        stop_loss = 0.09
     elif conf == 'ETHUSDLSTM':
 #   100 Epochs SR: 7.27 (SL), 5.74 (no SL), 3.31 on eToro (no SL)
 #        fee = 0.0095 # eToro spread

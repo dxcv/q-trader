@@ -17,7 +17,6 @@ import time
 import params as p
 import secrets as s
 #import cfscrape
-import math
 
 ex = ccxt.kraken({
 #    'verbose': True,    
@@ -118,9 +117,6 @@ def wait_order(order_id):
 #    orders = ex.fetchClosedOrders(p.pair)
 #    return orders[0]['info']['price']
 
-def truncate(n, digits):
-    return math.trunc(n*(10**digits))/(10**digits)
-
 # Returns Order Size based on order_pct parameter
 # For margin trading p.order_size parameter is used
 def get_order_size():
@@ -128,7 +124,7 @@ def get_order_size():
     price = get_price()
     balance = get_balance()
     amount = balance * p.order_pct 
-    size = truncate(amount/price, p.order_precision)
+    size = p.truncate(amount/price, p.order_precision)
     return size
 
 def close_position(action, amount=0, price=0, ordertype='', wait=True):

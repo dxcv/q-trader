@@ -23,15 +23,6 @@ import pandas as pd
 import stats as s
 import datalib as dl
 
-def get_signal(offset=-1):
-    s = td.iloc[offset]
-    pnl = round(100*(s.ctrf - 1), 2)
-    
-    return {'new_trade':s.new_trade, 'action':s.signal, 
-            'open':s.open_price, 'open_ts':s.date, 
-            'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 
-            'sl':s.sl, 'sl_price':s.sl_price, 'tp':s.tp, 'tp_price':s.tp_price}
-
 def get_signal_str(s=''):
     if s == '': s = get_signal()
     txt = p.pair + ': '
@@ -44,8 +35,17 @@ def get_signal_str(s=''):
     if s['tp']: txt += ' TAKE PROFIT! '
     if s['sl']: txt += ' STOP LOSS! '
     
-    return txt
- 
+    return txt 
+
+def get_signal(offset=-1):
+    s = td.iloc[offset]
+    pnl = round(100*(s.ctrf - 1), 2)
+    
+    return {'new_trade':s.new_trade, 'action':s.signal, 
+            'open':s.open_price, 'open_ts':s.date, 
+            'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 
+            'sl':s.sl, 'sl_price':s.sl_price, 'tp':s.tp, 'tp_price':s.tp_price}
+
 def add_features(ds):
     print('*** Adding Features ***')
     ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
@@ -145,10 +145,12 @@ def run_pnl(td, file):
     bt['sl_price'] = np.where(bt.signal == 'Buy', bt.open * (1 - p.stop_loss), 0)
     if p.short:
         bt['sl_price'] = np.where(bt.signal == 'Sell', bt.open * (1 + p.stop_loss), bt.sl_price)
+    bt['sl_price'] = bt['sl_price'].apply(lambda x: p.truncate(x, p.price_precision))
         
     bt['tp_price'] = np.where(bt.signal == 'Buy', bt.open * (1 + p.take_profit), 0)
     if p.short:
         bt['tp_price'] = np.where(bt.signal == 'Sell', bt.open * (1 - p.take_profit), bt.tp_price)
+    bt['tp_price'] = bt['tp_price'].apply(lambda x: p.truncate(x, p.price_precision))
 
     bt['sl'] = (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | p.short & (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
     bt['tp'] = (bt.signal == 'Buy') & (bt.high >= bt.tp_price) | p.short & (bt.signal == 'Sell') & (bt.low <= bt.tp_price)

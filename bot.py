@@ -30,7 +30,6 @@ def get_signal(conf):
 def send_results(res, msg):
     send(msg+' of '+str(res['amount'])+' '+p.pair+' with price '+str(res['price']))
 
-
 def execute(s, s0):
     action = s['action']
     prev_action = s0['action']
