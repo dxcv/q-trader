@@ -80,8 +80,10 @@ def load_config(config):
     execute = False
     global order_size # Order size in equity. 0 means to use order_pct. For margin trading this parameter must be set
     order_size = 0
-    global order_pct # Percent of balance to trade 
+    global order_pct # % of balance for long trade 
     order_pct = 1
+    global short_pct # % of balance for short trade
+    short_pct = 1
     global order_precision # Number of digits after decimal for order size
     order_precision = 0
     global result_size
@@ -183,23 +185,24 @@ def load_config(config):
         vol_period = 50
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
-    # Sortino Ratio: 4.01 (Short)
-#        fee = 0.0095 # eToro spread
+# Sortino Ratio: 4.01 (Short)
+#        fee = 0.0095 # eToro spread -> does not work
 #        train = True
 #        test_pct = 1
 #        reload = True
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
-        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
+        # Whole data: 0.30 / Test: 0.16
+        take_profit = 0.16
         order_pct = 1
         execute = True
         order_type = 'limit'
-#        short = True
-#       3: 3.79
-#        stop_loss = 0.09
+        short = True
+        short_pct = 0.1
+#        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
-#   100 Epochs SR: 7.27 (SL), 5.74 (no SL), 3.31 on eToro (no SL)
+# SR: 7.27 (SL), 5.74 (no SL), 3.31 on eToro (no SL)
 #        fee = 0.0095 # eToro spread
 #        test_pct = 1
 #        reload = True

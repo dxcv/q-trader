@@ -19,7 +19,7 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Deploy to AWS: Rounding for SL/TP price
+# Short position size
 
 # Set SL and TP based on stats (y_pred_id, minr, maxr)
 Hypothesis: SL = td.minr.mean() - 1
@@ -191,6 +191,8 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+Arbitrage: https://hackernoon.com/how-to-make-money-on-arbitrage-with-cryptocurrencies-6618bdad3ce1
+
 Using the latest advancements in deep learning to predict stock price movements
 https://towardsdatascience.com/aifortrading-2edd6fac689d
 https://github.com/borisbanushev/stockpredictionai

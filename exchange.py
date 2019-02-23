@@ -118,12 +118,12 @@ def wait_order(order_id):
 #    return orders[0]['info']['price']
 
 # Returns Order Size based on order_pct parameter
-# For margin trading p.order_size parameter is used
-def get_order_size():
+def get_order_size(action):
     if p.order_size > 0: return p.order_size
     price = get_price()
     balance = get_balance()
-    amount = balance * p.order_pct 
+    pct = p.order_pct if action == 'Buy' else p.short_pct
+    amount = balance * pct
     size = p.truncate(amount/price, p.order_precision)
     return size
 
@@ -150,7 +150,7 @@ def stop_loss(action, price):
 
 def open_position(action):
     res = {}
-    amount = get_order_size()
+    amount = get_order_size(action)
 
     if action == 'Sell':
         res = create_order('sell', amount, leverage=p.leverage)
