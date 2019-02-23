@@ -198,23 +198,24 @@ def load_config(config):
         order_pct = 1
         execute = True
         order_type = 'limit'
-        short = True
-        short_pct = 0.1
+#        !!! Do not trade short until stop loss is working
+#        short = True 
+#        short_pct = 0.1
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
-# SR: 7.27 (SL), 5.74 (no SL), 3.31 on eToro (no SL)
+# SR: 7.27 (SL), 5.74 (no SL), 4.46 on eToro (no SL)
 #        fee = 0.0095 # eToro spread
+#        margin = 0.0003 # eToro margin
+#        train = True
+#        epochs = 100
 #        test_pct = 1
 #        reload = True
-#        train = True
-        short = True
+        units = 16
+        model = cfgdir+'/model.top'
         model_type = 'LSTM'
         signal_threshold = 1
-        units = 16
-        epochs = 100
-        model = cfgdir+'/model.top'
-#        model = cfgdir+'/model.lstm'
-        take_profit = 0.20
+#        short = True
+        take_profit = 0.16
 #       Best SL: 0.03 (Test only, not good for full data)
 #        stop_loss = 0.03
 
