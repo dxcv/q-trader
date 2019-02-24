@@ -119,7 +119,8 @@ def wait_order(order_id):
 
 # Returns Order Size based on order_pct parameter
 def get_order_size(action):
-    if p.order_size > 0: return p.order_size
+    if action == 'Buy' and p.order_size > 0: return p.order_size
+    if action == 'Sell' and p.short_order_size > 0: return p.short_order_size
     price = get_price()
     balance = get_balance()
     pct = p.order_pct if action == 'Buy' else p.short_pct
@@ -130,7 +131,8 @@ def get_order_size(action):
 def close_position(action, amount=0, price=0, ordertype='', wait=True):
     res = {}
     if ordertype == '': ordertype = p.order_type
-    if amount == 0: amount = p.order_size
+    if action == 'Buy' and amount == 0: amount = p.order_size
+    if action == 'Sell' and amount == 0: amount = p.short_order_size
     
     if action == 'Sell':
         res = create_order('buy', amount, price, ordertype, p.leverage, wait)

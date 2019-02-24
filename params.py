@@ -78,8 +78,10 @@ def load_config(config):
     exchange = 'KRAKEN'
     global execute
     execute = False
-    global order_size # Order size in equity. 0 means to use order_pct. For margin trading this parameter must be set
+    global order_size # Order size in equity. 0 means to use order_pct
     order_size = 0
+    global short_order_size # Order size for short positions. 0 means to use short_pct
+    short_order_size = 0
     global order_pct # % of balance for long trade 
     order_pct = 1
     global short_pct # % of balance for short trade
@@ -194,9 +196,8 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.215'
         take_profit = 0.16
-        execute = True
-#        !!! Do not trade short until stop loss is working
-#        short = True 
+#        execute = True
+        short = True 
 #        short_pct = 0.1
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
@@ -212,8 +213,9 @@ def load_config(config):
         model_type = 'LSTM'
         signal_threshold = 1
         take_profit = 0.16
-#        execute = True
-#        short = True
+        execute = True
+        short = True
+        short_order_size = 250
 #       Best SL: 0.02: 2.17 / 6.16
 #        stop_loss = 0.02
 
