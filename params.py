@@ -196,7 +196,7 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.215'
         take_profit = 0.16
-        execute = True
+#        execute = True
         short = True
         short_order_size = 250
 #        short_pct = 0.1
@@ -214,7 +214,7 @@ def load_config(config):
         model_type = 'LSTM'
         signal_threshold = 1
         take_profit = 0.16
-#        execute = True
+        execute = True
         short = True
         short_order_size = 250
 #       Best SL: 0.02: 2.17 / 6.16
