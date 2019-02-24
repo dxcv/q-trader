@@ -19,7 +19,9 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Short position size
+# LSTM: Scaling for y?
+
+# Long/Short trading with SL and TP
 
 # Set SL and TP based on stats (y_pred_id, minr, maxr)
 Hypothesis: SL = td.minr.mean() - 1
@@ -236,7 +238,8 @@ https://www.wallstreetmojo.com/risk-adjusted-returns/
 
 # ********************** Features ************************************
 Fixed position sizing
-Dynamic Position Sizing based on balance %
+Position sizing based on balance %
+
 
 # ********************** Lessons Learned *************************************
 Model is as good as train data. Model needs to be trained on variety of data

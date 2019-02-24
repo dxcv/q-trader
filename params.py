@@ -91,7 +91,7 @@ def load_config(config):
     global order_wait # Wait time in seconds for order to be filled
     order_wait = 5*60
     global order_type # Order Type: market or limit 
-    order_type = 'market'
+    order_type = 'limit'
     global min_cash
     min_cash = 1
     global min_equity
@@ -193,11 +193,8 @@ def load_config(config):
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
-        # Whole data: 0.30 / Test: 0.16
         take_profit = 0.16
-        order_pct = 1
-        execute = True
-        order_type = 'limit'
+#        execute = True
 #        !!! Do not trade short until stop loss is working
 #        short = True 
 #        short_pct = 0.1
@@ -207,17 +204,18 @@ def load_config(config):
 #        fee = 0.0095 # eToro spread
 #        margin = 0.0003 # eToro margin
 #        train = True
-#        epochs = 100
 #        test_pct = 1
 #        reload = True
         units = 16
+        epochs = 50
         model = cfgdir+'/model.top'
         model_type = 'LSTM'
         signal_threshold = 1
-#        short = True
         take_profit = 0.16
-#       Best SL: 0.03 (Test only, not good for full data)
-#        stop_loss = 0.03
+        execute = True
+#        short = True
+#       Best SL: 0.02: 2.17 / 6.16
+#        stop_loss = 0.02
 
     global file
     file = cfgdir+'/price.pkl'

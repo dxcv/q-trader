@@ -255,6 +255,7 @@ def run_backtest(td, file):
     bt = run_pnl(td, file)
 
     bt['y_pred'] = td.y_pred
+    bt['y_pred_val'] = td.y_pred_val
     bt['y_pred_id'] = td.y_pred_id
     bt['Price_Rise'] = np.where(bt['DR'] > 1, 1, 0)
     bt['date_to'] = bt['date'].shift(-1)
@@ -376,8 +377,8 @@ def runLSTM():
     X_test_t = X_test.reshape(X_test.shape[0], 1, lag)
 
     file = p.model
-    if p.train:    
-        file = p.cfgdir+'/model.lstm'
+    if p.train:
+        file = p.cfgdir+'/model.nn'
         K.clear_session()
         nn = Sequential()
         nn.add(LSTM(p.units, input_shape=(1, lag), return_sequences=True))

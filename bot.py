@@ -33,16 +33,15 @@ def send_results(res, msg):
 def execute(s, s0):
     action = s['action']
     prev_action = s0['action']
+    is_open = (prev_action == 'Buy' or prev_action == 'Sell' and p.short) 
     
-    # Check position on exchange
-    is_open = x.has_open_position()
-    
-    if not is_open:
+    if is_open and not x.has_open_position():
+        is_open = False
         if p.stop_loss < 1 and not x.has_sl_order():
-            send('Stop Loss triggered!')
+            send('SL has triggerd!')
         
         if p.take_profit > 0 and not x.has_tp_order():
-            send('Take Profit triggered!')
+            send('TP has triggered!')
     
     # Cancel any open SL and TP orders
     x.cancel_orders()
@@ -55,6 +54,8 @@ def execute(s, s0):
     
     # Do not open new trade if SL or TP already triggered for current day
     if s['tp'] or s['sl']:
+        send('SL or TP happened today!') 
+        if s['new_trade']: send('Will not open new position')
         return
 
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
@@ -98,11 +99,11 @@ def test_execute():
     execute(s, s0)
 
 
-send('Current Model:', True)
+send('Old Model:', True)
 run_model('ETHUSDNN')
 
 send('New Model:', True)
 run_model('ETHUSDLSTM')
-#
+
 t.cleanup()
 
