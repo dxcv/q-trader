@@ -194,7 +194,7 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.215'
         take_profit = 0.16
-#        execute = True
+        execute = True
 #        !!! Do not trade short until stop loss is working
 #        short = True 
 #        short_pct = 0.1
@@ -212,7 +212,7 @@ def load_config(config):
         model_type = 'LSTM'
         signal_threshold = 1
         take_profit = 0.16
-        execute = True
+#        execute = True
 #        short = True
 #       Best SL: 0.02: 2.17 / 6.16
 #        stop_loss = 0.02
