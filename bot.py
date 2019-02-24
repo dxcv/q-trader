@@ -30,32 +30,27 @@ def get_signal(conf):
 def send_results(res, msg):
     send(msg+' of '+str(res['amount'])+' '+p.pair+' with price '+str(res['price']))
 
-def execute(s, s0):
+def execute(s):
     action = s['action']
-    prev_action = s0['action']
-    is_open = (prev_action == 'Buy' or prev_action == 'Sell' and p.short) 
+    position = 'Buy' if x.has_equity() else 'Sell'    
+    is_open = (position == 'Buy' or position == 'Sell' and p.short) 
     
-    if is_open and not x.has_open_position():
-        is_open = False
-        if p.stop_loss < 1 and not x.has_sl_order():
-            send('SL has triggerd!')
-        
-        if p.take_profit > 0 and not x.has_tp_order():
-            send('TP has triggered!')
+    if  p.short or action == 'Buy' or (action == 'Sell' and position == 'Buy'):
+        if p.stop_loss < 1 and not x.has_sl_order(): send('SL has triggerd!')
+        if p.take_profit > 0 and not x.has_tp_order(): send('TP has triggered!')
     
     # Cancel any open SL and TP orders
     x.cancel_orders()
     
-    # Close position if it is open and new trade or SL / TP triggered 
-    if is_open and (s['new_trade'] or s['tp'] or s['sl']):
-        res = x.close_position(prev_action)
-        send_results(res, 'Closed '+prev_action+' Position')
+    # Close position if new trade or SL / TP triggered 
+    if is_open and (action != position or s['tp'] or s['sl']):
+        res = x.close_position(position)
+        send_results(res, 'Closed '+position+' Position')
         is_open = False
     
     # Do not open new trade if SL or TP already triggered for current day
     if s['tp'] or s['sl']:
-        send('SL or TP happened today!') 
-        if s['new_trade']: send('Will not open new position')
+        send('SL or TP happened today! Position closed.') 
         return
 
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
@@ -70,14 +65,13 @@ def execute(s, s0):
             
 def run_model(conf):
         s = get_signal(conf)
-        s0 = nn.get_signal(-2)
      
         # Send signal
         send(nn.get_signal_str(s), True)
         
         if p.execute: 
             try:
-                execute(s, s0)
+                execute(s)
                 send('Balance: '+str(x.get_balance()))
             except Exception as e:
                 send('An error has occured. Please investigate!')
@@ -87,16 +81,14 @@ def test_execute():
     p.load_config('ETHUSDNN')
     p.order_size = 0.02
     s = {}
-    s0 = {}
     s['action'] = 'Buy'
-    s0['action'] = 'Buy'
     s['new_trade'] = False
     s['sl'] = False
     s['tp'] = False
     s['sl_price'] = 100
     s['tp_price'] = 200
     
-    execute(s, s0)
+    execute(s)
 
 
 send('Old Model:', True)

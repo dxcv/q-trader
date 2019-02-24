@@ -19,6 +19,8 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Regression for NN
+
 # LSTM: Scaling for y?
 
 # Long/Short trading with SL and TP

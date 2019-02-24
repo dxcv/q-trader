@@ -178,12 +178,9 @@ def has_sl_order():
 def has_tp_order():
     return has_orders(['take-profit'])
 
-def has_open_position():
+def has_equity():
     if get_balance(p.ticker) > 0: return True
         
-    res = ex.privatePostOpenPositions()
-    if len(res['result']) > 0: return True
-    
     return False
 
 def cancel_orders(types=[]):
