@@ -32,10 +32,10 @@ def send_results(res, msg):
 
 def execute(s):
     action = s['action']
-    position = 'Buy' if x.has_equity() else 'Sell'    
-    is_open = (position == 'Buy' or position == 'Sell' and p.short) 
+    position = x.get_position()    
+    is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-    if  p.short or action == 'Buy' or (action == 'Sell' and position == 'Buy'):
+    if  p.short or action == 'Buy':
         if p.stop_loss < 1 and not x.has_sl_order(): send('SL has triggerd!')
         if p.take_profit > 0 and not x.has_tp_order(): send('TP has triggered!')
     
@@ -50,7 +50,7 @@ def execute(s):
     
     # Do not open new trade if SL or TP already triggered for current day
     if s['tp'] or s['sl']:
-        send('SL or TP happened today! Position closed.') 
+        send('SL or TP happened today!') 
         return
 
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):

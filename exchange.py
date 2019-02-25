@@ -178,10 +178,15 @@ def has_sl_order():
 def has_tp_order():
     return has_orders(['take-profit'])
 
-def has_equity():
-    if get_balance(p.ticker) > 0: return True
-        
-    return False
+def get_position():
+    if get_balance(p.ticker) > 0: return 'Buy'
+    if not p.short: return 'Sell'
+
+    # Check short position
+    res = ex.privatePostOpenPositions()
+    if len(res['result']) > 0: return 'Sell'
+    
+    return 'Cash'
 
 def cancel_orders(types=[]):
     for order in ex.fetchOpenOrders(p.pair):
