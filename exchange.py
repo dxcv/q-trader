@@ -117,22 +117,29 @@ def wait_order(order_id):
 #    orders = ex.fetchClosedOrders(p.pair)
 #    return orders[0]['info']['price']
 
+def get_pos_size(action):
+    size = p.order_size
+    if action == 'Sell' and p.max_short > 0: size = min(p.order_size, p.max_short)
+    
+    return size
+
 # Returns Order Size based on order_pct parameter
 def get_order_size(action):
-    if action == 'Buy' and p.order_size > 0: return p.order_size
-    if action == 'Sell' and p.short_order_size > 0: return p.short_order_size
+    if p.order_size > 0: return get_pos_size(action)
+    
+    # Calculate position size based on available balance
     price = get_price()
     balance = get_balance()
     pct = p.order_pct if action == 'Buy' else p.short_pct
     amount = balance * pct
     size = p.truncate(amount/price, p.order_precision)
+    if p.short and p.max_short > 0 and action == 'Sell': size = min(p.max_short, size)
     return size
 
 def close_position(action, amount=0, price=0, ordertype='', wait=True):
     res = {}
     if ordertype == '': ordertype = p.order_type
-    if action == 'Buy' and amount == 0: amount = p.order_size
-    if action == 'Sell' and amount == 0: amount = p.short_order_size
+    if amount == 0 and p.order_size > 0: amount = get_pos_size(action)
     
     if action == 'Sell':
         res = create_order('buy', amount, price, ordertype, p.leverage, wait)

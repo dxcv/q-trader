@@ -19,11 +19,9 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Regression for NN
+# Try Regression for NN
 
-# LSTM: Scaling for y?
-
-# Long/Short trading with SL and TP
+# Bitfinex Integration
 
 # Set SL and TP based on stats (y_pred_id, minr, maxr)
 Hypothesis: SL = td.minr.mean() - 1
@@ -38,10 +36,9 @@ https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-inter
 # LSTM
 https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
 https://www.datacamp.com/community/tutorials/lstm-python-stock-market
+https://machinelearningmastery.com/multivariate-time-series-forecasting-lstms-keras/
 
 # Automated Machine Learning
-
-# Hourly Trading
 
 # Precision, Recall, ROC, AUC
 https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
@@ -195,6 +192,12 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+10 Ways To Limit Your Drawdowns In Trading Capital
+http://www.newtraderu.com/2014/06/26/9645/
+
+Multivariate Time Series Forecasting with LSTMs in Keras
+https://machinelearningmastery.com/multivariate-time-series-forecasting-lstms-keras/
+
 Arbitrage: https://hackernoon.com/how-to-make-money-on-arbitrage-with-cryptocurrencies-6618bdad3ce1
 
 Using the latest advancements in deep learning to predict stock price movements

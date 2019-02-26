@@ -80,8 +80,8 @@ def load_config(config):
     execute = False
     global order_size # Order size in equity. 0 means to use order_pct
     order_size = 0
-    global short_order_size # Order size for short positions. 0 means to use short_pct
-    short_order_size = 0
+    global max_short # Max Order size for short position
+    max_short = 0
     global order_pct # % of balance for long trade 
     order_pct = 1
     global short_pct # % of balance for short trade
@@ -198,7 +198,7 @@ def load_config(config):
         take_profit = 0.16
 #        execute = True
         short = True
-        short_order_size = 250
+        max_short = 250
 #        short_pct = 0.1
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
@@ -213,12 +213,11 @@ def load_config(config):
         model = cfgdir+'/model.top'
         model_type = 'LSTM'
         signal_threshold = 1
-        take_profit = 0.16
+        take_profit = 0.16 # Best TP 0.16: 8.96 No: 6.13
         execute = True
         short = True
-        short_order_size = 250
-#       Best SL: 0.02: 2.17 / 6.16
-#        stop_loss = 0.02
+        max_short = 250
+#        stop_loss = 0.15 # Best SL: No: 8.96 0.15: 8.57
 
     global file
     file = cfgdir+'/price.pkl'

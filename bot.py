@@ -46,6 +46,7 @@ def execute(s):
     if is_open and (action != position or s['tp'] or s['sl']):
         res = x.close_position(position)
         send_results(res, 'Closed '+position+' Position')
+        send('Balance: '+str(x.get_balance()))
         is_open = False
     
     # Do not open new trade if SL or TP already triggered for current day
@@ -72,7 +73,6 @@ def run_model(conf):
         if p.execute: 
             try:
                 execute(s)
-                send('Balance: '+str(x.get_balance()))
             except Exception as e:
                 send('An error has occured. Please investigate!')
                 send(e)
