@@ -203,8 +203,6 @@ def load_config(config):
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
 # SR: 7.27 (SL), 5.74 (no SL), 4.46 on eToro (no SL)
-#        fee = 0.0095 # eToro spread
-#        margin = 0.0003 # eToro margin
 #        train = True
 #        test_pct = 1
 #        reload = True
@@ -218,6 +216,22 @@ def load_config(config):
         short = True
         max_short = 250
 #        stop_loss = 0.15 # Best SL: No: 8.96 0.15: 8.57
+    elif conf == 'ETHUSDNN1':
+#        train = True
+        test_pct = 1
+#        reload = True
+        units = 16
+#        feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
+        feature_list = ['VOL','HH','LL','MA','MA2','STD','RSI','WR','DMA','MAR'] # model439.nn
+        epochs = 50
+        signal_threshold = 1
+        model = cfgdir+'/model439.nn'
+        take_profit = 0.16
+#        execute = True
+        short = True
+        max_short = 250
+#        short_pct = 0.1
+#        stop_loss = 0.15
 
     global file
     file = cfgdir+'/price.pkl'

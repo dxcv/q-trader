@@ -93,11 +93,15 @@ def train_model(X_train, X_test, y_train, y_test, file):
     print('*** Training model with '+str(p.units)+' units per layer ***')
     nn = Sequential()
     nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim = X_train.shape[1]))
+    nn.add(Dropout(0.2))
     nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
-    nn.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    nn.add(Dense(1))
+#    nn.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
 
     cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-    nn.compile(optimizer = 'adam', loss = p.loss, metrics = ['accuracy'])
+#    optimizer = RMSprop(lr=0.005, clipvalue=1.)
+    optimizer = 'adam'
+    nn.compile(optimizer = optimizer, loss = p.loss, metrics = ['accuracy'])
     history = nn.fit(X_train, y_train, batch_size = 10, 
                              epochs = p.epochs, callbacks=[cp], 
                              validation_data=(X_test, y_test), 
@@ -327,7 +331,7 @@ def runNN():
     
     # Separate input from output. Exclude last row
     X = ds[p.feature_list][:-1]
-    y = ds[['Price_Rise']].shift(-1)[:-1]
+    y = ds[['DR']].shift(-1)[:-1]
 
     # Split Train and Test and scale
     X_train, X_test, y_train, y_test = get_train_test(X, y)    
@@ -420,5 +424,5 @@ def runModel(conf):
 
 #runModel('BTCUSDNN')
 
-#runModel('ETHUSDNN')
+runModel('ETHUSDNN1')
 #runModel('ETHUSDLSTM')

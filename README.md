@@ -24,7 +24,8 @@ export AWS_REGION=You AWS  Region
 # Bitfinex Integration
 
 # Set SL and TP based on stats (y_pred_id, minr, maxr)
-Hypothesis: SL = td.minr.mean() - 1
+https://twitter.com/SJosephBurns/status/1100546299697528834
+ATR: Use 2 or 3 times ATR from entry price
 
 # Option to set SL and TP on trade level
 
