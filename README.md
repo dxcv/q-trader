@@ -19,8 +19,6 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Move execution to 00.08 UTC
-
 # Try Regression for NN
 
 # Bitfinex Integration
@@ -194,6 +192,9 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+Reinforcement Learning for Optimized Trade Execution
+http://www.cis.upenn.edu/~mkearns/papers/rlexec.pdf
+
 10 Ways To Limit Your Drawdowns In Trading Capital
 http://www.newtraderu.com/2014/06/26/9645/
 

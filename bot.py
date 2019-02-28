@@ -28,7 +28,8 @@ def get_signal(conf):
             return signal
 
 def send_results(res, msg):
-    send(msg+' of '+str(res['amount'])+' '+p.pair+' with price '+str(res['price']))
+    send(msg+' of '+str(res['filled'])+' '+p.pair+' with price '+str(res['average']))
+    send('Balance: '+x.get_balance_str())
 
 def execute(s):
     action = s['action']
@@ -46,7 +47,6 @@ def execute(s):
     if is_open and (action != position or s['tp'] or s['sl']):
         res = x.close_position(position)
         send_results(res, 'Closed '+position+' Position')
-        send('Balance: '+str(x.get_balance()))
         is_open = False
     
     # Do not open new trade if SL or TP already triggered for current day

@@ -105,8 +105,8 @@ def load_config(config):
     global train_goal
     train_goal = 'R' # Maximize Return
     global fee # Exchange fee
-#    fee = 0.0022 # Kraken Taker fee
-    fee = 0.0012 # Kraken Maker fee
+#    fee = 0.0020 # Kraken Taker fee
+    fee = 0.0010 # Kraken Maker fee
     global margin # Daily Margin fee for short positions
     margin = 0.0012 # Kraken 24 margin fee
     global margin_open # Kraken Margin Open fee
@@ -212,8 +212,12 @@ def load_config(config):
         signal_threshold = 1
         take_profit = 0.16 # Best TP 0.16: 8.96 No: 6.13
         execute = True
+        order_type = 'market'
+        order_pct = 0.99 # Trade with 99% so market order can execute
         short = True
         max_short = 250
+#        fee = 0.0010 # Maker
+        fee = 0.0020 # Taker
 #        stop_loss = 0.15 # Best SL: No: 8.96 0.15: 8.57
 
     global file

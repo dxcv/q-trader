@@ -78,6 +78,10 @@ def get_balance(asset=''):
     balance = ex.fetch_balance()['free']
     return balance[asset]
 
+def get_balance_str():
+    balance = ex.fetch_balance()['free']
+    return p.currency+': '+str(balance[p.currency])+', '+p.ticker+': '+str(balance[p.ticker])
+
 def create_order(side, amount=0, price=0, ordertype='', leverage=1, wait=True):
     params = {}
     if ordertype == '': ordertype = p.order_type
