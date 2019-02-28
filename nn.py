@@ -29,9 +29,10 @@ def get_signal_str(s=''):
     txt += 'NEW ' if s['new_trade'] else 'SAME '  
     txt += 'Trade: '+s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
-    txt += ' SL: '+str(s['sl_price'])
-    txt += ' TP: '+str(s['tp_price'])
+    if p.stop_loss < 1: txt += ' SL: '+str(s['sl_price'])
+    if p.take_profit > 0: txt += ' TP: '+str(s['tp_price'])
     txt += ' PnL: '+str(s['pnl'])+'%'
+    txt += ' Price: '+str(s['open'])
     if s['tp']: txt += ' TAKE PROFIT! '
     if s['sl']: txt += ' STOP LOSS! '
     

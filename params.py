@@ -141,8 +141,8 @@ def load_config(config):
     take_profit = 1
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 2
-    global feature_list # List of features to use for NN
-    feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR']
+    global feature_list # List of features to use for NN (ordered by importance)
+    feature_list = ['RSI','MA','MA2','STD','WR','MAR','HH','VOL','LL','DMA','DR']
     global datasource # Data Source for price data. Options cc: CryptoCompare, dr: DataReader, ql: Quandl
     datasource = 'cc'
     global loss # Loss function for NN: mse, binary_crossentropy, mean_absolute_error etc
@@ -187,8 +187,7 @@ def load_config(config):
         vol_period = 50
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
-# Sortino Ratio: 4.01 (Short)
-#        fee = 0.0095 # eToro spread -> does not work
+# Strategy Return: 4.84 Accuracy: 0.60
 #        train = True
 #        test_pct = 1
 #        reload = True
@@ -202,9 +201,7 @@ def load_config(config):
 #        short_pct = 0.1
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
-# SR: 7.27 (SL), 5.74 (no SL), 4.46 on eToro (no SL)
-#        fee = 0.0095 # eToro spread
-#        margin = 0.0003 # eToro margin
+# SR: 7.27 (SL), 5.74 (no SL)
 #        train = True
 #        test_pct = 1
 #        reload = True

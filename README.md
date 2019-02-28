@@ -19,6 +19,8 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Move execution to 00.08 UTC
+
 # Try Regression for NN
 
 # Bitfinex Integration
