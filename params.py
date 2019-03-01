@@ -142,7 +142,8 @@ def load_config(config):
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 2
     global feature_list # List of features to use for NN (ordered by importance)
-    feature_list = ['RSI','MA','MA2','STD','WR','MAR','HH','VOL','LL','DMA','DR']
+    feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR'] 
+#    features ordered by importance: ['RSI','MA','MA2','STD','WR','MAR','HH','VOL','LL','DMA','DR']
     global datasource # Data Source for price data. Options cc: CryptoCompare, dr: DataReader, ql: Quandl
     datasource = 'cc'
     global loss # Loss function for NN: mse, binary_crossentropy, mean_absolute_error etc
@@ -214,7 +215,7 @@ def load_config(config):
         execute = True
         short = True
         max_short = 250
-        fee = 0.0010 # Maker
+        fee = 0.0010 # Kraken Maker fee
 #        stop_loss = 0.15 # Best SL: No: 8.96 0.15: 8.57
 
     global file
