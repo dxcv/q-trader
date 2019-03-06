@@ -202,7 +202,6 @@ def load_config(config):
 #        short_pct = 0.1
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
-# SR: 7.27 (SL), 5.74 (no SL)
 #        train = True
 #        test_pct = 1
 #        reload = True
@@ -215,8 +214,12 @@ def load_config(config):
         execute = True
         short = True
         max_short = 250
-        fee = 0.0010 # Kraken Maker fee
-#        stop_loss = 0.15 # Best SL: No: 8.96 0.15: 8.57
+#        fee = 0.0010 # Maker
+        fee = 0.0020 # Taker
+        order_type = 'market'
+#        Test Only: No SL: 8.96, 0.15: 8.57
+#        All Data: No SL: 93951, 0.46: 53714 
+#        stop_loss = 0.15  
 
     global file
     file = cfgdir+'/price.pkl'

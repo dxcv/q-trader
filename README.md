@@ -19,14 +19,13 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Try Regression for NN
-
-# Bitfinex Integration
-
-# Set SL and TP based on stats (y_pred_id, minr, maxr)
-Hypothesis: SL = td.minr.mean() - 1
+# Set SL and TP based on: 
++ stats (y_pred_id, minr, maxr)
++ ATR
 
 # Option to set SL and TP on trade level
+
+# Bitfinex Integration
 
 # Use volume bars
 https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
@@ -192,6 +191,9 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+As a trader, what did you learn after blowing up your account that helped you become successful later?
+https://www.quora.com/As-a-trader-what-did-you-learn-after-blowing-up-your-account-that-helped-you-become-successful-later
+
 Reinforcement Learning for Optimized Trade Execution
 http://www.cis.upenn.edu/~mkearns/papers/rlexec.pdf
 

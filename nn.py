@@ -302,7 +302,8 @@ def show_stats(td, trades):
     sr = math.sqrt(365) * s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     srt = math.sqrt(365) * s.sortino_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     dur = trades.duration.mean()
-    false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
+#    FIXME: Need to handle short positions as well
+#    false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
     print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
     print('Market Return: %.2f'   % trades.CMR.iloc[-1])
     print('Sortino Ratio: %.2f' % srt)
@@ -316,7 +317,7 @@ def show_stats(td, trades):
     print('Risk Adjusted Return: %.2f' % rar)
     print('Sharpe Ratio: %.2f' % sr)
     print('Average Daily Return: %.3f' % adr)
-    print('False Stops: %.2f' % false_stop)
+#    print('False Stops: %.2f' % false_stop)
 
 # Inspired by:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
