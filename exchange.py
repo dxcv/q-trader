@@ -134,9 +134,7 @@ def get_order_size(action):
     # Calculate position size based on available balance
     price = get_price()
     balance = get_balance()
-    balance = balance * (1 - p.fee) # Deduct exchange fee
-    pct = p.order_pct if action == 'Buy' else p.short_pct
-    amount = balance * pct
+    amount = balance * p.order_pct * (1 - p.fee) # Apply order_pct and exchange fee
     size = p.truncate(amount/price, p.order_precision)
     if p.short and p.max_short > 0 and action == 'Sell': size = min(p.max_short, size)
     return size

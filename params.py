@@ -84,8 +84,6 @@ def load_config(config):
     max_short = 0
     global order_pct # % of balance for long trade 
     order_pct = 1
-    global short_pct # % of balance for short trade
-    short_pct = 1
     global order_precision # Number of digits after decimal for order size
     order_precision = 0
     global result_size
@@ -214,9 +212,10 @@ def load_config(config):
         execute = True
         short = True
         max_short = 250
-#        fee = 0.0010 # Maker
-        fee = 0.0020 # Taker
+#        fee = 0.001 # Maker
+        fee = 0.002 # Taker
         order_type = 'market'
+        order_pct = 0.99 # Reserve 1% for slippage
 #        Test Only: No SL: 8.96, 0.15: 8.57
 #        All Data: No SL: 93951, 0.46: 53714 
 #        stop_loss = 0.15  

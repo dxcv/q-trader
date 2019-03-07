@@ -3,3 +3,4 @@ secrets.py
 .DS_Store
 *.log
 *.pkl
+.ipynb_checkpoints

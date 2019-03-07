@@ -19,6 +19,9 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+
+# Add taker fee and slippage for market order
+
 # Set SL and TP based on: 
 + stats (y_pred_id, minr, maxr)
 + ATR
