@@ -386,10 +386,7 @@ def runLSTM():
         nn = Sequential()
         nn.add(LSTM(p.units, input_shape=(1, lag), return_sequences=True))
         nn.add(Dropout(0.2))
-
         nn.add(LSTM(p.units, return_sequences=False))
-        nn.add(Dropout(0.2))
-
         nn.add(Dense(1))
         
         optimizer = RMSprop(lr=0.005, clipvalue=1.)

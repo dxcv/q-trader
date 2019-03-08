@@ -20,7 +20,7 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-# Add taker fee and slippage for market order
+Use Kraken price data / Use cryptowat.ch API
 
 # Set SL and TP based on: 
 + stats (y_pred_id, minr, maxr)

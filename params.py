@@ -218,7 +218,7 @@ def load_config(config):
         order_pct = 0.99 # Reserve 1% for slippage
 #        Test Only: No SL: 8.96, 0.15: 8.57
 #        All Data: No SL: 93951, 0.46: 53714 
-#        stop_loss = 0.15  
+#        stop_loss = 0.15
 
     global file
     file = cfgdir+'/price.pkl'
