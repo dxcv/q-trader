@@ -34,8 +34,8 @@ def get_signal_str(s=''):
     txt += ' PnL: '+str(s['pnl'])+'%'
     txt += ' Date: '+str(s['open_ts'])
     txt += ' Price: '+str(s['open'])
-    if s['tp']: txt += ' TAKE PROFIT! '
-    if s['sl']: txt += ' STOP LOSS! '
+    if s['tp']: txt += ' TAKE PROFIT!'
+    if s['sl']: txt += ' STOP LOSS!'
     
     return txt 
 
