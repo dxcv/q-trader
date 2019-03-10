@@ -418,7 +418,7 @@ def runModel(conf):
     elif p.model_type == 'LSTM':
         runLSTM()
 
-#runModel('BTCUSDNN')
+#runModel('BTCUSDLSTM')
 
 #runModel('ETHUSDNN')
 #runModel('ETHUSDLSTM')

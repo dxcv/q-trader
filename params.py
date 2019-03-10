@@ -184,6 +184,20 @@ def load_config(config):
         hh_period = 50
         ll_period = 50
         vol_period = 50
+    elif conf == 'BTCUSDLSTM':
+#        model = cfgdir+'/model.top'
+        model_type = 'LSTM'
+        signal_threshold = 1
+        short = True
+#        train = True
+#        test_pct = 1
+        units = 32
+        epochs = 50
+        fee = 0.002 # Taker
+        order_type = 'market'
+#        hold_signals = [99]
+#        rsi_period = 21
+#        stop_loss = 0.1
 # ***************************************** Active Strategies
     elif conf == 'ETHUSDNN':
 # Strategy Return: 4.84 Accuracy: 0.60
@@ -195,9 +209,8 @@ def load_config(config):
         model = cfgdir+'/model.215'
         take_profit = 0.16
 #        execute = True
-        short = True
-        max_short = 250
-#        short_pct = 0.1
+#        short = True
+#        max_short = 250
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
 #        train = True
@@ -205,17 +218,18 @@ def load_config(config):
 #        reload = True
         units = 16
         epochs = 50
-        model = cfgdir+'/model.top'
         model_type = 'LSTM'
         signal_threshold = 1
+        model = cfgdir+'/model.top'
         take_profit = 0.16 # Best TP 0.16: 8.96 No: 6.13
         execute = True
-        short = True
-        max_short = 250
 #        fee = 0.001 # Maker
         fee = 0.002 # Taker
         order_type = 'market'
         order_pct = 0.99 # Reserve 1% for slippage
+#        !!! Short only in Bear market !!!
+#        short = True
+#        max_short = 250
 #        Test Only: No SL: 8.96, 0.15: 8.57
 #        All Data: No SL: 93951, 0.46: 53714 
 #        stop_loss = 0.15

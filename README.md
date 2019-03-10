@@ -20,13 +20,16 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-Use Kraken price data / Use cryptowat.ch API
+# Use Kraken price data / Use cryptowat.ch API
+https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440
 
 # Set SL and TP based on: 
 + stats (y_pred_id, minr, maxr)
 + ATR
 
 # Option to set SL and TP on trade level
+
+# Binary Features
 
 # Bitfinex Integration
 
