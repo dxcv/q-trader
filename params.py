@@ -199,14 +199,14 @@ def load_config(config):
 #        rsi_period = 21
 #        stop_loss = 0.1
 # ***************************************** Active Strategies
+# !!! Do not touch Active strategies - use new conf for tuning !!!
+# !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
-# Strategy Return: 4.84 Accuracy: 0.60
+# Accuracy: 0.61, Win Ratio: 0.69, Strategy Return: 1.76
 #        train = True
-#        0.65: 1.76
-        train_pct = 0.65
-#        test_pct = 0.3
+#        train_pct = 0.65
+#        test_pct = 0.35
 #        test_pct = 1
-#        reload = True
         units = 32
         epochs = 50
         model = cfgdir+'/model.215'
@@ -217,26 +217,24 @@ def load_config(config):
 #        max_short = 250
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
+# Accuracy: 0.57, Win Ratio: 0.68, Strategy Return: 1.77
 #        train = True
-        train_pct = 0.7 # This affects scaler fit, need to load scaler from file
+#        train_pct = 0.7
 #        test_pct = 0.3
 #        test_pct = 1
-#        reload = True
         units = 32
         epochs = 50
         model_type = 'LSTM'
         signal_threshold = 1
         model = cfgdir+'/model.top'
-        take_profit = 0.16 # Best TP 0.16: 8.96 No: 6.13
+        take_profit = 0.15  # Best TP 0.15: 1.77 No: 1.45
         execute = True
-#        fee = 0.001 # Maker
         fee = 0.002 # Taker
         order_type = 'market'
         order_pct = 0.99 # Reserve 1% for slippage
 #        !!! Short only in Bear market !!!
 #        short = True
 #        max_short = 250
-#        Test Only: No SL: 1.93, 0.14: 1.93
 #        stop_loss = 0.15
     elif conf == 'ETHUSDLSTM1':
         model_type = 'LSTM1'
