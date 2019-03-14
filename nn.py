@@ -68,11 +68,12 @@ def add_features(ds):
 
 def get_train_test(X, y):
     # Separate train from test
-    train_split = int(len(ds)*p.train_pct)
-    test_split = int(len(ds)*p.test_pct)
+    train_split = int(len(X)*p.train_pct)
+    test_split = int(len(X)*p.test_pct)
     X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
     
     # Feature Scaling
+    # TODO: Load scaler from file for test run
     sc = StandardScaler()
     X_train = sc.fit_transform(X_train)
     X_test = sc.transform(X_test)
@@ -82,11 +83,12 @@ def get_train_test(X, y):
 def plot_fit_history(h):
     # Plot model history
     # Accuracy: % of correct predictions 
-    plt.plot(h.history['acc'], label='Train Accuracy')
-    plt.plot(h.history['val_acc'], label='Test Accuracy')
-    plt.plot(h.history['loss'], label='Train Loss')
-    plt.plot(h.history['val_loss'], label='Test Loss')
+#    plt.plot(h.history['acc'], label='Train Accuracy')
+#    plt.plot(h.history['val_acc'], label='Test Accuracy')
+    plt.plot(h.history['loss'], label='Train')
+    plt.plot(h.history['val_loss'], label='Test')
     plt.xlabel('Epoch')
+    plt.ylabel('Loss')
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -241,11 +243,10 @@ def gen_trades(ds):
         return pd.Series(names)
 
     tr = ds.groupby(ds.trade_id).apply(trade_agg)
-    tr['win'] = (tr.sr > 1)
+    tr['win'] = (tr.sr > 1) | (tr.sr == 1) & (tr.mr < 1)
     tr['CMR'] = np.cumprod(tr['mr'])
     tr['CSR'] = np.cumprod(tr['sr'])
     tr = tr.dropna()
-    if not p.short: tr = tr[tr.action == 'Buy']
     
     return tr
     
@@ -291,19 +292,18 @@ def plot_chart(df, title, date_col='date'):
     plt.show()
 
 def show_stats(td, trades):
-    avg_loss = 1 - trades[trades.sr < 1].sr.mean()
-    avg_win = trades[trades.sr > 1].sr.mean() - 1
+    avg_loss = 1 - trades[trades.win == False].sr.mean()
+    avg_win = trades[trades.win].sr.mean() - 1
     r2r = avg_win / avg_loss
     win_ratio = len(trades[trades.win]) / len(trades)
-    trade_freq = len(trades[trades.sr != 1])/len(td)
+    trade_freq = len(trades)/len(td)
     adr = trade_freq*(win_ratio * avg_win - (1 - win_ratio)*avg_loss)
     exp = 365 * adr
     rar = exp / (100 * p.stop_loss)
     sr = math.sqrt(365) * s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     srt = math.sqrt(365) * s.sortino_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     dur = trades.duration.mean()
-#    FIXME: Need to handle short positions as well
-#    false_stop = len(td[(td.y_pred.astype('int') == td.Price_Rise) & td.sl])/(len(td[td.sl]) + 0.01)
+    slf = len(trades[trades.sl])/len(trades)
     print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
     print('Market Return: %.2f'   % trades.CMR.iloc[-1])
     print('Sortino Ratio: %.2f' % srt)
@@ -317,7 +317,7 @@ def show_stats(td, trades):
     print('Risk Adjusted Return: %.2f' % rar)
     print('Sharpe Ratio: %.2f' % sr)
     print('Average Daily Return: %.3f' % adr)
-#    print('False Stops: %.2f' % false_stop)
+    print('Stop Losses: %.2f' % slf)
 
 # Inspired by:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
@@ -353,6 +353,109 @@ def runNN():
     td = run_backtest(td, file)
 
     print(str(get_signal_str()))
+
+def runNN1():
+    global td
+    global ds
+    
+    ds = dl.load_price_data()
+    ds = add_features(ds)
+
+# =============================================================================
+#     print('*** Adding Features ***')
+#     ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
+#     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
+#     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
+#     ds['DR'] = ds['close']/ds['close'].shift(1)
+#     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
+#     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
+#     ds['STD']= ds['close'].rolling(p.std_period).std()/ds['close']
+#     ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
+#     ds['WR'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
+#     ds['DMA'] = ds.MA/ds.MA.shift(1)
+#     ds['MAR'] = ds.MA/ds.MA2
+#     ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
+#     
+# =============================================================================
+    
+#    for i in (14, 30, 50):
+#        ds['DR'+str(i)] = ds['close']/ds['close'].shift(i)
+#        p.feature_list += ['DR'+str(i)]
+#        ds['MA'+str(i)] = ds['close']/ds['close'].rolling(i).mean()
+#        p.feature_list += ['MA'+str(i)]
+#        ds['DMA'+str(i)] = ds['MA'+str(i)]/ds['MA'+str(i)].shift(1)
+#        p.feature_list += ['DMA'+str(i)]
+#        ds['RSI'+str(i)] = talib.RSI(ds['close'].values, timeperiod = i)
+#        p.feature_list += ['RSI'+str(i)]
+#        ds['STD'+str(i)]= ds['close'].rolling(i).std()
+#        p.feature_list += ['STD'+str(i)]
+#        ds['VOL'+str(i)] = ds['volume']/ds['volume'].rolling(i).mean()
+#        p.feature_list += ['VOL'+str(i)]
+#        ds['WR'+str(i)] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, i)
+#        p.feature_list += ['WR'+str(i)]
+#        ds['HL'+str(i)] = ds['high'].rolling(i).max()/ds['low'].rolling(i).min() 
+#        p.feature_list += ['HL'+str(i)]
+#    ds = ds.dropna()
+    
+    # Separate input from output. Exclude last row
+    X = ds[p.feature_list][:-1]
+    y = ds[['DR']].shift(-1)[:-1]
+#    y = ds[['Price_Rise']].shift(-1)[:-1]
+
+    # Separate train from test
+    train_split = int(len(X)*p.train_pct)
+    test_split = int(len(X)*p.test_pct)
+    X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
+    
+    # Feature Scaling
+    from sklearn.preprocessing import MinMaxScaler
+    sc = MinMaxScaler()
+#    sc = StandardScaler()
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+    
+#    y_train = sc.fit_transform(y_train)
+#    y_test = sc.transform(y_test)
+    
+    if p.train:
+        file = p.cfgdir+'/model.nn'
+        print('*** Training model with '+str(p.units)+' units per layer ***')
+        nn = Sequential()
+        nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim = X_train.shape[1]))
+        nn.add(Dropout(0.2))
+        nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
+        nn.add(Dense(1))
+    
+        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+        nn.compile(optimizer = 'adam', loss = p.loss)
+        history = nn.fit(X_train, y_train, batch_size = 10,
+                                 epochs = p.epochs, callbacks=[cp], 
+                                 validation_data=(X_test, y_test), 
+                                 verbose=0)
+    
+        # Plot model history
+        plot_fit_history(history)
+    
+        # Load Best Model
+        nn = load_model(file) 
+    else:
+        file = p.model
+        nn = load_model(file) 
+        print('Loaded best model: '+file)
+     
+    # Making prediction
+    y_pred_val = nn.predict(X_test)
+    
+#    y_pred_val = sc.inverse_transform(y_pred_val)
+
+    # Generating Signals
+    td = gen_signal(ds, y_pred_val)
+
+    # Backtesting
+    td = run_backtest(td, file)
+
+    print(str(get_signal_str()))
+
 
 # See: 
 # https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
@@ -395,8 +498,8 @@ def runLSTM():
         
         cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
         h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, 
-                             verbose=1, callbacks=[cp], validation_data=(X_test_t, y_test))
-        
+                             verbose=0, callbacks=[cp], validation_data=(X_test_t, y_test))
+
         plot_fit_history(h)
     
     # Load Best Model
@@ -409,16 +512,153 @@ def runLSTM():
     td = run_backtest(td, file)
     
     print(str(get_signal_str()))
+
+# convert series to supervised learning
+def series_to_supervised(features, targets, n_in=1, n_out=1, dropnan=True):
+	cols, names = list(), list()
+	# input sequence (t-n, ... t-1)
+	for i in range(n_in, 0, -1):
+		cols.append(features.shift(i))
+		names += [(features.columns[j]+'(t-%d)' % (i)) for j in range(len(features.columns))]
+     # forecast sequence (t, t+1, ... t+n)
+	for i in range(0, n_out):
+		cols.append(targets.shift(-i))
+		names += [(targets.columns[j]+'(t+%d)' % (i)) for j in range(len(targets.columns))]
+	# put it all together
+	agg = pd.concat(cols, axis=1)
+	agg.columns = names
+	# drop rows with NaN values
+	if dropnan:
+		agg.dropna(inplace=True)
+	return agg
     
+def runLSTM1():
+    global ds
+    global td
+
+    ds = dl.load_price_data()
+
+    # Add features
+    n_features = 1
+    ds['DR'] = ds['close']/ds['close'].shift(1)
+#    ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
+    ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
+#    ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
+    ds = ds.dropna()
+   
+    # Select features and target
+    ds1 = ds.iloc[:, -n_features-1:]
+
+    # Train / Test Split
+    train_split = int(len(ds)*p.train_pct)
+    test_split = int(len(ds)*p.test_pct)
+    train, test = ds1[:train_split], ds1[-test_split:]
+    
+    # Feature Scaling
+    from sklearn.preprocessing import MinMaxScaler
+    sc = MinMaxScaler()
+    ntrain = pd.DataFrame(sc.fit_transform(train), columns=train.columns)
+    ntest = pd.DataFrame(sc.transform(test), columns=test.columns)
+        
+    # Prepare data for LSTM
+    lag = 10
+    strain = series_to_supervised(ntrain.iloc[:,1:], ntrain.iloc[:,0:1], lag)
+    stest = series_to_supervised(ntest.iloc[:,1:], ntest.iloc[:,0:1], lag)
+    
+    # split into input and outputs
+    n_obs = lag * n_features
+    X_train, y_train = strain.iloc[:, :n_obs], strain.iloc[:, -1]
+    X_test, y_test = stest.iloc[:, :n_obs], stest.iloc[:, -1]
+
+    # reshape input to be 3D [samples, timesteps, features]
+    X_train_t = X_train.values.reshape((X_train.shape[0], n_features, lag))
+    X_test_t = X_test.values.reshape((X_test.shape[0], n_features, lag))
+
+    file = p.model
+    if p.train:
+        file = p.cfgdir+'/model.nn'
+
+        # design network
+        K.clear_session()
+        nn = Sequential()
+        nn.add(LSTM(p.units, input_shape=(X_train_t.shape[1], X_train_t.shape[2]), return_sequences=True))
+        nn.add(Dropout(0.2))
+        nn.add(LSTM(p.units, return_sequences=False))
+        nn.add(Dense(1))
+  
+        optimizer = RMSprop(lr=0.005, clipvalue=1.)
+        nn.compile(loss=p.loss, optimizer=optimizer)
+        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+
+        h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, shuffle=False,
+                             verbose=1, callbacks=[cp], validation_data=(X_test_t, y_test))
+        
+        # plot history
+        plt.plot(h.history['loss'], label='train')
+        plt.plot(h.history['val_loss'], label='test')
+        plt.legend()
+        plt.show()
+    
+    # Load Best Model
+    nn = load_model(file)
+
+    sy_pred = nn.predict(X_test_t)
+    X_test_t1 = X_test_t.reshape((X_test_t.shape[0], lag*n_features))[:, -n_features:]
+    
+    # invert scaling for forecast
+    y_pred = sc.inverse_transform(np.concatenate((sy_pred, X_test_t1), axis=1))[:,0]
+    
+    td = gen_signal(ds, y_pred)
+
+    # Backtesting
+    td = run_backtest(td, file)
+    
+    print(str(get_signal_str()))
+
+#conda install numpy scipy scikit-learn pandas
+#pip install deap update_checker tqdm stopit
+#pip install xgboost
+#pip install tpot
+def tpot_test(conf):
+    from tpot import TPOTRegressor
+    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import TimeSeriesSplit
+    
+    p.load_config(conf)
+    ds = dl.load_price_data()
+    ds = add_features(ds)
+
+    X = ds[p.feature_list][:-1]
+    y = ds['DR'].shift(-1)[:-1]
+
+    # Split Train and Test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2)
+    
+    tpot = TPOTRegressor(n_jobs=-1, verbosity=2, max_time_mins=60, cv=TimeSeriesSplit(n_splits=3))
+    
+    tpot.fit(X_train, y_train)
+    print(tpot.score(X_test, y_test))
+    tpot.export('./tpot_out.py')
+    
+#tpot_test('ETHUSDNN')
+
 def runModel(conf):
     p.load_config(conf)
 
     if p.model_type == 'NN':
         runNN()
+    elif p.model_type == 'NN1':
+        runNN1()
     elif p.model_type == 'LSTM':
         runLSTM()
+    elif p.model_type == 'LSTM1':
+        runLSTM1()
 
+#runModel('BTCUSDNN')
 #runModel('BTCUSDLSTM')
+
+#runModel('ETHUSDLSTM1')
+#runModel('ETHUSDNN1')
 
 #runModel('ETHUSDNN')
 #runModel('ETHUSDLSTM')

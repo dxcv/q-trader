@@ -20,44 +20,43 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-# Use Kraken price data / Use cryptowat.ch API
-https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440
+# Scaling depends on train/test split which is changing over time
+# Load fitted scaler from file for test run
 
-# Set SL and TP based on: 
-+ stats (y_pred_id, minr, maxr)
-+ ATR
+MAMA - MESA Adaptive Moving Average
+KAMA Kaufman Adaptive Moving Average
 
-# Option to set SL and TP on trade level
-
-# Binary Features
-
-# Bitfinex Integration
-
-# Use volume bars
-https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
-
-# Train model on S&P500 / NASDAQ and apply to ETH
-
-# LSTM
-https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
-https://www.datacamp.com/community/tutorials/lstm-python-stock-market
-https://machinelearningmastery.com/multivariate-time-series-forecasting-lstms-keras/
-
-# Automated Machine Learning
-
-# Precision, Recall, ROC, AUC
-https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
-
-# Generic MA Trading System
+# Convert NN to Regression
+# Generic MA trading system with binary Features
+# Test model on S&P500 / NASDAQ / Bitcoin
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
 # Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
 # 50 MA Trading Systems
 https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
 # Top 5 indicators: http://www.newtraderu.com/2019/01/04/the-top-5-effective-technical-indicators/
 
-# TODO: Practice with Hourly Data
+# Set SL and TP based on: 
++ stats (y_pred_id, minr, maxr)
++ ATR
+# Option to set SL and TP on trade level
 
-# TODO: Fixed SL: test if any better
+# Use Kraken price data / Use cryptowat.ch API
+https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440
+
+# Bitfinex Integration
+
+# Use volume bars
+https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
+
+# LSTM
+https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
+https://www.datacamp.com/community/tutorials/lstm-python-stock-market
+https://machinelearningmastery.com/multivariate-time-series-forecasting-lstms-keras/
+
+# Precision, Recall, ROC, AUC
+https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
+
+# TODO: Practice with Hourly Data
 
 # Google Colaboratory:
 https://colab.research.google.com/notebooks/welcome.ipynb
@@ -197,6 +196,10 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+AutoML
+https://www.datacamp.com/community/tutorials/automated-machine-learning-auto-keras
+https://www.pyimagesearch.com/2019/01/07/auto-keras-and-automl-a-getting-started-guide/
+
 As a trader, what did you learn after blowing up your account that helped you become successful later?
 https://www.quora.com/As-a-trader-what-did-you-learn-after-blowing-up-your-account-that-helped-you-become-successful-later
 
@@ -217,7 +220,8 @@ https://github.com/borisbanushev/stockpredictionai
 
 *** From Evgeny Tartakovsy
 Google Cloud
-AutoKeras, RL, 
+AutoKeras 
+RL 
 DEAP: https://deap.readthedocs.io/en/master/ 
 skit-learn, 
 TPOT: https://automl.info/tpot/
@@ -258,6 +262,10 @@ Position sizing based on balance %
 
 
 # ********************** Lessons Learned *************************************
+AutoML is very slow and not efficient for time series
+
+Shorting can be good on bear market, but not so good at bull market
+
 Model is as good as train data. Model needs to be trained on variety of data
 
 Predict DR for several days => not any better

@@ -164,11 +164,10 @@ def load_config(config):
 #        epsilon = 0
     elif conf == 'BTCUSDNN':
 #        train = True
-        units = 32
+#        units = 32
         model = 'data/ETHUSDNN/model.215'
-        take_profit = 0.30 # Best on whole data: 0.30 / Best on test data: 0.09 
-#        fee = 0.0008 # Maker fee
-        fee = 0.00375 # eToro
+#        take_profit = 0.15 # Best on whole data: 0.30 / Best on test data: 0.09 
+        fee = 0.002 # Taker
         test_pct = 1
     elif conf == 'NVDA':
         datasource = 'ql'
@@ -186,11 +185,12 @@ def load_config(config):
         vol_period = 50
     elif conf == 'BTCUSDLSTM':
 #        model = cfgdir+'/model.top'
+        model = 'data/ETHUSDLSTM/model.top'
         model_type = 'LSTM'
         signal_threshold = 1
-        short = True
+#        short = True
 #        train = True
-#        test_pct = 1
+        test_pct = 1
         units = 32
         epochs = 50
         fee = 0.002 # Taker
@@ -202,21 +202,27 @@ def load_config(config):
     elif conf == 'ETHUSDNN':
 # Strategy Return: 4.84 Accuracy: 0.60
 #        train = True
+#        0.65: 1.76
+        train_pct = 0.65
+#        test_pct = 0.3
 #        test_pct = 1
 #        reload = True
         units = 32
-        epochs = 30
+        epochs = 50
         model = cfgdir+'/model.215'
         take_profit = 0.16
+        fee = 0.002 # Taker
 #        execute = True
 #        short = True
 #        max_short = 250
 #        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
 #        train = True
+        train_pct = 0.7 # This affects scaler fit, need to load scaler from file
+#        test_pct = 0.3
 #        test_pct = 1
 #        reload = True
-        units = 16
+        units = 32
         epochs = 50
         model_type = 'LSTM'
         signal_threshold = 1
@@ -230,8 +236,33 @@ def load_config(config):
 #        !!! Short only in Bear market !!!
 #        short = True
 #        max_short = 250
-#        Test Only: No SL: 8.96, 0.15: 8.57
-#        All Data: No SL: 93951, 0.46: 53714 
+#        Test Only: No SL: 1.93, 0.14: 1.93
+#        stop_loss = 0.15
+    elif conf == 'ETHUSDLSTM1':
+        model_type = 'LSTM1'
+        units = 16
+        epochs = 50
+        signal_threshold = 1
+#        train = True
+        test_pct = 1
+        short = True
+    elif conf == 'ETHUSDNN1':
+# Strategy Return: 201.85 (ALL), 1.84 (Test) Accuracy: 0.57 Epoch: 100
+        train = True
+        train_pct = 0.75
+        test_pct = 0.25
+#        test_pct = 1
+        model_type = 'NN1'
+#        reload = True
+        units = 32
+        epochs = 50
+        signal_threshold = 1
+        model = cfgdir+'/model.top'
+        take_profit = 0.16
+        fee = 0.002 # Taker
+#        execute = True
+#        short = True
+#        max_short = 250
 #        stop_loss = 0.15
 
     global file

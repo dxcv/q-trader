@@ -33,10 +33,11 @@ def send_results(res, msg):
 
 def execute(s):
     action = s['action']
+    new_trade = s['new_trade']
     position = x.get_position()    
     is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-    if  p.short or action == 'Buy':
+    if not is_open and (p.short or (action == 'Buy' and not new_trade or action == 'Sell' and new_trade)):
         if p.stop_loss < 1 and not x.has_sl_order(): send('SL has triggerd!')
         if p.take_profit > 0 and not x.has_tp_order(): send('TP has triggered!')
     
