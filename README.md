@@ -19,9 +19,8 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-
-# Scaling depends on train/test split which is changing over time
-# Load fitted scaler from file for test run
+# Feature Selection Tool
+https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
 MAMA - MESA Adaptive Moving Average
 KAMA Kaufman Adaptive Moving Average
@@ -63,12 +62,6 @@ https://colab.research.google.com/notebooks/welcome.ipynb
 
 # Most used indicators
 https://www.quantinsti.com/blog/indicators-build-trend-following-strategy/
-
-# Feature Engineering
-https://towardsdatascience.com/why-automated-feature-engineering-will-change-the-way-you-do-machine-learning-5c15bf188b96
-
-# Feature Selection Tool
-https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
 # Hyperparameter Tuning
 https://en.wikipedia.org/wiki/Hyperparameter_optimization
@@ -196,6 +189,9 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+Reinforcement learning tutorial using Python and Keras
+https://adventuresinmachinelearning.com/reinforcement-learning-tutorial-python-keras/
+
 AutoML
 https://www.datacamp.com/community/tutorials/automated-machine-learning-auto-keras
 https://www.pyimagesearch.com/2019/01/07/auto-keras-and-automl-a-getting-started-guide/

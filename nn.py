@@ -22,7 +22,7 @@ import keras.backend as K
 import pandas as pd
 import stats as s
 import datalib as dl
-from joblib import dump, load
+from sklearn.externals.joblib import dump, load
 
 def get_signal_str(s=''):
     if s == '': s = get_signal()
@@ -75,8 +75,11 @@ def get_train_test(X, y):
     
     # Feature Scaling
     # Load scaler from file for test run
+#    from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
     scaler = p.cfgdir+'/sc.dmp'
     if p.train:
+#        sc = QuantileTransformer(10)
+#        sc = MinMaxScaler()
         sc = StandardScaler()
         X_train = sc.fit_transform(X_train)
         X_test = sc.transform(X_test)
