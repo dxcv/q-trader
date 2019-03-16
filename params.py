@@ -237,13 +237,14 @@ def load_config(config):
 #        max_short = 250
 #        stop_loss = 0.15
     elif conf == 'ETHUSDLSTM1':
+        train = True
+        train_pct = 0.7
+        test_pct = 0.3
+#        test_pct = 1
         model_type = 'LSTM1'
-        units = 16
+        units = 32
         epochs = 50
         signal_threshold = 1
-#        train = True
-        test_pct = 1
-        short = True
     elif conf == 'ETHUSDNN1':
 # Strategy Return: 201.85 (ALL), 1.84 (Test) Accuracy: 0.57 Epoch: 100
         train = True

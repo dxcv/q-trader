@@ -22,6 +22,7 @@ export AWS_REGION=You AWS  Region
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
+From eToro: RSI, 9MA RSI, MA20 + Bollinger Bands, MA50, MACD
 MAMA - MESA Adaptive Moving Average
 KAMA Kaufman Adaptive Moving Average
 

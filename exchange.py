@@ -189,7 +189,7 @@ def has_tp_order():
     return has_orders(['take-profit'])
 
 def get_position():
-    if get_balance(p.ticker) > 0: return 'Buy'
+    if get_balance(p.ticker) > p.min_equity: return 'Buy'
     if not p.short: return 'Sell'
 
     # Check short position

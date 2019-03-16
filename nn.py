@@ -525,133 +525,93 @@ def runLSTM():
     print(str(get_signal_str()))
 
 # convert series to supervised learning
-def series_to_supervised(features, targets, n_in=1, n_out=1, dropnan=True):
-	cols, names = list(), list()
-	# input sequence (t-n, ... t-1)
-	for i in range(n_in, 0, -1):
-		cols.append(features.shift(i))
-		names += [(features.columns[j]+'(t-%d)' % (i)) for j in range(len(features.columns))]
-     # forecast sequence (t, t+1, ... t+n)
-	for i in range(0, n_out):
-		cols.append(targets.shift(-i))
-		names += [(targets.columns[j]+'(t+%d)' % (i)) for j in range(len(targets.columns))]
-	# put it all together
-	agg = pd.concat(cols, axis=1)
-	agg.columns = names
-	# drop rows with NaN values
-	if dropnan:
-		agg.dropna(inplace=True)
-	return agg
+#def series_to_supervised(features, targets, n_in=1, n_out=1, dropnan=True):
+#	cols, names = list(), list()
+#	# input sequence (t-n, ... t-1)
+#	for i in range(n_in, 0, -1):
+#		cols.append(features.shift(i))
+#		names += [(features.columns[j]+'(t-%d)' % (i)) for j in range(len(features.columns))]
+#     # forecast sequence (t, t+1, ... t+n)
+#	for i in range(0, n_out):
+#		cols.append(targets.shift(-i))
+#		names += [(targets.columns[j]+'(t+%d)' % (i)) for j in range(len(targets.columns))]
+#	# put it all together
+#	agg = pd.concat(cols, axis=1)
+#	agg.columns = names
+#	# drop rows with NaN values
+#	if dropnan:
+#		agg.dropna(inplace=True)
+#	return agg
     
-def runLSTM1():
-    global ds
-    global td
-
-    ds = dl.load_price_data()
-
-    # Add features
-    n_features = 1
-    ds['DR'] = ds['close']/ds['close'].shift(1)
-#    ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
-    ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
-#    ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
-    ds = ds.dropna()
-   
-    # Select features and target
-    ds1 = ds.iloc[:, -n_features-1:]
-
-    # Train / Test Split
-    train_split = int(len(ds)*p.train_pct)
-    test_split = int(len(ds)*p.test_pct)
-    train, test = ds1[:train_split], ds1[-test_split:]
-    
-    # Feature Scaling
-    from sklearn.preprocessing import MinMaxScaler
-    sc = MinMaxScaler()
-    ntrain = pd.DataFrame(sc.fit_transform(train), columns=train.columns)
-    ntest = pd.DataFrame(sc.transform(test), columns=test.columns)
-        
-    # Prepare data for LSTM
-    lag = 10
-    strain = series_to_supervised(ntrain.iloc[:,1:], ntrain.iloc[:,0:1], lag)
-    stest = series_to_supervised(ntest.iloc[:,1:], ntest.iloc[:,0:1], lag)
-    
-    # split into input and outputs
-    n_obs = lag * n_features
-    X_train, y_train = strain.iloc[:, :n_obs], strain.iloc[:, -1]
-    X_test, y_test = stest.iloc[:, :n_obs], stest.iloc[:, -1]
-
-    # reshape input to be 3D [samples, timesteps, features]
-    X_train_t = X_train.values.reshape((X_train.shape[0], n_features, lag))
-    X_test_t = X_test.values.reshape((X_test.shape[0], n_features, lag))
-
-    file = p.model
-    if p.train:
-        file = p.cfgdir+'/model.nn'
-
-        # design network
-        K.clear_session()
-        nn = Sequential()
-        nn.add(LSTM(p.units, input_shape=(X_train_t.shape[1], X_train_t.shape[2]), return_sequences=True))
-        nn.add(Dropout(0.2))
-        nn.add(LSTM(p.units, return_sequences=False))
-        nn.add(Dense(1))
-  
-        optimizer = RMSprop(lr=0.005, clipvalue=1.)
-        nn.compile(loss=p.loss, optimizer=optimizer)
-        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-        h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, shuffle=False,
-                             verbose=1, callbacks=[cp], validation_data=(X_test_t, y_test))
-        
-        # plot history
-        plt.plot(h.history['loss'], label='train')
-        plt.plot(h.history['val_loss'], label='test')
-        plt.legend()
-        plt.show()
-    
-    # Load Best Model
-    nn = load_model(file)
-
-    sy_pred = nn.predict(X_test_t)
-    X_test_t1 = X_test_t.reshape((X_test_t.shape[0], lag*n_features))[:, -n_features:]
-    
-    # invert scaling for forecast
-    y_pred = sc.inverse_transform(np.concatenate((sy_pred, X_test_t1), axis=1))[:,0]
-    
-    td = gen_signal(ds, y_pred)
-
-    # Backtesting
-    td = run_backtest(td, file)
-    
-    print(str(get_signal_str()))
-
-#conda install numpy scipy scikit-learn pandas
-#pip install deap update_checker tqdm stopit
-#pip install xgboost
-#pip install tpot
-def tpot_test(conf):
-    from tpot import TPOTRegressor
-    from sklearn.model_selection import train_test_split
-    from sklearn.model_selection import TimeSeriesSplit
-    
-    p.load_config(conf)
-    ds = dl.load_price_data()
-    ds = add_features(ds)
-
-    X = ds[p.feature_list][:-1]
-    y = ds['DR'].shift(-1)[:-1]
-
-    # Split Train and Test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, test_size=0.2)
-    
-    tpot = TPOTRegressor(n_jobs=-1, verbosity=2, max_time_mins=60, cv=TimeSeriesSplit(n_splits=3))
-    
-    tpot.fit(X_train, y_train)
-    print(tpot.score(X_test, y_test))
-    tpot.export('./tpot_out.py')
-    
-#tpot_test('ETHUSDNN')
+#def runLSTM1():
+#    global ds
+#    global td
+#
+#    ds = dl.load_price_data()
+#
+#    # Add Target
+#    ds['DR'] = ds['close']/ds['close'].shift(1)
+#
+#    # Add features
+#    n_features = 1
+#    ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
+#    ds = ds.dropna()
+#   
+#    # Select features and target
+#    X = ds.iloc[:, -n_features-1:]
+#
+#    # Prepare data for LSTM
+#    lag = 10
+#    strain = series_to_supervised(ntrain.iloc[:,1:], ntrain.iloc[:,0:1], lag)
+#    
+#    X_train, X_test, y_train, y_test = get_train_test(X, y) 
+#    
+#    # split into input and outputs
+#    n_obs = lag * n_features
+#    X_train, y_train = strain.iloc[:, :n_obs], strain.iloc[:, -1]
+#    X_test, y_test = stest.iloc[:, :n_obs], stest.iloc[:, -1]
+#
+#    # reshape input to be 3D [samples, timesteps, features]
+#    X_train_t = X_train.values.reshape((X_train.shape[0], n_features, lag))
+#    X_test_t = X_test.values.reshape((X_test.shape[0], n_features, lag))
+#
+#    file = p.model
+#    if p.train:
+#        file = p.cfgdir+'/model.nn'
+#
+#        # design network
+#        K.clear_session()
+#        nn = Sequential()
+#        nn.add(LSTM(p.units, input_shape=(X_train_t.shape[1], X_train_t.shape[2]), return_sequences=True))
+#        nn.add(Dropout(0.2))
+#        nn.add(LSTM(p.units, return_sequences=False))
+#        nn.add(Dense(1))
+#  
+#        optimizer = RMSprop(lr=0.005, clipvalue=1.)
+#        nn.compile(loss=p.loss, optimizer=optimizer)
+#        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+#
+#        h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, shuffle=False,
+#                             verbose=0, callbacks=[cp], validation_data=(X_test_t, y_test))
+#        
+#        # plot history
+#        plot_fit_history(h)
+#    
+#    # Load Best Model
+#    nn = load_model(file)
+#
+#    sy_pred = nn.predict(X_test_t)
+#    X_test_t1 = X_test_t.reshape((X_test_t.shape[0], lag*n_features))[:, -n_features:]
+#    
+#    # invert scaling for forecast
+#    y_pred = sc.inverse_transform(np.concatenate((sy_pred, X_test_t1), axis=1))[:,0]
+#    
+#    td = gen_signal(ds, y_pred)
+#
+#    # Backtesting
+#    td = run_backtest(td, file)
+#    
+#    print(str(get_signal_str()))
 
 def runModel(conf):
     p.load_config(conf)
@@ -662,8 +622,8 @@ def runModel(conf):
         runNN1()
     elif p.model_type == 'LSTM':
         runLSTM()
-    elif p.model_type == 'LSTM1':
-        runLSTM1()
+#    elif p.model_type == 'LSTM1':
+#        runLSTM1()
 
 #runModel('BTCUSDNN')
 #runModel('BTCUSDLSTM')
