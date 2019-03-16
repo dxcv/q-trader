@@ -365,109 +365,6 @@ def runNN():
 
     print(str(get_signal_str()))
 
-def runNN1():
-    global td
-    global ds
-    
-    ds = dl.load_price_data()
-    ds = add_features(ds)
-
-# =============================================================================
-#     print('*** Adding Features ***')
-#     ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
-#     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
-#     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
-#     ds['DR'] = ds['close']/ds['close'].shift(1)
-#     ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
-#     ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
-#     ds['STD']= ds['close'].rolling(p.std_period).std()/ds['close']
-#     ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
-#     ds['WR'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
-#     ds['DMA'] = ds.MA/ds.MA.shift(1)
-#     ds['MAR'] = ds.MA/ds.MA2
-#     ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
-#     
-# =============================================================================
-    
-#    for i in (14, 30, 50):
-#        ds['DR'+str(i)] = ds['close']/ds['close'].shift(i)
-#        p.feature_list += ['DR'+str(i)]
-#        ds['MA'+str(i)] = ds['close']/ds['close'].rolling(i).mean()
-#        p.feature_list += ['MA'+str(i)]
-#        ds['DMA'+str(i)] = ds['MA'+str(i)]/ds['MA'+str(i)].shift(1)
-#        p.feature_list += ['DMA'+str(i)]
-#        ds['RSI'+str(i)] = talib.RSI(ds['close'].values, timeperiod = i)
-#        p.feature_list += ['RSI'+str(i)]
-#        ds['STD'+str(i)]= ds['close'].rolling(i).std()
-#        p.feature_list += ['STD'+str(i)]
-#        ds['VOL'+str(i)] = ds['volume']/ds['volume'].rolling(i).mean()
-#        p.feature_list += ['VOL'+str(i)]
-#        ds['WR'+str(i)] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, i)
-#        p.feature_list += ['WR'+str(i)]
-#        ds['HL'+str(i)] = ds['high'].rolling(i).max()/ds['low'].rolling(i).min() 
-#        p.feature_list += ['HL'+str(i)]
-#    ds = ds.dropna()
-    
-    # Separate input from output. Exclude last row
-    X = ds[p.feature_list][:-1]
-    y = ds[['DR']].shift(-1)[:-1]
-#    y = ds[['Price_Rise']].shift(-1)[:-1]
-
-    # Separate train from test
-    train_split = int(len(X)*p.train_pct)
-    test_split = int(len(X)*p.test_pct)
-    X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
-    
-    # Feature Scaling
-    from sklearn.preprocessing import MinMaxScaler
-    sc = MinMaxScaler()
-#    sc = StandardScaler()
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.transform(X_test)
-    
-#    y_train = sc.fit_transform(y_train)
-#    y_test = sc.transform(y_test)
-    
-    if p.train:
-        file = p.cfgdir+'/model.nn'
-        print('*** Training model with '+str(p.units)+' units per layer ***')
-        nn = Sequential()
-        nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim = X_train.shape[1]))
-        nn.add(Dropout(0.2))
-        nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
-        nn.add(Dense(1))
-    
-        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-        nn.compile(optimizer = 'adam', loss = p.loss)
-        history = nn.fit(X_train, y_train, batch_size = 10,
-                                 epochs = p.epochs, callbacks=[cp], 
-                                 validation_data=(X_test, y_test), 
-                                 verbose=0)
-    
-        # Plot model history
-        plot_fit_history(history)
-    
-        # Load Best Model
-        nn = load_model(file) 
-    else:
-        file = p.model
-        nn = load_model(file) 
-        print('Loaded best model: '+file)
-     
-    # Making prediction
-    y_pred_val = nn.predict(X_test)
-    
-#    y_pred_val = sc.inverse_transform(y_pred_val)
-
-    # Generating Signals
-    td = gen_signal(ds, y_pred_val)
-
-    # Backtesting
-    td = run_backtest(td, file)
-
-    print(str(get_signal_str()))
-
-
 # See: 
 # https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
 def runLSTM():
@@ -618,8 +515,6 @@ def runModel(conf):
 
     if p.model_type == 'NN':
         runNN()
-    elif p.model_type == 'NN1':
-        runNN1()
     elif p.model_type == 'LSTM':
         runLSTM()
 #    elif p.model_type == 'LSTM1':
@@ -629,7 +524,6 @@ def runModel(conf):
 #runModel('BTCUSDLSTM')
 
 #runModel('ETHUSDLSTM1')
-#runModel('ETHUSDNN1')
 
 #runModel('ETHUSDNN')
 #runModel('ETHUSDLSTM')

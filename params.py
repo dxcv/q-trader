@@ -247,9 +247,10 @@ def load_config(config):
         signal_threshold = 1
     elif conf == 'ETHUSDNN1':
 # Strategy Return: 201.85 (ALL), 1.84 (Test) Accuracy: 0.57 Epoch: 100
+# Target Return: 1.88
         train = True
-        train_pct = 0.75
-        test_pct = 0.25
+        train_pct = 0.7
+        test_pct = 0.3
 #        test_pct = 1
         model_type = 'NN1'
 #        reload = True
