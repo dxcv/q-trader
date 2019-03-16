@@ -258,9 +258,11 @@ def load_config(config):
         units = 32
         epochs = 50
         model = cfgdir+'/model.215'
-        take_profit = 0.16
+        take_profit = 0.15
         fee = 0.002 # Taker
         execute = True
+        order_type = 'market'
+        order_pct = 0.99 # Reserve 1% for slippage
 #        short = True
 #        max_short = 250
 #        stop_loss = 0.03
