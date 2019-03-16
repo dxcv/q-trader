@@ -70,7 +70,7 @@ def add_features(ds):
 def get_train_test(X, y):
     # Separate train from test
     train_split = int(len(X)*p.train_pct)
-    test_split = int(len(X)*p.test_pct)
+    test_split = p.test_bars if p.test_bars > 0 else int(len(X)*p.test_pct)
     X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
     
     # Feature Scaling
@@ -286,12 +286,7 @@ def run_backtest(td, file):
     return bt
 
 def plot_chart(df, title, date_col='date'):
-    td = df.copy()
-    if p.plot_bars > 0:
-        td = td[td[date_col] >= td[date_col].max() - dt.timedelta(days=p.plot_bars)]
-#        td = td.tail(p.plot_bars).reset_index(drop=True)
-        td['CMR'] = dl.normalize(td['CMR'])
-        td['CSR'] = dl.normalize(td['CSR'])
+    td = df.dropna().copy()
     td = td.set_index(date_col)
     fig, ax = plt.subplots()
     fig.autofmt_xdate()
@@ -517,13 +512,13 @@ def runModel(conf):
         runNN()
     elif p.model_type == 'LSTM':
         runLSTM()
-#    elif p.model_type == 'LSTM1':
-#        runLSTM1()
 
 #runModel('BTCUSDNN')
 #runModel('BTCUSDLSTM')
 
+#runModel('ETHUSDLSTM')
 #runModel('ETHUSDLSTM1')
+#runModel('ETHUSDNN1')
 
 #runModel('ETHUSDNN')
-#runModel('ETHUSDLSTM')
+

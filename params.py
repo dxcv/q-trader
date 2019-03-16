@@ -119,8 +119,8 @@ def load_config(config):
     test_pct = 0.2 # % of data used for testing
     global model
     model = cfgdir+'/model.nn'
-    global plot_bars # Number of days to plot. 0 means plot all
-    plot_bars = 0
+    global test_bars # Number of bars to test. Overrides test_pct if > 0
+    test_bars = 0
     global time_lag # Number of hours to offset price data. 0 means no offset
     time_lag = 0 # best 0: 3.49 4: 2.59 6: 1.6 7: 1.49 8: 2.71 20: 0.87
     global trade_interval
@@ -198,29 +198,12 @@ def load_config(config):
 #        hold_signals = [99]
 #        rsi_period = 21
 #        stop_loss = 0.1
-# ***************************************** Active Strategies
-# !!! Do not touch Active strategies - use new conf for tuning !!!
-# !!! Scaler will be updated when tuning is run 
-    elif conf == 'ETHUSDNN':
-# Accuracy: 0.61, Win Ratio: 0.69, Strategy Return: 1.76
-#        train = True
-#        train_pct = 0.65
-#        test_pct = 0.35
-#        test_pct = 1
-        units = 32
-        epochs = 50
-        model = cfgdir+'/model.215'
-        take_profit = 0.16
-        fee = 0.002 # Taker
-#        execute = True
-#        short = True
-#        max_short = 250
-#        stop_loss = 0.03
     elif conf == 'ETHUSDLSTM':
 # Accuracy: 0.57, Win Ratio: 0.68, Strategy Return: 1.77
 #        train = True
-#        train_pct = 0.7
+#        train_pct = 0.65
 #        test_pct = 0.3
+        test_bars = 365
 #        test_pct = 1
         units = 32
         epochs = 50
@@ -228,7 +211,7 @@ def load_config(config):
         signal_threshold = 1
         model = cfgdir+'/model.top'
         take_profit = 0.15  # Best TP 0.15: 1.77 No: 1.45
-        execute = True
+#        execute = True
         fee = 0.002 # Taker
         order_type = 'market'
         order_pct = 0.99 # Reserve 1% for slippage
@@ -247,12 +230,10 @@ def load_config(config):
         signal_threshold = 1
     elif conf == 'ETHUSDNN1':
 # Strategy Return: 201.85 (ALL), 1.84 (Test) Accuracy: 0.57 Epoch: 100
-# Target Return: 1.88
         train = True
         train_pct = 0.7
         test_pct = 0.3
 #        test_pct = 1
-        model_type = 'NN1'
 #        reload = True
         units = 32
         epochs = 50
@@ -264,6 +245,25 @@ def load_config(config):
 #        short = True
 #        max_short = 250
 #        stop_loss = 0.15
+# ***************************************** Active Strategies
+# !!! Do not touch Active strategies - use new conf for tuning !!!
+# !!! Scaler will be updated when tuning is run 
+    elif conf == 'ETHUSDNN':
+# Accuracy: 0.61, Win Ratio: 0.69, Strategy Return: 1.76
+#        train = True
+#        train_pct = 0.65
+#        test_pct = 0.35
+#        test_bars = 365
+#        test_pct = 1
+        units = 32
+        epochs = 50
+        model = cfgdir+'/model.215'
+        take_profit = 0.16
+        fee = 0.002 # Taker
+        execute = True
+#        short = True
+#        max_short = 250
+#        stop_loss = 0.03
 
     global file
     file = cfgdir+'/price.pkl'

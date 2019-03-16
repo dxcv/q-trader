@@ -92,11 +92,6 @@ def test_execute():
     execute(s)
 
 
-send('Old Model:', True)
 run_model('ETHUSDNN')
 
-send('New Model:', True)
-run_model('ETHUSDLSTM')
-
 t.cleanup()
-
