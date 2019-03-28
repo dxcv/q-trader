@@ -185,28 +185,28 @@ def load_config(config):
         vol_period = 50
     elif conf == 'BTCUSDLSTM':
 #        model = cfgdir+'/model.top'
-        model = 'data/ETHUSDLSTM/model.top'
+#        model = 'data/ETHUSDLSTM/model.nn'
         model_type = 'LSTM'
         signal_threshold = 1
 #        short = True
-#        train = True
+        train = True
+        train_pct = 1
         test_pct = 1
         units = 32
-        epochs = 50
+        epochs = 20
         fee = 0.002 # Taker
         order_type = 'market'
-#        hold_signals = [99]
-#        rsi_period = 21
+        rsi_period = 50
 #        stop_loss = 0.1
     elif conf == 'ETHUSDLSTM':
 # Accuracy: 0.57, Win Ratio: 0.68, Strategy Return: 1.77
 #        train = True
-#        train_pct = 0.65
-#        test_pct = 0.3
-        test_bars = 365
+#        train_pct = 1
+#        test_pct = 1
+#        test_bars = 365
 #        test_pct = 1
         units = 32
-        epochs = 50
+        epochs = 20
         model_type = 'LSTM'
         signal_threshold = 1
         model = cfgdir+'/model.top'
@@ -221,12 +221,12 @@ def load_config(config):
 #        stop_loss = 0.15
     elif conf == 'ETHUSDLSTM1':
         train = True
-        train_pct = 0.7
-        test_pct = 0.3
+        train_pct = 0.8
+        test_pct = 0.2
 #        test_pct = 1
-        model_type = 'LSTM1'
+        model_type = 'LSTM'
         units = 32
-        epochs = 50
+        epochs = 20
         signal_threshold = 1
     elif conf == 'ETHUSDNN1':
 # Strategy Return: 201.85 (ALL), 1.84 (Test) Accuracy: 0.57 Epoch: 100
@@ -259,11 +259,12 @@ def load_config(config):
         epochs = 50
         model = cfgdir+'/model.215'
         take_profit = 0.15
-        fee = 0.002 # Taker
+#        fee = 0.002 # Taker
+        fee = 0.0008 # Maker
         execute = True
-        order_type = 'market'
-        order_pct = 0.99 # Reserve 1% for slippage
 #        short = True
+#        order_type = 'market'
+#        order_pct = 0.99 # Reserve 1% for slippage
 #        max_short = 250
 #        stop_loss = 0.03
 

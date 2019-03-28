@@ -254,7 +254,8 @@ def gen_trades(ds):
         return pd.Series(names)
 
     tr = ds.groupby(ds.trade_id).apply(trade_agg)
-    tr['win'] = (tr.sr > 1) | (tr.sr == 1) & (tr.mr < 1)
+    if not p.short: tr = tr[tr.action=='Buy']
+    tr['win'] = (tr.sr > 1)
     tr['CMR'] = np.cumprod(tr['mr'])
     tr['CSR'] = np.cumprod(tr['sr'])
     tr = tr.dropna()
@@ -310,8 +311,8 @@ def show_stats(td, trades):
     srt = math.sqrt(365) * s.sortino_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     dur = trades.duration.mean()
     slf = len(trades[trades.sl])/len(trades)
-    print('Strategy Return: %.2f' % trades.CSR.iloc[-1])
-    print('Market Return: %.2f'   % trades.CMR.iloc[-1])
+    print('Strategy Return: %.2f' % td.CSR.iloc[-1])
+    print('Market Return: %.2f'   % td.CMR.iloc[-1])
     print('Sortino Ratio: %.2f' % srt)
     print('Bars in Trade: %.0f' % dur)
     print('Accuracy: %.2f' % (len(td[td.y_pred.astype('int') == td.Price_Rise])/len(td)))
@@ -367,37 +368,36 @@ def runLSTM():
     global td
 
     ds = dl.load_price_data()
-
-    # Add features
-    ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
-    ds['DR'] = ds['close']/ds['close'].shift(1)
+    ds = add_features(ds)
    
     lag = 10
+    n_features = 2
+    X = pd.DataFrame()
     for i in range(1, lag+1):
-        ds['RSI'+str(i)] = ds['RSI'].shift(i)
-    ds = ds.dropna()
+        X['RSI'+str(i)] = ds['RSI'].shift(i)
+        X['MA'+str(i)] = ds['MA'].shift(i)
+#        X['VOL'+str(i)] = ds['VOL'].shift(i)
+    X = X.dropna()
     
-    X = ds.iloc[:,-lag:]
     y = ds['DR']
 
     X_train, X_test, y_train, y_test = get_train_test(X, y) 
 
-    X_train_t = X_train.reshape(X_train.shape[0], 1, lag)
-    X_test_t = X_test.reshape(X_test.shape[0], 1, lag)
+    X_train_t = X_train.reshape(X_train.shape[0], lag, n_features)
+    X_test_t = X_test.reshape(X_test.shape[0], lag, n_features)
 
     file = p.model
     if p.train:
         file = p.cfgdir+'/model.nn'
-        K.clear_session()
         nn = Sequential()
-        nn.add(LSTM(p.units, input_shape=(1, lag), return_sequences=True))
+        nn.add(LSTM(p.units, input_shape=(X_train_t.shape[1], X_train_t.shape[2]), return_sequences=True))
         nn.add(Dropout(0.2))
         nn.add(LSTM(p.units, return_sequences=False))
         nn.add(Dense(1))
         
         optimizer = RMSprop(lr=0.005, clipvalue=1.)
 #        optimizer = 'adam'
-        nn.compile(loss=p.loss, optimizer=optimizer, metrics = ['accuracy'])
+        nn.compile(loss=p.loss, optimizer=optimizer)
         
         cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
         h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, 
@@ -416,95 +416,6 @@ def runLSTM():
     
     print(str(get_signal_str()))
 
-# convert series to supervised learning
-#def series_to_supervised(features, targets, n_in=1, n_out=1, dropnan=True):
-#	cols, names = list(), list()
-#	# input sequence (t-n, ... t-1)
-#	for i in range(n_in, 0, -1):
-#		cols.append(features.shift(i))
-#		names += [(features.columns[j]+'(t-%d)' % (i)) for j in range(len(features.columns))]
-#     # forecast sequence (t, t+1, ... t+n)
-#	for i in range(0, n_out):
-#		cols.append(targets.shift(-i))
-#		names += [(targets.columns[j]+'(t+%d)' % (i)) for j in range(len(targets.columns))]
-#	# put it all together
-#	agg = pd.concat(cols, axis=1)
-#	agg.columns = names
-#	# drop rows with NaN values
-#	if dropnan:
-#		agg.dropna(inplace=True)
-#	return agg
-    
-#def runLSTM1():
-#    global ds
-#    global td
-#
-#    ds = dl.load_price_data()
-#
-#    # Add Target
-#    ds['DR'] = ds['close']/ds['close'].shift(1)
-#
-#    # Add features
-#    n_features = 1
-#    ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
-#    ds = ds.dropna()
-#   
-#    # Select features and target
-#    X = ds.iloc[:, -n_features-1:]
-#
-#    # Prepare data for LSTM
-#    lag = 10
-#    strain = series_to_supervised(ntrain.iloc[:,1:], ntrain.iloc[:,0:1], lag)
-#    
-#    X_train, X_test, y_train, y_test = get_train_test(X, y) 
-#    
-#    # split into input and outputs
-#    n_obs = lag * n_features
-#    X_train, y_train = strain.iloc[:, :n_obs], strain.iloc[:, -1]
-#    X_test, y_test = stest.iloc[:, :n_obs], stest.iloc[:, -1]
-#
-#    # reshape input to be 3D [samples, timesteps, features]
-#    X_train_t = X_train.values.reshape((X_train.shape[0], n_features, lag))
-#    X_test_t = X_test.values.reshape((X_test.shape[0], n_features, lag))
-#
-#    file = p.model
-#    if p.train:
-#        file = p.cfgdir+'/model.nn'
-#
-#        # design network
-#        K.clear_session()
-#        nn = Sequential()
-#        nn.add(LSTM(p.units, input_shape=(X_train_t.shape[1], X_train_t.shape[2]), return_sequences=True))
-#        nn.add(Dropout(0.2))
-#        nn.add(LSTM(p.units, return_sequences=False))
-#        nn.add(Dense(1))
-#  
-#        optimizer = RMSprop(lr=0.005, clipvalue=1.)
-#        nn.compile(loss=p.loss, optimizer=optimizer)
-#        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-#
-#        h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, shuffle=False,
-#                             verbose=0, callbacks=[cp], validation_data=(X_test_t, y_test))
-#        
-#        # plot history
-#        plot_fit_history(h)
-#    
-#    # Load Best Model
-#    nn = load_model(file)
-#
-#    sy_pred = nn.predict(X_test_t)
-#    X_test_t1 = X_test_t.reshape((X_test_t.shape[0], lag*n_features))[:, -n_features:]
-#    
-#    # invert scaling for forecast
-#    y_pred = sc.inverse_transform(np.concatenate((sy_pred, X_test_t1), axis=1))[:,0]
-#    
-#    td = gen_signal(ds, y_pred)
-#
-#    # Backtesting
-#    td = run_backtest(td, file)
-#    
-#    print(str(get_signal_str()))
-
 def runModel(conf):
     p.load_config(conf)
 
@@ -514,11 +425,12 @@ def runModel(conf):
         runLSTM()
 
 #runModel('BTCUSDNN')
+
+#runModel('ETHUSDNN1')
+
 #runModel('BTCUSDLSTM')
 
 #runModel('ETHUSDLSTM')
-#runModel('ETHUSDLSTM1')
-#runModel('ETHUSDNN1')
-
 #runModel('ETHUSDNN')
 
+#runModel('ETHUSDLSTM1')

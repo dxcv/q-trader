@@ -58,6 +58,16 @@ def load_data():
     print('Last complete '+p.bar_period+' close: '+str(df.close.iloc[-2]))
     return df
 
+def load_data1():
+    url = 'https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440'
+    # array of array entries(<time>, <open>, <high>, <low>, <close>, <vwap>, <volume>, <count>)
+    df = pd.DataFrame(requests.get(url).json()['result']['XETHZUSD'])
+    df.columns = ['time','open','high','low','close','vwap','volume','count']
+    df = df.set_index('time')
+    df = df.sort_index()
+    df['date'] = pd.to_datetime(df.index, unit='s')
+    
+
 def load_prices():
     """ Loads historical price data and saves it in price.csv
     """

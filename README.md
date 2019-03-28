@@ -19,6 +19,19 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# Trade multiple coins based on relative strength
+# Relative Strength Strategies for Investing
+https://mebfaber.com/white-papers/
+
+# Self Learning Quant
+https://hackernoon.com/the-self-learning-quant-d3329fcc9915
+https://github.com/danielzak/sl-quant/blob/master/ex3-self_learning_quant.py
+
+# Use Kraken price data / Use cryptowat.ch API
+https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440
+
+# Trade at 6pm Moscow time = Midnight in Japan/Korea
+
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
 
@@ -39,9 +52,6 @@ https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkC
 + stats (y_pred_id, minr, maxr)
 + ATR
 # Option to set SL and TP on trade level
-
-# Use Kraken price data / Use cryptowat.ch API
-https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440
 
 # Bitfinex Integration
 
@@ -190,6 +200,10 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+Portfolio Management from Meb Faber
+https://www.cambriainvestments.com/investing-insights/#whitepapers
+Critics: https://www.moneysense.ca/columns/the-failed-promise-of-market-timing/
+
 Reinforcement learning tutorial using Python and Keras
 https://adventuresinmachinelearning.com/reinforcement-learning-tutorial-python-keras/
 
