@@ -142,7 +142,7 @@ def load_config(config):
     global feature_list # List of features to use for NN (ordered by importance)
     feature_list = ['VOL','HH','LL','DR','MA','MA2','STD','RSI','WR','DMA','MAR'] 
 #    features ordered by importance: ['RSI','MA','MA2','STD','WR','MAR','HH','VOL','LL','DMA','DR']
-    global datasource # Data Source for price data. Options cc: CryptoCompare, dr: DataReader, ql: Quandl
+    global datasource # Data Source for price data. Options cc: CryptoCompare, kr: Kraken, dr: DataReader, ql: Quandl
     datasource = 'cc'
     global loss # Loss function for NN: mse, binary_crossentropy, mean_absolute_error etc
     loss = 'mse'
@@ -152,6 +152,8 @@ def load_config(config):
     model_type = 'NN'
     global price_precision # Number of decimals for price
     price_precision = 2
+    global kraken_pair # Name of pair in Kraken. Used for fetching price data from Kraken
+    kraken_pair = ''
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -253,15 +255,17 @@ def load_config(config):
 #        train = True
 #        train_pct = 0.65
 #        test_pct = 0.35
-#        test_bars = 365
+#        test_bars = 246
 #        test_pct = 1
         units = 32
         epochs = 50
         model = cfgdir+'/model.215'
         take_profit = 0.15
-#        fee = 0.002 # Taker
+#        fee = 0.0018 # Taker
         fee = 0.0008 # Maker
         execute = True
+        datasource = 'kr'
+        kraken_pair = 'XETHZUSD'
 #        short = True
 #        order_type = 'market'
 #        order_pct = 0.99 # Reserve 1% for slippage

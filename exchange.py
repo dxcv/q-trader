@@ -16,7 +16,6 @@ import ccxt
 import time
 import params as p
 import secrets as s
-#import cfscrape
 
 ex = ccxt.kraken({
 #    'verbose': True,    

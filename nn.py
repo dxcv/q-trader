@@ -18,7 +18,6 @@ from sklearn.preprocessing import StandardScaler
 #from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import RMSprop
-import keras.backend as K
 import pandas as pd
 import stats as s
 import datalib as dl
@@ -34,7 +33,7 @@ def get_signal_str(s=''):
     if p.take_profit > 0: txt += ' TP: '+str(s['tp_price'])
     txt += ' PnL: '+str(s['pnl'])+'%'
     txt += ' Date: '+str(s['open_ts'])
-    txt += ' Price: '+str(s['open'])
+    txt += ' Open: '+str(s['open'])
     if s['tp']: txt += ' TAKE PROFIT!'
     if s['sl']: txt += ' STOP LOSS!'
     
@@ -332,7 +331,7 @@ def runNN():
     global td
     global ds
     
-    ds = dl.load_price_data()
+    ds = dl.load_data()
     ds = add_features(ds)
     
     # Separate input from output. Exclude last row
@@ -367,7 +366,7 @@ def runLSTM():
     global ds
     global td
 
-    ds = dl.load_price_data()
+    ds = dl.load_data()
     ds = add_features(ds)
    
     lag = 10
@@ -431,6 +430,6 @@ def runModel(conf):
 #runModel('BTCUSDLSTM')
 
 #runModel('ETHUSDLSTM')
-#runModel('ETHUSDNN')
-
 #runModel('ETHUSDLSTM1')
+
+#runModel('ETHUSDNN')

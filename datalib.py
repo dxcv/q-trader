@@ -19,6 +19,31 @@ import quandl
 import numpy as np
 
 
+def load_data_cc():
+    retry = True
+    while retry: # This is to avoid issue when only 31 rows are returned
+        r = requests.get('https://min-api.cryptocompare.com/data/histo'+p.bar_period
+                         +'?fsym='+p.ticker+'&tsym='+p.currency
+                         +'&allData=true&e='+p.exchange
+                         +'&api_key='+s.cryptocompare_key)
+        df = pd.DataFrame(r.json()['Data'])
+        if len(df) > p.min_data_size: 
+            retry = False
+        else:
+            print("Incomplete price data. Retrying ...")
+    df = df.rename(columns={'volumefrom': 'volume'})
+    
+    return df
+
+def load_data_kr():
+    url = 'https://api.kraken.com/0/public/OHLC?pair='+p.ticker+p.currency+'&interval=1440'
+    df = pd.DataFrame(requests.get(url).json()['result'][p.kraken_pair])
+    df.columns = ['time','open','high','low','close','vwap','volume','count']
+    df = df[['time','open','high','low','close','volume']]
+    df = df.apply(pd.to_numeric)
+    
+    return df
+
 # Load Historical Price Data from Cryptocompare
 # API Guide: https://medium.com/@agalea91/cryptocompare-api-quick-start-guide-ca4430a484d4
 def load_data():
@@ -30,43 +55,23 @@ def load_data():
             print('Using loaded prices for ' + now)
             return df
     
-    if p.bar_period == 'day':
-        period = 'histoday'
-    elif p.bar_period == 'hour': 
-        period = 'histohour'
-    
-    retry = True
-    while retry: # This is to avoid issue when only 31 rows are returned
-        r = requests.get('https://min-api.cryptocompare.com/data/'+period
-                         +'?fsym='+p.ticker+'&tsym='+p.currency
-                         +'&allData=true&e='+p.exchange
-                         +'&api_key='+s.cryptocompare_key)
-        df = pd.DataFrame(r.json()['Data'])
-        if len(df) > p.min_data_size: 
-            retry = False
-        else:
-            print("Incomplete price data. Retrying ...")
+    if p.datasource == 'cc': df = load_data_cc()
+    elif p.datasource == 'kr': df = load_data_kr()
+    else: print('Invalid Data Source: '+p.datasource) 
+
     df = df.set_index('time')
     df = df.sort_index()
-    df = df.rename(columns={'volumefrom': 'volume'})
     df['date'] = pd.to_datetime(df.index, unit='s')
 
-    if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
     os.makedirs(os.path.dirname(p.file), exist_ok=True)
     pickle.dump(df, open(p.file, "wb" ))
-    print('Loaded Prices from '+p.exchange+' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
+    print('Loaded prices from '+p.exchange+' via '+p.datasource
+          +' Rows:'+str(len(df))+' Date:'+str(df.date.iloc[-1]))
     print('Last complete '+p.bar_period+' close: '+str(df.close.iloc[-2]))
-    return df
 
-def load_data1():
-    url = 'https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440'
-    # array of array entries(<time>, <open>, <high>, <low>, <close>, <vwap>, <volume>, <count>)
-    df = pd.DataFrame(requests.get(url).json()['result']['XETHZUSD'])
-    df.columns = ['time','open','high','low','close','vwap','volume','count']
-    df = df.set_index('time')
-    df = df.sort_index()
-    df['date'] = pd.to_datetime(df.index, unit='s')
-    
+    if p.max_bars > 0: df = df.tail(p.max_bars).reset_index(drop=True)
+
+    return df
 
 def load_prices():
     """ Loads historical price data and saves it in price.csv
@@ -173,24 +178,7 @@ def quandl_stocks(symbol='NVDA', start_date=(2000, 1, 1), end_date=None):
     
     return df
  
-
-def load_price_data():
-    """
-    Main Procedure to load price data
-    """
-    print('*** Loading Data ***')
-    if p.datasource == 'cc':
-        if p.bar_period == 'day':
-            ds = load_data()
-        else:
-            ds = load_prices()
-    elif p.datasource == 'dr':
-        ds = load_prices_dr()
-    elif p.datasource == 'ql':
-        ds = quandl_stocks()
     
-    return ds
-
 # Map feature values to bins (numbers)
 # Each bin has same number of feature values
 def bin_feature(feature, bins=None, cum=True):
