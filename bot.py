@@ -33,37 +33,34 @@ def send_results(res, msg):
 
 def execute(s):
     action = s['action']
-    new_trade = s['new_trade']
     position = x.get_position()    
     is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-    if not is_open and (p.short or (action == 'Buy' and not new_trade or action == 'Sell' and new_trade)):
-        if p.stop_loss < 1 and not x.has_sl_order(): send('SL has triggerd!')
-        if p.take_profit > 0 and not x.has_tp_order(): send('TP has triggered!')
+    if p.stop_loss and not x.has_sl_order(): send('SL is not set!')
+    if p.take_profit < 1 and not x.has_tp_order(): send('TP is not set!')
     
-    # Cancel any open SL and TP orders
+    # Cancel any open orders
     x.cancel_orders()
     
-    # Close position if new trade or SL / TP triggered 
-    if is_open and (action != position or s['tp'] or s['sl']):
+    # Close position if new trade
+    if is_open and action != position:
         res = x.close_position(position)
         send_results(res, 'Closed '+position+' Position')
         is_open = False
     
-    # Do not open new trade if SL or TP already triggered for current day
-    if s['tp'] or s['sl']:
-        send('SL or TP happened today!') 
-        return
-
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
         res = x.open_position(action)
         send_results(res, 'Opened '+action+' Position')
         is_open = True
 
     """ SL/TP can only be set AFTER order is executed if margin is not used """
-    if is_open:
-        if p.take_profit > 0: x.take_profit(action, s['tp_price'])
-        if p.stop_loss < 1: x.stop_loss(action, s['sl_price'])
+    if p.stop_loss and s['sl_price'] > 0: 
+        x.stop_loss(action, s['sl_price'])
+        send('SL set at '+str(s['sl_price']))
+
+    if is_open and p.take_profit < 1: 
+        x.take_profit(action, s['tp_price'])
+        send('TP set at '+str(s['tp_price']))
             
 def run_model(conf):
         s = get_signal(conf)

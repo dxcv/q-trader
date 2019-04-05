@@ -19,7 +19,29 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-# Trade multiple coins based on relative strength
+Breakout Strategy using Pivot Points: Sell -> Buy
+Use Stop Loss order: Buy
+https://support.kraken.com/hc/en-us/articles/203325793-Stop-Loss-Orders
+
+Use Conditional Close order for SL OR TP
+https://support.kraken.com/hc/en-us/articles/203053246-Other-order-options
+
+Use day Open price for Limit Order 
+Limit order stays for whole day - set 'Good This Day' option
+Use first hours data to predict DR
+Ensemble
+Remove Duplicate Data
+
+# Add total Crypto market Cap, Price in BTC
+
+# Generic trading system
+# Test model on S&P500 / NASDAQ / Bitcoin
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
+# 50 MA Trading Systems
+https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
+# Top 5 indicators: http://www.newtraderu.com/2019/01/04/the-top-5-effective-technical-indicators/
+# Binary Features from https://coincheckup.com/coins/ethereum/
 # Relative Strength Strategies for Investing
 https://mebfaber.com/white-papers/
 
@@ -27,10 +49,7 @@ https://mebfaber.com/white-papers/
 https://hackernoon.com/the-self-learning-quant-d3329fcc9915
 https://github.com/danielzak/sl-quant/blob/master/ex3-self_learning_quant.py
 
-# Use Kraken price data / Use cryptowat.ch API
-https://api.kraken.com/0/public/OHLC?pair=ETHUSD&interval=1440
-
-# Trade at 6pm Moscow time = Midnight in Japan/Korea
+# Trade multiple coins based on relative strength
 
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
@@ -38,15 +57,6 @@ https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-
 From eToro: RSI, 9MA RSI, MA20 + Bollinger Bands, MA50, MACD
 MAMA - MESA Adaptive Moving Average
 KAMA Kaufman Adaptive Moving Average
-
-# Convert NN to Regression
-# Generic MA trading system with binary Features
-# Test model on S&P500 / NASDAQ / Bitcoin
-# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
-# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
-# 50 MA Trading Systems
-https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
-# Top 5 indicators: http://www.newtraderu.com/2019/01/04/the-top-5-effective-technical-indicators/
 
 # Set SL and TP based on: 
 + stats (y_pred_id, minr, maxr)
@@ -200,6 +210,9 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+A Guide To Stop Losses
+http://www.newtraderu.com/2018/07/20/a-guide-to-stop-losses/
+
 Portfolio Management from Meb Faber
 https://www.cambriainvestments.com/investing-insights/#whitepapers
 Critics: https://www.moneysense.ca/columns/the-failed-promise-of-market-timing/
@@ -229,7 +242,7 @@ Using the latest advancements in deep learning to predict stock price movements
 https://towardsdatascience.com/aifortrading-2edd6fac689d
 https://github.com/borisbanushev/stockpredictionai
 
-*** From Evgeny Tartakovsy
+*** From Evgeny Tartakovsky
 Google Cloud
 AutoKeras 
 RL 
@@ -273,6 +286,13 @@ Position sizing based on balance %
 
 
 # ********************** Lessons Learned *************************************
+Best months for trading ETH are: Dec - May (Sell in May and go away)
+
+Limit Order vs Market Order
++22% a year for reducing fee from 0.18% to 0.08%
++56% a year for avoiding slippage of 0.3%
+Total: +78% a year
+
 AutoML is very slow and not efficient for time series
 
 Shorting can be good on bear market, but not so good at bull market

@@ -68,9 +68,10 @@ Example: Sell 0.0001 BTC
 order = market_order('sell', 'BTC', 'EUR', 0.0001)
 '''
 
+# Returns day open price
 def get_price():
     ticker = ex.fetch_ticker(p.pair)
-    return ticker['last']
+    return ticker['open']
 
 def get_balance(asset=''):
     if asset == '': asset = p.currency
@@ -127,11 +128,11 @@ def get_pos_size(action):
     return size
 
 # Returns Order Size based on order_pct parameter
-def get_order_size(action):
+def get_order_size(action, price=0):
     if p.order_size > 0: return get_pos_size(action)
     
     # Calculate position size based on available balance
-    price = get_price()
+    if price == 0: price = get_price()
     balance = get_balance()
     amount = balance * p.order_pct * (1 - p.fee) # Apply order_pct and exchange fee
     size = p.truncate(amount/price, p.order_precision)
@@ -151,25 +152,26 @@ def close_position(action, amount=0, price=0, ordertype='', wait=True):
 
     return res
 
-def take_profit(action, price):
-    res = close_position(action, ordertype='take-profit', price=price, wait=False)
-    return res
-
-def stop_loss(action, price):
-    res = close_position(action, ordertype='stop-loss', price=price, wait=False)
-    return res
-
-def open_position(action):
+def open_position(action, amount=0, price=0, ordertype='', wait=True):
     res = {}
-    amount = get_order_size(action)
+    if amount == 0: amount = get_order_size(action, price)
 
     if action == 'Sell':
-        res = create_order('sell', amount, leverage=p.leverage)
+        res = create_order('sell', amount, price, ordertype, leverage=p.leverage, wait)
     elif action == 'Buy':
-        res = create_order('buy', amount)
+        res = create_order('buy', amount, price, ordertype, 1, wait)
 
     return res
         
+def take_profit(action, price):
+    close_position(action, ordertype='take-profit', price=price, wait=False)
+
+def stop_loss(action, price):
+    # Close original position
+    if p.short or action == 'Buy': close_position(action, ordertype='stop-loss', price=price, wait=False)
+    # Breakout Buy
+    if action == 'Sell': open_position('Buy', ordertype='stop-loss', price=price, wait=False)
+
 def has_orders(types=[]):
     if types == []: types = [p.order_type]
     for order in ex.fetchOpenOrders(p.pair):

@@ -13,6 +13,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential, load_model
+from keras import backend as K
 from keras.layers import Dense, LSTM, Activation, Dropout
 from sklearn.preprocessing import StandardScaler
 #from keras.callbacks import EarlyStopping
@@ -29,8 +30,8 @@ def get_signal_str(s=''):
     txt += ' NEW' if s['new_trade'] else ' SAME'  
     txt += ' Trade: '+s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
-    if p.stop_loss < 1: txt += ' SL: '+str(s['sl_price'])
-    if p.take_profit > 0: txt += ' TP: '+str(s['tp_price'])
+    if p.stop_loss: txt += ' SL: '+str(s['sl_price'])
+    if p.take_profit < 1: txt += ' TP: '+str(s['tp_price'])
     txt += ' PnL: '+str(s['pnl'])+'%'
     txt += ' Date: '+str(s['open_ts'])
     txt += ' Open: '+str(s['open'])
@@ -42,14 +43,16 @@ def get_signal_str(s=''):
 def get_signal(offset=-1):
     s = td.iloc[offset]
     pnl = round(100*(s.ctrf - 1), 2)
+    sl = p.truncate(s.sl_price, p.price_precision)
+    tp = p.truncate(s.tp_price, p.price_precision)
     
     return {'new_trade':s.new_trade, 'action':s.signal, 
             'open':s.open, 'open_ts':s.date, 
             'close':s.close, 'close_ts':s.date_to, 'pnl':pnl, 
-            'sl':s.sl, 'sl_price':s.sl_price, 'tp':s.tp, 'tp_price':s.tp_price}
+            'sl':s.sl, 'sl_price':sl, 'tp':s.tp, 'tp_price':tp}
 
 def add_features(ds):
-    print('*** Adding Features ***')
+#    print('*** Adding Features ***')
     ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
     ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
     ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
@@ -62,6 +65,7 @@ def add_features(ds):
     ds['DMA'] = ds.MA/ds.MA.shift(1)
     ds['MAR'] = ds.MA/ds.MA2
     ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
+
     ds = ds.dropna()
     
     return ds
@@ -125,8 +129,9 @@ def train_model(X_train, X_test, y_train, y_test, file):
     
     return nn
     
+# TODO: Use Long / Short / Cash signals
 def gen_signal(ds, y_pred_val):
-    print('*** Generating Signals ***')
+#    print('*** Generating Signals ***')
     ds['y_pred_val'] = np.NaN
     ds.iloc[(len(ds) - len(y_pred_val)):,-1:] = y_pred_val
     ds['y_pred'] = (ds['y_pred_val'] >= p.signal_threshold)
@@ -139,34 +144,33 @@ def gen_signal(ds, y_pred_val):
         td['signal'] = td.signal.fillna(method='ffill')
     if p.hold_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.hold_signals), 'Hold', td.signal)
+    
+#    td['pos'] = td['signal'].map({'Buy':'Long', 'Hold':'Cash', 'Sell': ('Short' if p.short else 'Cash')})
 
     return td
 
 def run_pnl(td, file):
-    bt = td[['date','open','high','low','close','signal']].copy()
+    bt = td[['date','open','high','low','close','volume','signal']].copy()
+    
+    # Calculate Pivot Points
+    bt['PP'] = (bt.high + bt.low + bt.close)/3
+    bt['R1'] = 2*bt.PP - bt.low 
+    bt['S1'] = 2*bt.PP - bt.high
+    bt['R2'] = bt.PP + bt.high - bt.low
+    bt['S2'] = bt.PP - bt.high + bt.low
+    bt['R3'] = bt.high + 2*(bt.PP - bt.low)
+    bt['S3'] = bt.low - 2*(bt.high - bt.PP)
+    bt['R4'] = bt.high + 3*(bt.PP - bt.low)
+    bt['S4'] = bt.low - 3*(bt.high - bt.PP)
 
-    # TODO: Use Hold signal instead of Sell when Short is disabled
-    # Calculate Min / Max Daily Return
-    bt['minr'] = np.where(bt.signal == 'Buy', bt.low/bt.open, 1)
-    if p.short:
-        bt['minr'] = np.where(bt.signal == 'Sell', (2 - bt.high/bt.open), bt.minr)
-
-    bt['maxr'] = np.where(bt.signal == 'Buy', bt.high/bt.open, 1)
-    if p.short:
-        bt['maxr'] = np.where(bt.signal == 'Sell', (2 - bt.low/bt.open), bt.maxr)
-
-    # Calculate SL and TP
-    bt['sl_price'] = np.where(bt.signal == 'Buy', bt.open * (1 - p.stop_loss), 0)
-    if p.short:
-        bt['sl_price'] = np.where(bt.signal == 'Sell', bt.open * (1 + p.stop_loss), bt.sl_price)
-    bt['sl_price'] = bt['sl_price'].apply(lambda x: p.truncate(x, p.price_precision))
+    # Calculate SL price
+    bt['sl_price'] = np.where(bt.signal == 'Buy', bt.S4.shift(1)*0, 0) # Buy SL is currently disabled
+    bt['sl_price'] = np.where(bt.signal == 'Sell', bt.R1.shift(1), bt.sl_price)
+    bt['sl'] = (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
         
+    # Calculate TP price
     bt['tp_price'] = np.where(bt.signal == 'Buy', bt.open * (1 + p.take_profit), 0)
-    if p.short:
-        bt['tp_price'] = np.where(bt.signal == 'Sell', bt.open * (1 - p.take_profit), bt.tp_price)
-    bt['tp_price'] = bt['tp_price'].apply(lambda x: p.truncate(x, p.price_precision))
-
-    bt['sl'] = (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | p.short & (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
+    bt['tp_price'] = np.where(bt.signal == 'Sell', bt.open * (1 - p.take_profit), bt.tp_price)
     bt['tp'] = (bt.signal == 'Buy') & (bt.high >= bt.tp_price) | p.short & (bt.signal == 'Sell') & (bt.low <= bt.tp_price)
 
     bt['new_trade'] = (bt.signal != bt.signal.shift(1)) | bt.sl.shift(1) | bt.tp.shift(1)
@@ -182,6 +186,8 @@ def run_pnl(td, file):
     bt['ctr'] = np.where(bt.signal == 'Buy', bt.close_price/bt.open_price, 1)
     if p.short:
         bt['ctr'] = np.where(bt.signal == 'Sell', 2 - bt.close_price/bt.open_price, bt.ctr)
+    # BreakUp: Buy if SL is triggered for Sell trade
+    bt['ctr'] = np.where((bt.signal == 'Sell') & bt.sl, bt.ctr*(bt.close/bt.sl_price), bt.ctr)
 
     # Margin Calculation. Assuming marging is used for short trades only
     bt['margin'] = 0
@@ -193,6 +199,8 @@ def run_pnl(td, file):
 
     # Rolling Trade Open and Close Fees
     bt['fee'] = np.where((bt.signal == 'Buy') | (p.short & (bt.signal == 'Sell')), p.fee + bt.ctr*p.fee, 0)
+    # BreakUp: Add fee
+    bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, bt.fee + 2*p.fee, bt.fee)
     
     # Rolling Trade Return minus fees and margin
     bt['ctrf'] = bt.ctr - bt.fee - bt.summargin
@@ -202,7 +210,7 @@ def run_pnl(td, file):
     bt['DR'] = bt['close']/bt['close'].shift(1)
     bt['CSR'] = np.cumprod(bt.SR)
     bt['CMR'] = np.cumprod(bt.DR)
-    
+
     return bt
 
 def get_stats(ds):
@@ -305,11 +313,11 @@ def show_stats(td, trades):
     trade_freq = len(trades)/len(td)
     adr = trade_freq*(win_ratio * avg_win - (1 - win_ratio)*avg_loss)
     exp = 365 * adr
-    rar = exp / (100 * p.stop_loss)
     sr = math.sqrt(365) * s.sharpe_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     srt = math.sqrt(365) * s.sortino_ratio((td.SR - 1).mean(), td.SR - 1, 0)
     dur = trades.duration.mean()
-    slf = len(trades[trades.sl])/len(trades)
+    slf = len(td[td.sl])/len(td)
+    tpf = len(td[td.tp])/len(td)
     print('Strategy Return: %.2f' % td.CSR.iloc[-1])
     print('Market Return: %.2f'   % td.CMR.iloc[-1])
     print('Sortino Ratio: %.2f' % srt)
@@ -320,10 +328,9 @@ def show_stats(td, trades):
     print('Avg Loss: %.2f' % avg_loss)
     print('Risk to Reward: %.2f' % r2r)
     print('Expectancy: %.2f' % exp)
-    print('Risk Adjusted Return: %.2f' % rar)
     print('Sharpe Ratio: %.2f' % sr)
     print('Average Daily Return: %.3f' % adr)
-    print('Stop Losses: %.2f' % slf)
+    print('SL: %.2f TP: %.2f' % (slf, tpf))
 
 # Inspired by:
 # https://www.quantinsti.com/blog/artificial-neural-network-python-using-keras-predicting-stock-price-movement/
@@ -341,13 +348,14 @@ def runNN():
     # Split Train and Test and scale
     X_train, X_test, y_train, y_test = get_train_test(X, y)    
     
+    K.clear_session() # Required to speed up model load
     if p.train:
         file = p.cfgdir+'/model.nn'
         nn = train_model(X_train, X_test, y_train, y_test, file)
     else:
         file = p.model
         nn = load_model(file) 
-        print('Loaded best model: '+file)
+#        print('Loaded best model: '+file)
      
     # Making prediction
     y_pred_val = nn.predict(X_test)
@@ -370,11 +378,11 @@ def runLSTM():
     ds = add_features(ds)
    
     lag = 10
-    n_features = 2
+    n_features = 1
     X = pd.DataFrame()
     for i in range(1, lag+1):
         X['RSI'+str(i)] = ds['RSI'].shift(i)
-        X['MA'+str(i)] = ds['MA'].shift(i)
+#        X['MA'+str(i)] = ds['MA'].shift(i)
 #        X['VOL'+str(i)] = ds['VOL'].shift(i)
     X = X.dropna()
     
@@ -423,13 +431,18 @@ def runModel(conf):
     elif p.model_type == 'LSTM':
         runLSTM()
 
+def test_sl():
+#    sr = td.SR.prod()
+    for i in range(0, 101):
+        minr = i/100
+        sr1 = minr**len(td[td.minr <= minr]) * td[td.minr > minr].SR.prod()
+        print('SL: %.2f SR: %.2f' % (1-minr, sr1))
+    
 #runModel('BTCUSDNN')
 
 #runModel('ETHUSDNN1')
 
 #runModel('BTCUSDLSTM')
-
-#runModel('ETHUSDLSTM')
 #runModel('ETHUSDLSTM1')
 
 #runModel('ETHUSDNN')

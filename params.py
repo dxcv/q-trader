@@ -133,9 +133,9 @@ def load_config(config):
     hold_signals = None
     global min_data_size # Minimum records expected from Cryptocompare API
     min_data_size = 100
-    global stop_loss # Stop Loss % Default 1 which is 100%
-    stop_loss = 1
-    global take_profit # Take Profit %
+    global stop_loss # Enable Stop Loss 
+    stop_loss = True
+    global take_profit # Take Profit % Default 1 which is no TP
     take_profit = 1
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 2
@@ -223,54 +223,53 @@ def load_config(config):
 #        stop_loss = 0.15
     elif conf == 'ETHUSDLSTM1':
         train = True
-        train_pct = 0.8
-        test_pct = 0.2
-#        test_pct = 1
-        model_type = 'LSTM'
-        units = 32
-        epochs = 20
-        signal_threshold = 1
-    elif conf == 'ETHUSDNN1':
-# Strategy Return: 201.85 (ALL), 1.84 (Test) Accuracy: 0.57 Epoch: 100
-        train = True
         train_pct = 0.7
         test_pct = 0.3
 #        test_pct = 1
+        model_type = 'LSTM'
+        units = 20
+        epochs = 20
+        signal_threshold = 1
+    elif conf == 'ETHUSDNN1':
+# Accuracy: 0.57 Epoch: 100
+        train = True
+        feature_list = ['AMA'+str(i) for i in range(1, 100)]
+#        train_pct = 0.7
+#        test_pct = 0.3
+#        test_pct = 1
 #        reload = True
         units = 32
-        epochs = 50
-        signal_threshold = 1
-        model = cfgdir+'/model.top'
+        epochs = 30
+#        signal_threshold = 0.5
+#        model = cfgdir+'/model.top'
         take_profit = 0.16
-        fee = 0.002 # Taker
-#        execute = True
-#        short = True
-#        max_short = 250
 #        stop_loss = 0.15
+        fee = 0.0008 # Maker
+#        short = True
 # ***************************************** Active Strategies
 # !!! Do not touch Active strategies - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
 # Accuracy: 0.61, Win Ratio: 0.69, Strategy Return: 1.76
+# Strategy Return: 21180.44 / 18.83 on Kraken data
 #        train = True
+#        reload = True
 #        train_pct = 0.65
-#        test_pct = 0.35
-#        test_bars = 246
-#        test_pct = 1
+#        test_bars = 365
+        test_pct = 1
         units = 32
-        epochs = 50
+        epochs = 30
         model = cfgdir+'/model.215'
-        take_profit = 0.15
-#        fee = 0.0018 # Taker
+#        take_profit = 0.15
         fee = 0.0008 # Maker
         execute = True
         datasource = 'kr'
         kraken_pair = 'XETHZUSD'
 #        short = True
 #        order_type = 'market'
+#        fee = 0.0048 # Taker + Slippage 0.3%
 #        order_pct = 0.99 # Reserve 1% for slippage
 #        max_short = 250
-#        stop_loss = 0.03
 
     global file
     file = cfgdir+'/price.pkl'
