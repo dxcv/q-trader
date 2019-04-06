@@ -134,7 +134,7 @@ def get_order_size(action, price=0):
     # Calculate position size based on available balance
     if price == 0: price = get_price()
     balance = get_balance()
-    amount = balance * p.order_pct * (1 - p.fee) # Apply order_pct and exchange fee
+    amount = balance * p.order_pct
     size = p.truncate(amount/price, p.order_precision)
     if p.short and p.max_short > 0 and action == 'Sell': size = min(p.max_short, size)
     return size
@@ -157,7 +157,7 @@ def open_position(action, amount=0, price=0, ordertype='', wait=True):
     if amount == 0: amount = get_order_size(action, price)
 
     if action == 'Sell':
-        res = create_order('sell', amount, price, ordertype, leverage=p.leverage, wait)
+        res = create_order('sell', amount, price, ordertype, p.leverage, wait)
     elif action == 'Buy':
         res = create_order('buy', amount, price, ordertype, 1, wait)
 
@@ -167,10 +167,7 @@ def take_profit(action, price):
     close_position(action, ordertype='take-profit', price=price, wait=False)
 
 def stop_loss(action, price):
-    # Close original position
-    if p.short or action == 'Buy': close_position(action, ordertype='stop-loss', price=price, wait=False)
-    # Breakout Buy
-    if action == 'Sell': open_position('Buy', ordertype='stop-loss', price=price, wait=False)
+    close_position(action, ordertype='stop-loss', price=price, wait=False)
 
 def has_orders(types=[]):
     if types == []: types = [p.order_type]

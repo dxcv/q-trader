@@ -30,8 +30,8 @@ def get_signal_str(s=''):
     txt += ' NEW' if s['new_trade'] else ' SAME'  
     txt += ' Trade: '+s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
-    if p.stop_loss: txt += ' SL: '+str(s['sl_price'])
-    if p.take_profit < 1: txt += ' TP: '+str(s['tp_price'])
+    if s['sl_price'] > 0: txt += ' SL: '+str(s['sl_price'])
+    if s['tp_price'] > 0: txt += ' TP: '+str(s['tp_price'])
     txt += ' PnL: '+str(s['pnl'])+'%'
     txt += ' Date: '+str(s['open_ts'])
     txt += ' Open: '+str(s['open'])
@@ -145,8 +145,6 @@ def gen_signal(ds, y_pred_val):
     if p.hold_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.hold_signals), 'Hold', td.signal)
     
-#    td['pos'] = td['signal'].map({'Buy':'Long', 'Hold':'Cash', 'Sell': ('Short' if p.short else 'Cash')})
-
     return td
 
 def run_pnl(td, file):
@@ -164,13 +162,13 @@ def run_pnl(td, file):
     bt['S4'] = bt.low - 3*(bt.high - bt.PP)
 
     # Calculate SL price
-    bt['sl_price'] = np.where(bt.signal == 'Buy', bt.S4.shift(1)*0, 0) # Buy SL is currently disabled
-    bt['sl_price'] = np.where(bt.signal == 'Sell', bt.R1.shift(1), bt.sl_price)
+    bt['sl_price'] = np.where(p.buy_sl & (bt.signal == 'Buy'), bt.S4.shift(1), 0)
+    bt['sl_price'] = np.where(p.sell_sl & (bt.signal == 'Sell'), bt.R1.shift(1), bt.sl_price)
     bt['sl'] = (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
         
     # Calculate TP price
-    bt['tp_price'] = np.where(bt.signal == 'Buy', bt.open * (1 + p.take_profit), 0)
-    bt['tp_price'] = np.where(bt.signal == 'Sell', bt.open * (1 - p.take_profit), bt.tp_price)
+    bt['tp_price'] = np.where(p.buy_tp & (bt.signal == 'Buy'), bt.open * (1 + p.take_profit), 0)
+    bt['tp_price'] = np.where(p.sell_tp & (bt.signal == 'Sell'), bt.open * (1 - p.take_profit), bt.tp_price)
     bt['tp'] = (bt.signal == 'Buy') & (bt.high >= bt.tp_price) | p.short & (bt.signal == 'Sell') & (bt.low <= bt.tp_price)
 
     bt['new_trade'] = (bt.signal != bt.signal.shift(1)) | bt.sl.shift(1) | bt.tp.shift(1)
@@ -184,10 +182,9 @@ def run_pnl(td, file):
 
     # Rolling Trade Return
     bt['ctr'] = np.where(bt.signal == 'Buy', bt.close_price/bt.open_price, 1)
-    if p.short:
-        bt['ctr'] = np.where(bt.signal == 'Sell', 2 - bt.close_price/bt.open_price, bt.ctr)
-    # BreakUp: Buy if SL is triggered for Sell trade
-    bt['ctr'] = np.where((bt.signal == 'Sell') & bt.sl, bt.ctr*(bt.close/bt.sl_price), bt.ctr)
+    if p.short: bt['ctr'] = np.where(bt.signal == 'Sell', 2 - bt.close_price/bt.open_price, bt.ctr)
+    # Breakout: Buy if SL is triggered for Sell trade
+    if p.breakout: bt['ctr'] = np.where((bt.signal == 'Sell') & bt.sl, bt.ctr*(bt.close/bt.sl_price), bt.ctr)
 
     # Margin Calculation. Assuming marging is used for short trades only
     bt['margin'] = 0
@@ -199,8 +196,8 @@ def run_pnl(td, file):
 
     # Rolling Trade Open and Close Fees
     bt['fee'] = np.where((bt.signal == 'Buy') | (p.short & (bt.signal == 'Sell')), p.fee + bt.ctr*p.fee, 0)
-    # BreakUp: Add fee
-    bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, bt.fee + 2*p.fee, bt.fee)
+    # Breakout: Add fee
+    if p.breakout: bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, bt.fee + 2*p.fee, bt.fee)
     
     # Rolling Trade Return minus fees and margin
     bt['ctrf'] = bt.ctr - bt.fee - bt.summargin
@@ -261,8 +258,8 @@ def gen_trades(ds):
         return pd.Series(names)
 
     tr = ds.groupby(ds.trade_id).apply(trade_agg)
-    if not p.short: tr = tr[tr.action=='Buy']
-    tr['win'] = (tr.sr > 1)
+#    if not p.short: tr = tr[tr.action=='Buy']
+    tr['win'] = (tr.sr > 1) | ((tr.sr == 1) & (tr.mr < 1))
     tr['CMR'] = np.cumprod(tr['mr'])
     tr['CSR'] = np.cumprod(tr['sr'])
     tr = tr.dropna()

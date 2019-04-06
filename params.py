@@ -133,10 +133,16 @@ def load_config(config):
     hold_signals = None
     global min_data_size # Minimum records expected from Cryptocompare API
     min_data_size = 100
-    global stop_loss # Enable Stop Loss 
-    stop_loss = True
     global take_profit # Take Profit % Default 1 which is no TP
     take_profit = 1
+    global buy_sl # Enables SL for Buy
+    buy_sl = False # Buy SL is disabled as not profitable
+    global sell_sl # Enables SL for Sell
+    sell_sl = True
+    global buy_tp # Enables TP for Buy
+    buy_tp = True
+    global sell_tp # Enables TP for Sell
+    sell_tp = False # Sell TP is disabled as cannot have both SL and TP on Kraken
     global leverage # Leverage used for margin trading. 0 means - no leverage
     leverage = 2
     global feature_list # List of features to use for NN (ordered by importance)
@@ -154,6 +160,8 @@ def load_config(config):
     price_precision = 2
     global kraken_pair # Name of pair in Kraken. Used for fetching price data from Kraken
     kraken_pair = ''
+    global breakout # Use Breakout strategy
+    breakout = True
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -199,7 +207,6 @@ def load_config(config):
         fee = 0.002 # Taker
         order_type = 'market'
         rsi_period = 50
-#        stop_loss = 0.1
     elif conf == 'ETHUSDLSTM':
 # Accuracy: 0.57, Win Ratio: 0.68, Strategy Return: 1.77
 #        train = True
@@ -220,7 +227,6 @@ def load_config(config):
 #        !!! Short only in Bear market !!!
 #        short = True
 #        max_short = 250
-#        stop_loss = 0.15
     elif conf == 'ETHUSDLSTM1':
         train = True
         train_pct = 0.7
@@ -243,7 +249,6 @@ def load_config(config):
 #        signal_threshold = 0.5
 #        model = cfgdir+'/model.top'
         take_profit = 0.16
-#        stop_loss = 0.15
         fee = 0.0008 # Maker
 #        short = True
 # ***************************************** Active Strategies
@@ -260,15 +265,16 @@ def load_config(config):
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
-#        take_profit = 0.15
+        take_profit = 0.15
         fee = 0.0008 # Maker
         execute = True
         datasource = 'kr'
         kraken_pair = 'XETHZUSD'
+        breakout = True
+        order_pct = 0.99 # Reserve 1% for slippage and fees
 #        short = True
 #        order_type = 'market'
 #        fee = 0.0048 # Taker + Slippage 0.3%
-#        order_pct = 0.99 # Reserve 1% for slippage
 #        max_short = 250
 
     global file

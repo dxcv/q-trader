@@ -36,8 +36,8 @@ def execute(s):
     position = x.get_position()    
     is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-    if p.stop_loss and not x.has_sl_order(): send('SL is not set!')
-    if p.take_profit < 1 and not x.has_tp_order(): send('TP is not set!')
+    if x.has_sl_order(): send('SL is found')
+    if x.has_tp_order(): send('TP is found')
     
     # Cancel any open orders
     x.cancel_orders()
@@ -54,26 +54,30 @@ def execute(s):
         is_open = True
 
     """ SL/TP can only be set AFTER order is executed if margin is not used """
-    if p.stop_loss and s['sl_price'] > 0: 
+    if is_open and s['sl_price'] > 0: 
         x.stop_loss(action, s['sl_price'])
         send('SL set at '+str(s['sl_price']))
 
-    if is_open and p.take_profit < 1: 
+    if is_open and s['tp_price'] > 0:
         x.take_profit(action, s['tp_price'])
         send('TP set at '+str(s['tp_price']))
+        
+    # Breakout Order
+    if p.breakout and s['sl_price'] > 0:
+        pos = 'Buy' if action == 'Sell' else 'Sell'
+        x.open_position(pos, ordertype='stop-loss', price=s['sl_price'], wait=False)
+        send('Breakout SL set at '+str(s['sl_price']))
             
 def run_model(conf):
+    try:
         s = get_signal(conf)
-     
-        # Send signal
         send(nn.get_signal_str(s), True)
-        
-        if p.execute: 
-            try:
-                execute(s)
-            except Exception as e:
-                send('An error has occured. Please investigate!')
-                send(e)
+        if p.execute: execute(s)
+    except Exception as e:
+        send('An error has occured. Please investigate!')
+        send(e)
+    finally:
+        t.cleanup()
         
 def test_execute():
     p.load_config('ETHUSDNN')
@@ -90,5 +94,3 @@ def test_execute():
 
 
 run_model('ETHUSDNN')
-
-t.cleanup()

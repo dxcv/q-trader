@@ -19,6 +19,8 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
++ Enable TP for Buy position
+
 Breakout Strategy using Pivot Points: Sell -> Buy
 Use Stop Loss order: Buy
 https://support.kraken.com/hc/en-us/articles/203325793-Stop-Loss-Orders
@@ -26,7 +28,6 @@ https://support.kraken.com/hc/en-us/articles/203325793-Stop-Loss-Orders
 Use Conditional Close order for SL OR TP
 https://support.kraken.com/hc/en-us/articles/203053246-Other-order-options
 
-Use day Open price for Limit Order 
 Limit order stays for whole day - set 'Good This Day' option
 Use first hours data to predict DR
 Ensemble
@@ -314,3 +315,8 @@ HH/LL Stop Loss is not better than % SL
 
 Historical Results which were used for training cannot be trusted
 Only Test Results can be trusted
+
+# ********************** Known Issues **********************
+ECS Task is stuck in running state. AWS CloudWatch logs are incomplete
+This can be caused by error in Python when process exits quickly so logs are not captured.
+https://stackoverflow.com/questions/54656906/docker-container-on-aws-ecs-exits-before-all-the-logs-are-printed-to-cloudwatch
