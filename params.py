@@ -256,7 +256,7 @@ def load_config(config):
 # !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
 # Accuracy: 0.61, Win Ratio: 0.69, Strategy Return: 1.76
-# Strategy Return: 21180.44 / 18.83 on Kraken data
+# Strategy Return: 21180.44 / 22.25 on Kraken data
 #        train = True
 #        reload = True
 #        train_pct = 0.65

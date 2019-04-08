@@ -19,16 +19,12 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-+ Enable TP for Buy position
-
-Breakout Strategy using Pivot Points: Sell -> Buy
-Use Stop Loss order: Buy
-https://support.kraken.com/hc/en-us/articles/203325793-Stop-Loss-Orders
+Investigate: Kraken data inconsistency
+=> Use open price from signal to open / close position
 
 Use Conditional Close order for SL OR TP
 https://support.kraken.com/hc/en-us/articles/203053246-Other-order-options
 
-Limit order stays for whole day - set 'Good This Day' option
 Use first hours data to predict DR
 Ensemble
 Remove Duplicate Data
