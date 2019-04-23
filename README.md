@@ -19,8 +19,12 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
-Investigate: Kraken data inconsistency
-=> Use open price from signal to open / close position
+
+# Use advanced bars (AFML: Chapter 2.3)
+http://www.blackarbs.com/blog/exploring-alternative-price-bars
+https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
+
+Crypto Screener: Buy top N coins with strongest trend - 200 sma DR / RSI / Return
 
 Use Conditional Close order for SL OR TP
 https://support.kraken.com/hc/en-us/articles/203053246-Other-order-options
@@ -41,6 +45,7 @@ https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkC
 # Binary Features from https://coincheckup.com/coins/ethereum/
 # Relative Strength Strategies for Investing
 https://mebfaber.com/white-papers/
+# Statistical Arbitrage
 
 # Self Learning Quant
 https://hackernoon.com/the-self-learning-quant-d3329fcc9915
@@ -61,9 +66,6 @@ KAMA Kaufman Adaptive Moving Average
 # Option to set SL and TP on trade level
 
 # Bitfinex Integration
-
-# Use volume bars
-https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
 
 # LSTM
 https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
@@ -283,6 +285,8 @@ Position sizing based on balance %
 
 
 # ********************** Lessons Learned *************************************
+Historical data can be amended. Do not trust your API provider (Kraken, CryptoCompare)
+
 Best months for trading ETH are: Dec - May (Sell in May and go away)
 
 Limit Order vs Market Order

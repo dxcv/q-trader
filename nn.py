@@ -137,7 +137,7 @@ def gen_signal(ds, y_pred_val):
     ds['y_pred'] = (ds['y_pred_val'] >= p.signal_threshold)
 
     td = ds.dropna().copy()
-    td['y_pred_id'] = np.trunc(td['y_pred_val'] * 100)
+    td['y_pred_id'] = np.trunc(td['y_pred_val'] * 1000)
     td['signal'] = td['y_pred'].map({True: 'Buy', False: 'Sell'})
     if p.ignore_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.ignore_signals), np.NaN, td.signal)
@@ -153,16 +153,16 @@ def run_pnl(td, file):
     # Calculate Pivot Points
     bt['PP'] = (bt.high + bt.low + bt.close)/3
     bt['R1'] = 2*bt.PP - bt.low 
-    bt['S1'] = 2*bt.PP - bt.high
-    bt['R2'] = bt.PP + bt.high - bt.low
-    bt['S2'] = bt.PP - bt.high + bt.low
-    bt['R3'] = bt.high + 2*(bt.PP - bt.low)
-    bt['S3'] = bt.low - 2*(bt.high - bt.PP)
-    bt['R4'] = bt.high + 3*(bt.PP - bt.low)
-    bt['S4'] = bt.low - 3*(bt.high - bt.PP)
+#    bt['S1'] = 2*bt.PP - bt.high
+#    bt['R2'] = bt.PP + bt.high - bt.low
+#    bt['S2'] = bt.PP - bt.high + bt.low
+#    bt['R3'] = bt.high + 2*(bt.PP - bt.low)
+#    bt['S3'] = bt.low - 2*(bt.high - bt.PP)
+#    bt['R4'] = bt.high + 3*(bt.PP - bt.low)
+#    bt['S4'] = bt.low - 3*(bt.high - bt.PP)
 
     # Calculate SL price
-    bt['sl_price'] = np.where(p.buy_sl & (bt.signal == 'Buy'), bt.S4.shift(1), 0)
+    bt['sl_price'] = np.where(p.buy_sl & (bt.signal == 'Buy'), (bt.PP - 2*bt.PP.rolling(3).std()).shift(1), 0)
     bt['sl_price'] = np.where(p.sell_sl & (bt.signal == 'Sell'), bt.R1.shift(1), bt.sl_price)
     bt['sl'] = (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
         
@@ -215,6 +215,7 @@ def get_stats(ds):
         names = {
             'SRAvg': x['SR'].mean(),
             'SRTotal': x['SR'].prod(),
+            'DRAvg': x['DR'].mean(),
             'DRTotal': x['DR'].prod(),
             'Count': x['y_pred_id'].count()
         }

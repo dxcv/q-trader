@@ -255,8 +255,7 @@ def load_config(config):
 # !!! Do not touch Active strategies - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
-# Accuracy: 0.61, Win Ratio: 0.69, Strategy Return: 1.76
-# Strategy Return: 21180.44 / 22.25 on Kraken data
+# Strategy Return: 33909
 #        train = True
 #        reload = True
 #        train_pct = 0.65
@@ -272,6 +271,7 @@ def load_config(config):
         kraken_pair = 'XETHZUSD'
         breakout = True
         order_pct = 0.99 # Reserve 1% for slippage and fees
+        hold_signals = [495,511,513,514,518]
 #        short = True
 #        order_type = 'market'
 #        fee = 0.0048 # Taker + Slippage 0.3%
