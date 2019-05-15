@@ -428,13 +428,6 @@ def runModel(conf):
         runNN()
     elif p.model_type == 'LSTM':
         runLSTM()
-
-def test_sl():
-#    sr = td.SR.prod()
-    for i in range(0, 101):
-        minr = i/100
-        sr1 = minr**len(td[td.minr <= minr]) * td[td.minr > minr].SR.prod()
-        print('SL: %.2f SR: %.2f' % (1-minr, sr1))
     
 #runModel('BTCUSDNN')
 

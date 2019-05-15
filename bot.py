@@ -12,6 +12,7 @@ import exchange as x
 import datetime as dt
 import time
 import params as p
+import ccxt
 
 def send(msg, public=False):
     print(msg)
@@ -69,15 +70,22 @@ def execute(s):
         send('Breakout SL set at '+str(s['sl_price']))
             
 def run_model(conf):
-    try:
-        s = get_signal(conf)
-        send(nn.get_signal_str(s), True)
-        if p.execute: execute(s)
-    except Exception as e:
-        send('An error has occured. Please investigate!')
-        send(e)
-    finally:
-        t.cleanup()
+    done = False
+    while not done:
+        try:
+            s = get_signal(conf)
+            send(nn.get_signal_str(s), True)
+            if p.execute: execute(s)
+            done = True
+        except ccxt.NetworkError as e:
+            send('Network Error has occured. Retrying ...')
+            send(e)
+            time.sleep(p.sleep_interval)
+        except Exception as e:
+            send('An error has occured. Please investigate!')
+            send(e)
+            done = True
+    t.cleanup()
         
 def test_execute():
     p.load_config('ETHUSDNN')
