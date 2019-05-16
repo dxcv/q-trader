@@ -30,11 +30,8 @@ def get_signal_str(s=''):
     txt += ' NEW' if s['new_trade'] else ' SAME'  
     txt += ' Trade: '+s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
-    if s['sl_price'] > 0: txt += ' SL: '+str(s['sl_price'])
-    if s['tp_price'] > 0: txt += ' TP: '+str(s['tp_price'])
-    txt += ' PnL: '+str(s['pnl'])+'%'
-    txt += ' Date: '+str(s['open_ts'])
     txt += ' Open: '+str(s['open'])
+    txt += ' P/L: '+str(s['pnl'])+'%'
     if s['tp']: txt += ' TAKE PROFIT!'
     if s['sl']: txt += ' STOP LOSS!'
     
@@ -162,14 +159,14 @@ def run_pnl(td, file):
 #    bt['S4'] = bt.low - 3*(bt.high - bt.PP)
 
     # Calculate SL price
-    bt['sl_price'] = np.where(p.buy_sl & (bt.signal == 'Buy'), (bt.PP - 2*bt.PP.rolling(3).std()).shift(1), 0)
-    bt['sl_price'] = np.where(p.sell_sl & (bt.signal == 'Sell'), bt.R1.shift(1), bt.sl_price)
-    bt['sl'] = (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
+    bt['sl_price'] = np.where(bt.signal == 'Buy', (bt.PP - 2*bt.PP.rolling(3).std()).shift(1), 0)
+    bt['sl_price'] = np.where(bt.signal == 'Sell', bt.R1.shift(1), bt.sl_price)
+    bt['sl'] = p.buy_sl & (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | p.sell_sl & (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
         
     # Calculate TP price
-    bt['tp_price'] = np.where(p.buy_tp & (bt.signal == 'Buy'), bt.open * (1 + p.take_profit), 0)
-    bt['tp_price'] = np.where(p.sell_tp & (bt.signal == 'Sell'), bt.open * (1 - p.take_profit), bt.tp_price)
-    bt['tp'] = (bt.signal == 'Buy') & (bt.high >= bt.tp_price) | p.short & (bt.signal == 'Sell') & (bt.low <= bt.tp_price)
+    bt['tp_price'] = np.where(bt.signal == 'Buy', bt.open * (1 + p.take_profit), 0)
+    bt['tp_price'] = np.where(bt.signal == 'Sell', bt.open * (1 - p.take_profit), bt.tp_price)
+    bt['tp'] = p.buy_tp & (bt.signal == 'Buy') & (bt.high >= bt.tp_price) | p.sell_tp & p.short & (bt.signal == 'Sell') & (bt.low <= bt.tp_price)
 
     bt['new_trade'] = (bt.signal != bt.signal.shift(1)) | bt.sl.shift(1) | bt.tp.shift(1)
     bt['trade_id'] = np.where(bt.new_trade, bt.index, np.NaN)

@@ -285,6 +285,8 @@ Position sizing based on balance %
 
 
 # ********************** Lessons Learned *************************************
+Always follow the plan. Keep limit order until it is filled
+
 Historical data can be amended. Do not trust your API provider (Kraken, CryptoCompare)
 
 Best months for trading ETH are: Dec - May (Sell in May and go away)

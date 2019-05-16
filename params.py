@@ -140,7 +140,7 @@ def load_config(config):
     global sell_sl # Enables SL for Sell
     sell_sl = True
     global buy_tp # Enables TP for Buy
-    buy_tp = True
+    buy_tp = False
     global sell_tp # Enables TP for Sell
     sell_tp = False # Sell TP is disabled as cannot have both SL and TP on Kraken
     global leverage # Leverage used for margin trading. 0 means - no leverage
@@ -264,7 +264,6 @@ def load_config(config):
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
-        take_profit = 0.15
         fee = 0.0008 # Maker
         execute = True
         datasource = 'kr'
