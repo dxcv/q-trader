@@ -68,6 +68,8 @@ def execute(s):
         x.open_position('Buy', ordertype='stop-loss', price=s['sl_price'], wait=False)
         send('Breakout SL set at '+str(s['sl_price']))
             
+    send('Balance: '+x.get_balance_str())
+
 def run_model(conf):
     done = False
     while not done:
