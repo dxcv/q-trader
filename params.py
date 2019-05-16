@@ -126,7 +126,7 @@ def load_config(config):
     global trade_interval
     trade_interval = 60*24 # Trade interval in minutes
     global sleep_interval
-    sleep_interval = 60*5 # Bot sleep interval in seconds when waiting for new signal / network error
+    sleep_interval = 60 # Bot sleep interval in seconds when waiting for new signal / network error
     global ignore_signals
     ignore_signals = None # list of y_pred_id to ignore. None to disable 
     global hold_signals # list of y_pred_id to HOLD. None to disable
