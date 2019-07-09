@@ -37,8 +37,8 @@ def execute(s):
     position = x.get_position()    
     is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-    if x.has_sl_order(): send('SL is found')
-    if x.has_tp_order(): send('TP is found')
+#    if x.has_sl_order(): send('SL is found')
+#    if x.has_tp_order(): send('TP is found')
     
     # Cancel any open orders
     x.cancel_orders()

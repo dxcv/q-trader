@@ -172,13 +172,6 @@ def load_config(config):
         max_r = 6508
 #        train = True
 #        epsilon = 0
-    elif conf == 'BTCUSDNN':
-#        train = True
-#        units = 32
-        model = 'data/ETHUSDNN/model.215'
-#        take_profit = 0.15 # Best on whole data: 0.30 / Best on test data: 0.09 
-        fee = 0.002 # Taker
-        test_pct = 1
     elif conf == 'NVDA':
         datasource = 'ql'
 #        reload = True
@@ -251,6 +244,17 @@ def load_config(config):
         take_profit = 0.16
         fee = 0.0008 # Maker
 #        short = True
+    elif conf == 'BTCUSDNN':
+#        train = True
+#        reload = True
+        test_pct = 1
+        units = 32
+        model = cfgdir+'/model.top'
+        fee = 0.0008 # Maker
+        datasource = 'kr'
+        kraken_pair = 'XXBTZUSD'
+        ticker = 'XBT'
+        breakout = True
 # ***************************************** Active Strategies
 # !!! Do not touch Active strategies - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
@@ -259,7 +263,7 @@ def load_config(config):
 #        train = True
 #        reload = True
 #        train_pct = 0.65
-#        test_bars = 365
+#        test_bars = 180
         test_pct = 1
         units = 32
         epochs = 30

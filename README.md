@@ -25,6 +25,7 @@ http://www.blackarbs.com/blog/exploring-alternative-price-bars
 https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
 
 Crypto Screener: Buy top N coins with strongest trend - 200 sma DR / RSI / Return
+Use ADX for trend identification
 
 Use Conditional Close order for SL OR TP
 https://support.kraken.com/hc/en-us/articles/203053246-Other-order-options
@@ -36,6 +37,10 @@ Remove Duplicate Data
 # Add total Crypto market Cap, Price in BTC
 
 # Generic trading system
+# The Original Turtle Trading Rules
+# http://www.newtraderu.com/wp-content/uploads/2011/11/turtlerules.pdf
+# Trade multiple coins based on relative strength
+
 # Test model on S&P500 / NASDAQ / Bitcoin
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
 # Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
@@ -50,8 +55,6 @@ https://mebfaber.com/white-papers/
 # Self Learning Quant
 https://hackernoon.com/the-self-learning-quant-d3329fcc9915
 https://github.com/danielzak/sl-quant/blob/master/ex3-self_learning_quant.py
-
-# Trade multiple coins based on relative strength
 
 # Feature Selection Tool
 https://towardsdatascience.com/a-feature-selection-tool-for-machine-learning-in-python-b64dd23710f0
@@ -209,6 +212,17 @@ https://hackernoon.com/tips-to-reduce-docker-image-sizes-876095da3b34
 # Converge Criteria: best result is not improved after n epochs (n is another parameter)
 
 # ********************** Useful Links ************************************
+An implementation of Q-learning applied to (short-term) stock trading
+https://github.com/edwardhdlu/q-trader
+
+https://www.quora.com/Does-the-Turtle-Trading-system-still-work
+
+The Original Turtle Trading Rules
+http://www.newtraderu.com/wp-content/uploads/2011/11/turtlerules.pdf
+
+Elements for Building Trading Systems
+http://www.newtraderu.com/2016/05/05/elements-building-trading-systems/
+
 A Guide To Stop Losses
 http://www.newtraderu.com/2018/07/20/a-guide-to-stop-losses/
 

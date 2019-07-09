@@ -236,6 +236,17 @@ def get_stats(ds):
     
     return stats, stats_mon
 
+def get_stats_mon(ds):
+    def my_agg(x):
+        names = {
+            'MR': x['DR'].prod(),
+            'SR': x['SR'].prod()
+        }
+    
+        return pd.Series(names)
+    
+    return ds.groupby(ds['date'].map(lambda x: x.strftime('%m'))).apply(my_agg)    
+    
 def gen_trades(ds):
     def trade_agg(x):
         names = {
@@ -426,11 +437,19 @@ def runModel(conf):
     elif p.model_type == 'LSTM':
         runLSTM()
     
+def check_retro():
+    ret = (td.date >= '2019-03-05') & (td.date <= '2019-03-28')
+    ret = ret | (td.date >= '2018-03-23') & (td.date <= '2018-04-15')
+    ret = ret | (td.date >= '2018-07-26') & (td.date <= '2018-08-19')
+    ret = ret | (td.date >= '2018-11-17') & (td.date <= '2018-12-06')
+    ret = ret | (td.date >= '2017-12-03') & (td.date <= '2017-12-23')
+    rtd = td[ret]
+    print(rtd.SR.prod())
+    print(rtd.DR.prod())
+    print((len(rtd[rtd.y_pred.astype('int') == rtd.Price_Rise])/len(rtd)))
+
 #runModel('BTCUSDNN')
 
-#runModel('ETHUSDNN1')
-
-#runModel('BTCUSDLSTM')
-#runModel('ETHUSDLSTM1')
-
 #runModel('ETHUSDNN')
+
+
