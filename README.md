@@ -34,6 +34,10 @@ Use first hours data to predict DR
 Ensemble
 Remove Duplicate Data
 
+# Fix Coincompare data load
+
+# Bitfinex Integration
+
 # Add total Crypto market Cap, Price in BTC
 
 # Generic trading system
@@ -67,13 +71,6 @@ KAMA Kaufman Adaptive Moving Average
 + stats (y_pred_id, minr, maxr)
 + ATR
 # Option to set SL and TP on trade level
-
-# Bitfinex Integration
-
-# LSTM
-https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
-https://www.datacamp.com/community/tutorials/lstm-python-stock-market
-https://machinelearningmastery.com/multivariate-time-series-forecasting-lstms-keras/
 
 # Precision, Recall, ROC, AUC
 https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c
@@ -299,6 +296,8 @@ Position sizing based on balance %
 
 
 # ********************** Lessons Learned *************************************
+Trading on Mercury Retrograde brings a lot of fakeouts and glitches. Must be avoided.
+
 Always follow the plan. Keep limit order until it is filled
 
 Historical data can be amended. Do not trust your API provider (Kraken, CryptoCompare)
