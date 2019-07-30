@@ -263,7 +263,7 @@ def load_config(config):
 #        train = True
 #        reload = True
 #        train_pct = 0.65
-#        test_bars = 180
+#        test_bars = 210
         test_pct = 1
         units = 32
         epochs = 30
@@ -274,7 +274,7 @@ def load_config(config):
         kraken_pair = 'XETHZUSD'
         breakout = True
         order_pct = 0.99 # Reserve 1% for slippage and fees
-        hold_signals = [495,511,513,514,518]
+        hold_signals = [495,511,512,513,514,515,516,517,518]
 #        short = True
 #        order_type = 'market'
 #        fee = 0.0048 # Taker + Slippage 0.3%

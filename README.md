@@ -20,6 +20,18 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# Unit Tests
+
+# Short Sell + Breakout SL
+
+# Signal only if market is trending
+
+# Integrate fundamental data for ETH:
+https://docs.tokenanalyst.io/#ethereum-fundamentals
+
+# Python Testing
+https://realpython.com/python-testing/
+
 # Use advanced bars (AFML: Chapter 2.3)
 http://www.blackarbs.com/blog/exploring-alternative-price-bars
 https://www.investopedia.com/articles/trading/10/data-based-intraday-chart-intervals.asp
