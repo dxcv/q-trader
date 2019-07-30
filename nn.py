@@ -449,6 +449,6 @@ def check_retro():
     print((len(rtd[rtd.y_pred.astype('int') == rtd.Price_Rise])/len(rtd)))
 
 #runModel('BTCUSDNN')
-runModel('ETHUSDNN')
+#runModel('ETHUSDNN')
 
 
