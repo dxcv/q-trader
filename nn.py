@@ -22,7 +22,10 @@ from keras.optimizers import RMSprop
 import pandas as pd
 import stats as s
 import datalib as dl
-from sklearn.externals.joblib import dump, load
+#from sklearn.externals.joblib import dump, load
+from joblib import dump, load
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 def get_signal_str(s=''):
     if s == '': s = get_signal()
@@ -449,6 +452,6 @@ def check_retro():
     print((len(rtd[rtd.y_pred.astype('int') == rtd.Price_Rise])/len(rtd)))
 
 #runModel('BTCUSDNN')
-runModel('ETHUSDNN')
+#runModel('ETHUSDNN')
 
 #runModel('ETHBTCNN')
