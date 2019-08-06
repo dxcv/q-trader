@@ -15,7 +15,7 @@ Created on Mon Dec 25 18:06:07 2017
 import ccxt
 import time
 import params as p
-import secrets as s
+import mysecrets as s
 
 ex = ccxt.kraken({
 #    'verbose': True,    

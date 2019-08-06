@@ -255,6 +255,10 @@ def load_config(config):
         kraken_pair = 'XXBTZUSD'
         ticker = 'XBT'
         breakout = True
+    elif conf == 'ETHBTCNN':
+        train = True
+        units = 16
+        breakout = False
 # ***************************************** Active Strategies
 # !!! Do not touch Active strategies - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 

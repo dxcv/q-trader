@@ -8,7 +8,7 @@ Created on Thu Dec  6 12:37:56 2018
 
 import talib.abstract as ta
 import requests
-import secrets as s
+import mysecrets as s
 import datetime as dt
 import params as p
 import os

@@ -1,5 +1,5 @@
 __pycache__
-secrets.py
+mysecrets.py
 .DS_Store
 *.log
 *.pkl
