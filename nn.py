@@ -12,13 +12,13 @@ import talib
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.models import Sequential, load_model
-from keras import backend as K
-from keras.layers import Dense, LSTM, Activation, Dropout
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Dense, LSTM, Activation, Dropout
 from sklearn.preprocessing import StandardScaler
 #from keras.callbacks import EarlyStopping
-from keras.callbacks import ModelCheckpoint
-from keras.optimizers import RMSprop
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.optimizers import RMSprop
 import pandas as pd
 import stats as s
 import datalib as dl
