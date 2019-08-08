@@ -253,7 +253,7 @@ def test_order2():
     ex.fetchBalance()['ETH']
 
 def test_order3():
-    p.load_config('ETHUSDNN')
+    p.load_config('BTCUSDNN')
     p.order_size = 0.02
     p.order_wait = 10
     open_position('Buy')

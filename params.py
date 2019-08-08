@@ -298,6 +298,7 @@ def load_config(config):
         fee = 0.0008 # Maker
         execute = True
         order_pct = 0.99 # Reserve 1% for slippage and fees
+        order_precision = 2
 
     global file
     file = cfgdir+'/price.pkl'
