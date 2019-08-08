@@ -233,7 +233,6 @@ def load_config(config):
 #        SR = 1.08
         exchange = 'KRAKEN'
         datasource = 'kr'
-        currency = 'XBT'
         kraken_pair = 'XETHXXBT'
         reload = True
 #        train = True
@@ -289,7 +288,6 @@ def load_config(config):
         datasource = 'kr'
         exchange = 'KRAKEN'
         kraken_pair = 'XXBTZUSD'
-        ticker = 'XBT'
         reload = True
 #        train = True
 #        test_pct = 1

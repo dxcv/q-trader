@@ -36,7 +36,7 @@ def load_data_cc():
     return df
 
 def load_data_kr():
-    url = 'https://api.kraken.com/0/public/OHLC?pair='+p.ticker+p.currency+'&interval=1440'
+    url = 'https://api.kraken.com/0/public/OHLC?pair='+p.kraken_pair+'&interval=1440'
     df = pd.DataFrame(requests.get(url).json()['result'][p.kraken_pair])
     df.columns = ['time','open','high','low','close','vwap','volume','count']
     df = df[['time','open','high','low','close','volume']]
