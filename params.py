@@ -74,8 +74,8 @@ def load_config(config):
     global wil_period
     wil_period = 7
     global exchange
-#    exchange = 'CCCAGG' # Average price from all exchanges
-    exchange = 'KRAKEN'
+    exchange = 'CCCAGG' # Average price from all exchanges
+#    exchange = 'KRAKEN'
     global execute
     execute = False
     global order_size # Order size in equity. 0 means to use order_pct
@@ -161,7 +161,7 @@ def load_config(config):
     global kraken_pair # Name of pair in Kraken. Used for fetching price data from Kraken
     kraken_pair = ''
     global breakout # Use Breakout strategy
-    breakout = True
+    breakout = False
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -229,51 +229,34 @@ def load_config(config):
         units = 20
         epochs = 20
         signal_threshold = 1
-    elif conf == 'ETHUSDNN1':
-# Accuracy: 0.57 Epoch: 100
-        train = True
-        feature_list = ['AMA'+str(i) for i in range(1, 100)]
-#        train_pct = 0.7
-#        test_pct = 0.3
-#        test_pct = 1
-#        reload = True
-        units = 32
-        epochs = 30
-#        signal_threshold = 0.5
-#        model = cfgdir+'/model.top'
-        take_profit = 0.16
-        fee = 0.0008 # Maker
-#        short = True
-    elif conf == 'BTCUSDNN':
-#        train = True
-#        reload = True
-        test_pct = 1
-        units = 32
-        model = cfgdir+'/model.top'
-        fee = 0.0008 # Maker
-        datasource = 'kr'
-        kraken_pair = 'XXBTZUSD'
-        ticker = 'XBT'
-        breakout = True
     elif conf == 'ETHBTCNN':
-        train = True
-        units = 16
-        breakout = False
-# ***************************************** Active Strategies
-# !!! Do not touch Active strategies - use new conf for tuning !!!
-# !!! Scaler will be updated when tuning is run 
+#        SR = 1.08
+        exchange = 'KRAKEN'
+        datasource = 'kr'
+        currency = 'XBT'
+        kraken_pair = 'XETHXXBT'
+        reload = True
+#        train = True
+#        test_bars = 272
+        test_pct = 1
+        model = cfgdir+'/model.top'
+        units = 20
+        epochs = 20
+#        breakout = True
+        fee = 0.0008 # Maker
     elif conf == 'ETHUSDNN':
 # Strategy Return: 33909
 #        train = True
 #        reload = True
 #        train_pct = 0.65
-#        test_bars = 210
-        test_pct = 1
+        test_bars = 272
+#        test_pct = 1
         units = 32
         epochs = 30
         model = cfgdir+'/model.215'
         fee = 0.0008 # Maker
-        execute = True
+#        execute = True
+        exchange = 'KRAKEN'
         datasource = 'kr'
         kraken_pair = 'XETHZUSD'
         breakout = True
@@ -283,6 +266,40 @@ def load_config(config):
 #        order_type = 'market'
 #        fee = 0.0048 # Taker + Slippage 0.3%
 #        max_short = 250
+# ***************************************** Active Strategies
+# !!! Do not touch Active strategies - use new conf for tuning !!!
+# !!! Scaler will be updated when tuning is run 
+    elif conf == 'ETHUSDNN1':
+        exchange = 'KRAKEN'
+        datasource = 'kr'
+        kraken_pair = 'XETHZUSD'
+        reload = True
+#        train = True
+#        train_pct = 1
+#        test_pct = 1
+        test_bars = 365
+        units = 20
+        epochs = 300
+        model = cfgdir+'/model.486'
+        fee = 0.0008 # Maker
+        breakout = True
+        signal_threshold = 1
+    elif conf == 'BTCUSDNN':
+#        6.87 for last 642 days
+        datasource = 'kr'
+        exchange = 'KRAKEN'
+        kraken_pair = 'XXBTZUSD'
+        ticker = 'XBT'
+        reload = True
+#        train = True
+#        test_pct = 1
+        test_bars = 365
+        units = 20
+        epochs = 30
+        model = cfgdir+'/model.top'
+        fee = 0.0008 # Maker
+        execute = True
+        order_pct = 0.99 # Reserve 1% for slippage and fees
 
     global file
     file = cfgdir+'/price.pkl'

@@ -102,4 +102,8 @@ def test_execute():
     execute(s)
 
 
-run_model('ETHUSDNN')
+# Signal Only
+run_model('ETHUSDNN1')
+
+# Trading
+run_model('BTCUSDNN')

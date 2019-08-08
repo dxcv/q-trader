@@ -103,6 +103,7 @@ def plot_fit_history(h):
     plt.plot(h.history['val_loss'], label='Test')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
+    plt.yscale('log')
     plt.legend()
     plt.grid(True)
     plt.show()
@@ -114,9 +115,9 @@ def train_model(X_train, X_test, y_train, y_test, file):
     nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
     nn.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
 
-    cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    cp = ModelCheckpoint(file, monitor='val_loss', verbose=0, save_best_only=True, mode='min')
     nn.compile(optimizer = 'adam', loss = p.loss, metrics = ['accuracy'])
-    history = nn.fit(X_train, y_train, batch_size = 10, 
+    history = nn.fit(X_train, y_train, batch_size = 100, 
                              epochs = p.epochs, callbacks=[cp], 
                              validation_data=(X_test, y_test), 
                              verbose=0)
@@ -317,7 +318,7 @@ def plot_chart(df, title, date_col='date'):
 def show_stats(td, trades):
     avg_loss = 1 - trades[trades.win == False].sr.mean()
     avg_win = trades[trades.win].sr.mean() - 1
-    r2r = avg_win / avg_loss
+    r2r = 0 if avg_loss == 0 else avg_win / avg_loss
     win_ratio = len(trades[trades.win]) / len(trades)
     trade_freq = len(trades)/len(td)
     adr = trade_freq*(win_ratio * avg_win - (1 - win_ratio)*avg_loss)
@@ -352,6 +353,7 @@ def runNN():
     
     # Separate input from output. Exclude last row
     X = ds[p.feature_list][:-1]
+#    y = ds[['DR']].shift(-1)[:-1]
     y = ds[['Price_Rise']].shift(-1)[:-1]
 
     # Split Train and Test and scale
@@ -415,7 +417,7 @@ def runLSTM():
 #        optimizer = 'adam'
         nn.compile(loss=p.loss, optimizer=optimizer)
         
-        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+        cp = ModelCheckpoint(file, monitor='val_loss', verbose=0, save_best_only=True, mode='min')
         h = nn.fit(X_train_t, y_train, batch_size = 10, epochs = p.epochs, 
                              verbose=0, callbacks=[cp], validation_data=(X_test_t, y_test))
 
@@ -451,7 +453,15 @@ def check_retro():
     print(rtd.DR.prod())
     print((len(rtd[rtd.y_pred.astype('int') == rtd.Price_Rise])/len(rtd)))
 
-#runModel('BTCUSDNN')
-#runModel('ETHUSDNN')
+def check_missing_dates(td):
+    from datetime import timedelta
+    date_set = set(td.date.iloc[0] + timedelta(x) for x in range((td.date.iloc[-1] - td.date.iloc[0]).days))
+    missing = sorted(date_set - set(td.date))
+    print(missing)
 
+# Tuning
 #runModel('ETHBTCNN')
+
+# PROD
+#runModel('ETHUSDNN1')
+#runModel('BTCUSDNN')
