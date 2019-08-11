@@ -89,7 +89,9 @@ def run_model(conf):
     t.cleanup()
         
 def test_execute():
-    p.load_config('ETHUSDNN')
+    conf = 'ETHUSDNN'
+    p.load_config(conf)
+    s = get_signal(conf)
     p.order_size = 0.02
     s = {}
     s['action'] = 'Buy'

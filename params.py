@@ -245,9 +245,6 @@ def load_config(config):
         breakout = True
         signal_threshold = 1
         short = True
-# ***************************************** Active Models
-# !!! Do not tune Active models - use new conf for tuning !!!
-# !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHBTCNN':
 #        SR (FULL) = 30.86
         feature_list = ['MA','MA2']
@@ -262,6 +259,7 @@ def load_config(config):
         units = 20
         epochs = 20
 #        breakout = True
+        sell_sl = False
         fee = 0.0008 # Maker
     elif conf == 'BTCUSDNN':
         datasource = 'kr'
@@ -280,6 +278,9 @@ def load_config(config):
         order_precision = 2
         short = True
         breakout = True
+# ***************************************** Active Models
+# !!! Do not tune Active models - use new conf for tuning !!!
+# !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
         exchange = 'KRAKEN'
         datasource = 'kr'
