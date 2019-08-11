@@ -277,10 +277,10 @@ def load_config(config):
         model = cfgdir+'/model.top'
         fee = 0.0008 # Maker
         execute = True
-        order_pct = 0.5
+        order_pct = 0.99
 #        Works best with below enabled
-        short = True
-        breakout = True
+#        short = True
+#        breakout = True
     elif conf == 'ETHUSDNN':
         exchange = 'KRAKEN'
         datasource = 'kr'
