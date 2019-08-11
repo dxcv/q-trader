@@ -69,9 +69,9 @@ order = market_order('sell', 'BTC', 'EUR', 0.0001)
 '''
 
 # Returns day open price
-def get_price():
+def get_price(item='open'):
     ticker = ex.fetch_ticker(p.pair)
-    return ticker['open']
+    return ticker[item]
 
 def get_balance(asset=''):
     if asset == '': asset = p.currency
@@ -82,6 +82,17 @@ def get_balance_str():
     balance = ex.fetch_balance()['free']
     return p.currency+': '+str(balance[p.currency])+', '+p.ticker+': '+str(balance[p.ticker])
 
+def get_total_value():
+    bal = ex.fetch_balance()['free']
+    amt = 0
+    for c in bal:
+        if c == 'USD' or bal[c] == 0: price = 1
+        else: price = ex.fetch_ticker(c+'/USD')['last']
+        
+        amt = amt + bal[c] * price
+    
+    return p.truncate(amt, 2)    
+    
 def create_order(side, amount=0, price=0, ordertype='', leverage=1, wait=True):
     params = {}
     if ordertype == '': ordertype = p.order_type
@@ -121,40 +132,33 @@ def wait_order(order_id):
 #    orders = ex.fetchClosedOrders(p.pair)
 #    return orders[0]['info']['price']
 
-def get_pos_size(action):
-    size = p.order_size
-    if action == 'Sell' and p.max_short > 0: size = min(p.order_size, p.max_short)
-    
-    return size
-
-# Returns Order Size based on order_pct parameter
 def get_order_size(action, price=0):
-    if p.order_size > 0: return get_pos_size(action)
-    
-    # Calculate position size based on available balance
+    # Calculate position size based on portfolio value %
     if price == 0: price = get_price()
-    balance = get_balance()
-    amount = balance * p.order_pct
+    amount = get_total_value() * p.order_pct
     size = p.truncate(amount/price, p.order_precision)
-    if p.short and p.max_short > 0 and action == 'Sell': size = min(p.max_short, size)
+
+    # Applying order size limit
+    if p.order_size > 0: size = min(size, p.order_size)
+    if action == 'Sell' and p.max_short > 0: size = min(size, p.max_short)
     return size
 
-def close_position(action, amount=0, price=0, ordertype='', wait=True):
+def close_position(action, price=0, ordertype='', wait=True):
     res = {}
     if ordertype == '': ordertype = p.order_type
-    if amount == 0 and p.order_size > 0: amount = get_pos_size(action)
     
     if action == 'Sell':
-        res = create_order('buy', amount, price, ordertype, p.leverage, wait)
+        res = create_order('buy', 0, price, ordertype, p.leverage, wait)
     elif action == 'Buy':
-        if amount == 0: amount = get_balance(p.ticker)
+        amount = get_balance(p.ticker)
         res = create_order('sell', amount, price, ordertype, 1, wait)
 
     return res
 
-def open_position(action, amount=0, price=0, ordertype='', wait=True):
+def open_position(action, price=0, ordertype='', wait=True):
     res = {}
-    if amount == 0: amount = get_order_size(action, price)
+    amount = get_order_size(action, price)
+    if amount == 0: raise Exception('Not enough funds to open position')
 
     if action == 'Sell':
         res = create_order('sell', amount, price, ordertype, p.leverage, wait)
@@ -275,4 +279,3 @@ def test_order3():
     close_position('Sell', wait=False)
     ex.fetchOpenOrders()
     get_price()
-        

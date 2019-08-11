@@ -82,7 +82,7 @@ def load_config(config):
     order_size = 0
     global max_short # Max Order size for short position
     max_short = 0
-    global order_pct # % of balance for long trade 
+    global order_pct # % of balance to use for position
     order_pct = 1
     global order_precision # Number of digits after decimal for order size
     order_precision = 2
@@ -265,6 +265,10 @@ def load_config(config):
 # !!! Do not tune Active models - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
     elif conf == 'BTCUSDNN':
+        execute = True
+        breakout = True
+        order_pct = 0.5
+        short = True
         datasource = 'kr'
         exchange = 'KRAKEN'
         kraken_pair = 'XXBTZUSD'
@@ -276,30 +280,24 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.top'
         fee = 0.0008 # Maker
-        execute = True
-        order_pct = 0.99
-#        Works best with below enabled
-#        short = True
-#        breakout = True
     elif conf == 'ETHUSDNN':
+        execute = True
+        breakout = True
+        order_pct = 0.5
+        short = True
+        max_short = 250
         exchange = 'KRAKEN'
         datasource = 'kr'
         kraken_pair = 'XETHZUSD'
         reload = True
 #        train = True
-#        train_pct = 0.65
 #        test_pct = 1
         test_bars = 365
         units = 32
         epochs = 20
         model = cfgdir+'/model.215'
         fee = 0.0008 # Maker
-        execute = True
-        breakout = True
-        order_pct = 0.99 # Reserve 1% for slippage and fees
         hold_signals = [495,511,512,513,514,515,516,517,518]
-        short = True
-        max_short = 250
 #        order_type = 'market'
 #        fee = 0.0048 # Taker + Slippage 0.3%
 

@@ -37,9 +37,6 @@ def execute(s):
     position = x.get_position()    
     is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-#    if x.has_sl_order(): send('SL is found')
-#    if x.has_tp_order(): send('TP is found')
-    
     # Cancel any open orders
     x.cancel_orders()
     
@@ -67,8 +64,9 @@ def execute(s):
     if p.breakout and action == 'Sell':
         x.open_position('Buy', ordertype='stop-loss', price=s['sl_price'], wait=False)
         send('Breakout SL set at '+str(s['sl_price']))
-            
-    send('Balance: '+x.get_balance_str())
+        
+    send('Value: '+str(x.get_total_value())+' USD')
+
 
 def run_model(conf):
     done = False

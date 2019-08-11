@@ -20,6 +20,8 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# Bet Size Calculation based on stats (% of profitable trades)
+
 # Unit Tests
 
 # Short Sell + Breakout SL
@@ -45,8 +47,6 @@ https://support.kraken.com/hc/en-us/articles/203053246-Other-order-options
 Use first hours data to predict DR
 Ensemble
 Remove Duplicate Data
-
-# Fix Coincompare data load
 
 # Bitfinex Integration
 
