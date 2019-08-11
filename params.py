@@ -273,11 +273,12 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.top'
         fee = 0.0008 # Maker
-#        execute = True
+        execute = True
         order_pct = 0.99 # Reserve 1% for slippage and fees
         order_precision = 2
-        short = True
-        breakout = True
+#        Works best with below enabled
+#        short = True
+#        breakout = True
 # ***************************************** Active Models
 # !!! Do not tune Active models - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
