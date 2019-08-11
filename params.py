@@ -229,8 +229,28 @@ def load_config(config):
         units = 20
         epochs = 20
         signal_threshold = 1
+    elif conf == 'ETHUSDNN1':
+        exchange = 'KRAKEN'
+        datasource = 'kr'
+        kraken_pair = 'XETHZUSD'
+#        reload = True
+#        train = True
+#        train_pct = 1
+#        test_pct = 1
+        test_bars = 365
+        units = 20
+        epochs = 20
+        model = cfgdir+'/model.486'
+        fee = 0.0008 # Maker
+        breakout = True
+        signal_threshold = 1
+        short = True
+# ***************************************** Active Models
+# !!! Do not tune Active models - use new conf for tuning !!!
+# !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHBTCNN':
-#        SR = 1.08
+#        SR (FULL) = 30.86
+        feature_list = ['MA','MA2']
         exchange = 'KRAKEN'
         datasource = 'kr'
         kraken_pair = 'XETHXXBT'
@@ -243,48 +263,7 @@ def load_config(config):
         epochs = 20
 #        breakout = True
         fee = 0.0008 # Maker
-    elif conf == 'ETHUSDNN':
-# Strategy Return: 33909
-#        train = True
-#        reload = True
-#        train_pct = 0.65
-        test_bars = 272
-#        test_pct = 1
-        units = 32
-        epochs = 30
-        model = cfgdir+'/model.215'
-        fee = 0.0008 # Maker
-#        execute = True
-        exchange = 'KRAKEN'
-        datasource = 'kr'
-        kraken_pair = 'XETHZUSD'
-        breakout = True
-        order_pct = 0.99 # Reserve 1% for slippage and fees
-        hold_signals = [495,511,512,513,514,515,516,517,518]
-#        short = True
-#        order_type = 'market'
-#        fee = 0.0048 # Taker + Slippage 0.3%
-#        max_short = 250
-# ***************************************** Active Strategies
-# !!! Do not touch Active strategies - use new conf for tuning !!!
-# !!! Scaler will be updated when tuning is run 
-    elif conf == 'ETHUSDNN1':
-        exchange = 'KRAKEN'
-        datasource = 'kr'
-        kraken_pair = 'XETHZUSD'
-        reload = True
-#        train = True
-#        train_pct = 1
-#        test_pct = 1
-        test_bars = 365
-        units = 20
-        epochs = 300
-        model = cfgdir+'/model.486'
-        fee = 0.0008 # Maker
-        breakout = True
-        signal_threshold = 1
     elif conf == 'BTCUSDNN':
-#        6.87 for last 642 days
         datasource = 'kr'
         exchange = 'KRAKEN'
         kraken_pair = 'XXBTZUSD'
@@ -296,9 +275,32 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.top'
         fee = 0.0008 # Maker
-        execute = True
+#        execute = True
         order_pct = 0.99 # Reserve 1% for slippage and fees
         order_precision = 2
+        short = True
+        breakout = True
+    elif conf == 'ETHUSDNN':
+        exchange = 'KRAKEN'
+        datasource = 'kr'
+        kraken_pair = 'XETHZUSD'
+        reload = True
+#        train = True
+#        train_pct = 0.65
+#        test_pct = 1
+        test_bars = 365
+        units = 32
+        epochs = 20
+        model = cfgdir+'/model.215'
+        fee = 0.0008 # Maker
+        execute = True
+        breakout = True
+        order_pct = 0.99 # Reserve 1% for slippage and fees
+        hold_signals = [495,511,512,513,514,515,516,517,518]
+        short = True
+        max_short = 250
+#        order_type = 'market'
+#        fee = 0.0048 # Taker + Slippage 0.3%
 
     global file
     file = cfgdir+'/price.pkl'

@@ -461,7 +461,8 @@ def check_missing_dates(td):
 
 # Tuning
 #runModel('ETHBTCNN')
-
-# PROD
 #runModel('ETHUSDNN1')
 #runModel('BTCUSDNN')
+
+# PROD
+#runModel('ETHUSDNN')
