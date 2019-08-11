@@ -85,7 +85,7 @@ def load_config(config):
     global order_pct # % of balance for long trade 
     order_pct = 1
     global order_precision # Number of digits after decimal for order size
-    order_precision = 0
+    order_precision = 2
     global result_size
     result_size = 0
     global order_wait # Wait time in seconds for order to be filled
@@ -261,6 +261,9 @@ def load_config(config):
 #        breakout = True
         sell_sl = False
         fee = 0.0008 # Maker
+# ***************************************** Active Models
+# !!! Do not tune Active models - use new conf for tuning !!!
+# !!! Scaler will be updated when tuning is run 
     elif conf == 'BTCUSDNN':
         datasource = 'kr'
         exchange = 'KRAKEN'
@@ -274,14 +277,10 @@ def load_config(config):
         model = cfgdir+'/model.top'
         fee = 0.0008 # Maker
         execute = True
-        order_pct = 0.99 # Reserve 1% for slippage and fees
-        order_precision = 2
+        order_pct = 0.5
 #        Works best with below enabled
-#        short = True
-#        breakout = True
-# ***************************************** Active Models
-# !!! Do not tune Active models - use new conf for tuning !!!
-# !!! Scaler will be updated when tuning is run 
+        short = True
+        breakout = True
     elif conf == 'ETHUSDNN':
         exchange = 'KRAKEN'
         datasource = 'kr'
