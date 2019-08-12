@@ -135,7 +135,7 @@ def wait_order(order_id):
 def get_order_size(action, price=0):
     # Calculate position size based on portfolio value %
     if price == 0: price = get_price()
-    amount = get_total_value() * p.order_pct
+    amount = get_balance() * p.order_pct
     size = p.truncate(amount/price, p.order_precision)
 
     # Applying order size limit

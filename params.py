@@ -261,10 +261,10 @@ def load_config(config):
         sell_sl = False
         fee = 0.0008 # Maker
     elif conf == 'BTCUSDNN':
-#        execute = True
-        breakout = True
+        execute = True
+#        breakout = True
         order_pct = 0.99
-        short = True
+#        short = True
         datasource = 'kr'
         exchange = 'KRAKEN'
         kraken_pair = 'XXBTZUSD'
