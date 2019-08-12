@@ -63,9 +63,7 @@ def execute(s):
     # Breakout Order
     if p.breakout and action == 'Sell':
         x.open_position('Buy', ordertype='stop-loss', price=s['sl_price'], wait=False)
-        send('Breakout SL set at '+str(s['sl_price']))
-        
-    send('Value: '+str(x.get_total_value())+' USD')
+        send('Breakout SL set at '+str(s['sl_price']))        
 
 
 def run_model(conf):
@@ -103,8 +101,8 @@ def test_execute():
 
 
 # Signal Only
-run_model('ETHBTCNN')
+#run_model('ETHBTCNN')
+#run_model('BTCUSDNN')
 
 # Trading
-run_model('BTCUSDNN')
 run_model('ETHUSDNN')
