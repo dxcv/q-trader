@@ -155,6 +155,7 @@ def close_position(action, price=0, ordertype='', wait=True):
 
     return res
 
+# TODO: Handle ccxt.InsufficientFunds exception. Open position for amount close or equal to requested amount
 def open_position(action, price=0, ordertype='', wait=True):
     res = {}
     amount = get_order_size(action, price)
@@ -257,7 +258,7 @@ def test_order2():
     ex.fetchBalance()['ETH']
 
 def test_order3():
-    p.load_config('BTCUSDNN')
+    p.load_config('ETHUSDNN')
     p.order_size = 0.02
     p.order_wait = 10
     open_position('Buy')
@@ -279,3 +280,4 @@ def test_order3():
     close_position('Sell', wait=False)
     ex.fetchOpenOrders()
     get_price()
+    create_order('buy', 10, 215.19, 'stop-loss', 1, False)

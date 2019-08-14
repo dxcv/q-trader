@@ -282,7 +282,7 @@ def load_config(config):
     elif conf == 'ETHUSDNN':
         execute = True
         breakout = True
-        order_pct = 0.99
+        order_pct = 0.6
         short = True
         max_short = 250
         exchange = 'KRAKEN'
