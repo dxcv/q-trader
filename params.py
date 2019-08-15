@@ -94,7 +94,7 @@ def load_config(config):
     order_type = 'limit'
     global min_cash
     min_cash = 1
-    global min_equity
+    global min_equity # Minimum order size
     min_equity = 0.001
     global bar_period
     bar_period = 'day' # Price bar period: day or hour
@@ -285,6 +285,7 @@ def load_config(config):
         order_pct = 0.8
         short = True
         leverage = 5
+        min_equity = 0.02
         max_short = 250
         exchange = 'KRAKEN'
         datasource = 'kr'

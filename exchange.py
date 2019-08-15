@@ -155,17 +155,29 @@ def close_position(action, price=0, ordertype='', wait=True):
 
     return res
 
-# TODO: Handle ccxt.InsufficientFunds exception. Open position for amount close or equal to requested amount
 def open_position(action, price=0, ordertype='', wait=True):
     res = {}
     amount = get_order_size(action, price)
     if amount == 0: raise Exception('Not enough funds to open position')
-
+    lot = amount
+    side = action.lower()
+    
     if action == 'Sell':
-        res = create_order('sell', amount, price, ordertype, p.leverage, wait)
+        leverage = p.leverage
     elif action == 'Buy':
-        res = create_order('buy', amount, price, ordertype, 1, wait)
+        leverage = 1
+    else: 
+        raise Exception('Invalid action provided: '+action)
 
+    while lot >= p.min_equity:
+        try:
+            res = create_order(side, lot, price, ordertype, leverage, wait)
+            print('Created order of size '+str(lot))
+            if lot == amount: break # Position opened as expected
+        except ccxt.InsufficientFunds:
+            lot = p.truncate(lot/2, p.order_precision)
+            print('Insufficient Funds. Reducing order size to '+str(lot))
+            
     return res
         
 def take_profit(action, price):
