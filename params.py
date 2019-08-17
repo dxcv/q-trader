@@ -286,6 +286,7 @@ def load_config(config):
         short = True
         leverage = 5
         min_equity = 0.02
+        order_precision = 0
         max_short = 250
         exchange = 'KRAKEN'
         datasource = 'kr'
