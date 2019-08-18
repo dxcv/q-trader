@@ -282,7 +282,7 @@ def load_config(config):
     elif conf == 'ETHUSDNN':
         execute = True
         breakout = True
-        order_pct = 0.8
+        order_pct = 1
         short = True
         leverage = 5
         min_equity = 0.02
