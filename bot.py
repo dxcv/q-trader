@@ -42,12 +42,12 @@ def execute(s):
     
     # Close position if new trade
     if is_open and action != position:
-        res = x.close_position(position, price=s['open'])
+        res = x.close_position(position)
         send_results(res, 'Closed '+position+' Position')
         is_open = False
     
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
-        res = x.open_position(action, price=s['open'])
+        res = x.open_position(action)
         send_results(res, 'Opened '+action+' Position')
         is_open = True
 

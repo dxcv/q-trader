@@ -20,6 +20,8 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
+# Use exchange data for model training
+
 # Bet Size Calculation based on stats (% of profitable trades)
 
 # Unit Tests

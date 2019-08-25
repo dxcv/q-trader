@@ -97,6 +97,7 @@ def create_order(side, amount=0, price=0, ordertype='', leverage=1, wait=True):
     params = {}
     if ordertype == '': ordertype = p.order_type
     if leverage > 1: params['leverage'] = leverage
+    # TODO: Use 0% if price is better than order price to avoid market order
     if price == 0 and ordertype == 'limit': params['price'] = '#0%'
 
     order = ex.create_order(p.pair, ordertype, side, amount, price, params)    
