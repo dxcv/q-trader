@@ -46,6 +46,7 @@ def execute(s):
         send_results(res, 'Closed '+position+' Position')
         is_open = False
     
+    # TODO: Open position with SL/TP and no wait
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
         res = x.open_position(action)
         send_results(res, 'Opened '+action+' Position')

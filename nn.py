@@ -196,9 +196,13 @@ def run_pnl(td, file):
     bt['summargin'] = bt.groupby('trade_id')['margin'].transform(pd.Series.cumsum)
 
     # Rolling Trade Open and Close Fees
-    bt['fee'] = np.where((bt.signal == 'Buy') | (p.short & (bt.signal == 'Sell')), p.fee + bt.ctr*p.fee, 0)
-    # Breakout: Add fee
-    if p.breakout: bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, bt.fee + 2*p.fee, bt.fee)
+    bt['fee'] = 2*p.limit_fee
+    bt['fee'] = np.where(bt.sl, p.limit_fee + p.market_fee, bt.fee)
+    if p.short:
+        if p.breakout: bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, 2*p.limit_fee + 2*p.market_fee, bt.fee)
+    else:
+        bt['fee'] = np.where(bt.signal == 'Sell', 0, bt.fee)
+        if p.breakout: bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, p.market_fee + p.limit_fee, bt.fee)
     
     # Rolling Trade Return minus fees and margin
     bt['ctrf'] = bt.ctr - bt.fee - bt.summargin

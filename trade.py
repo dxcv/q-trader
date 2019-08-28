@@ -24,7 +24,7 @@ class Portfolio:
 def buy_lot(pf, lot, short=False):
     if lot > pf.cash: lot = pf.cash
     pf.cash -= lot
-    adj_lot = lot*(1-p.fee)
+    adj_lot = lot*(1-p.market_fee)
     if short: pf.short += adj_lot
     else: pf.equity += adj_lot
     
@@ -36,7 +36,7 @@ def sell_lot(pf, lot, short=False):
         if lot > pf.equity: lot = pf.equity 
         pf.equity -= lot
     
-    pf.cash = pf.cash + lot*(1-p.fee)
+    pf.cash = pf.cash + lot*(1-p.market_fee)
 
 class TradeLog:
     def __init__(self):

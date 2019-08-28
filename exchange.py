@@ -123,8 +123,8 @@ def wait_order(order_id):
     print('Waiting for order '+order_id+' to be executed ...')
     while True:
         order = fetchOrder(order_id)
-        if order != {} and order['status'] == 'closed':
-            print('***** Order Executed *****')
+        if order != {} and order['status'] in ['closed','canceled','expired']:
+            print('***** Order '+order['status']+' *****')
             print(order)
             return order
         time.sleep(p.order_wait)

@@ -102,9 +102,10 @@ def load_config(config):
     max_bars = 0 # Number of bars to use for training
     global train_goal
     train_goal = 'R' # Maximize Return
-    global fee # Exchange fee
-#    fee = 0.0020 # Kraken Taker fee
-    fee = 0.0010 # Kraken Maker fee
+    global limit_fee # Exchange fee
+    limit_fee = 0.0010 # Kraken Maker fee
+    global market_fee # Kraken Taker fee
+    market_fee = 0.0016
     global margin # Daily Margin fee for short positions
     margin = 0.0012 # Kraken 24 margin fee
     global margin_open # Kraken Margin Open fee
@@ -138,7 +139,7 @@ def load_config(config):
     global buy_sl # Enables SL for Buy
     buy_sl = False # Buy SL is disabled as not profitable
     global sell_sl # Enables SL for Sell
-    sell_sl = True
+    sell_sl = False
     global buy_tp # Enables TP for Buy
     buy_tp = False
     global sell_tp # Enables TP for Sell
@@ -197,7 +198,7 @@ def load_config(config):
         test_pct = 1
         units = 32
         epochs = 20
-        fee = 0.002 # Taker
+        limit_fee = 0.002 # Taker
         order_type = 'market'
         rsi_period = 50
     elif conf == 'ETHUSDLSTM':
@@ -214,7 +215,7 @@ def load_config(config):
         model = cfgdir+'/model.top'
         take_profit = 0.15  # Best TP 0.15: 1.77 No: 1.45
 #        execute = True
-        fee = 0.002 # Taker
+        limit_fee = 0.002 # Taker
         order_type = 'market'
         order_pct = 0.99 # Reserve 1% for slippage
 #        !!! Short only in Bear market !!!
@@ -241,7 +242,7 @@ def load_config(config):
         units = 20
         epochs = 20
         model = cfgdir+'/model.486'
-        fee = 0.0008 # Maker
+        limit_fee = 0.0008 # Maker
         breakout = True
         signal_threshold = 1
         short = True
@@ -259,11 +260,11 @@ def load_config(config):
         epochs = 20
 #        breakout = True
         sell_sl = False
-        fee = 0.0008 # Maker
+        limit_fee = 0.0008 # Maker
     elif conf == 'BTCUSDNN':
 #        execute = True
         breakout = True
-        order_pct = 0.99
+        order_pct = 1
         short = True
         datasource = 'kr'
         exchange = 'KRAKEN'
@@ -275,13 +276,14 @@ def load_config(config):
         units = 20
         epochs = 30
         model = cfgdir+'/model.top'
-        fee = 0.0008 # Maker
+        limit_fee = 0.0008 # Maker
 # ***************************************** Active Models
 # !!! Do not tune Active models - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
         execute = True
         breakout = True
+        sell_sl = True
         order_pct = 1
         short = True
         leverage = 5
@@ -298,10 +300,9 @@ def load_config(config):
         units = 32
         epochs = 20
         model = cfgdir+'/model.215'
-        fee = 0.0008 # Maker
+        limit_fee = 0.0006
+        market_fee = 0.0016 + 0.005 # Market fee 0.0016 + slippage <0.005> -> Find average slippage !!!
         hold_signals = [495,511,512,513,514,515,516,517,518]
-#        order_type = 'market'
-#        fee = 0.0048 # Taker + Slippage 0.3%
 
     global file
     file = cfgdir+'/price.pkl'
