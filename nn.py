@@ -153,9 +153,9 @@ def run_pnl(td, file):
     
     # Calculate Pivot Points
     bt['PP'] = (bt.high + bt.low + bt.close)/3
-    bt['R1'] = 2*bt.PP - bt.low 
+#    bt['R1'] = 2*bt.PP - bt.low 
 #    bt['S1'] = 2*bt.PP - bt.high
-#    bt['R2'] = bt.PP + bt.high - bt.low
+    bt['R2'] = bt.PP + bt.high - bt.low
 #    bt['S2'] = bt.PP - bt.high + bt.low
 #    bt['R3'] = bt.high + 2*(bt.PP - bt.low)
 #    bt['S3'] = bt.low - 2*(bt.high - bt.PP)
@@ -164,7 +164,7 @@ def run_pnl(td, file):
 
     # Calculate SL price
     bt['sl_price'] = np.where(bt.signal == 'Buy', (bt.PP - 2*bt.PP.rolling(3).std()).shift(1), 0)
-    bt['sl_price'] = np.where(bt.signal == 'Sell', bt.R1.shift(1), bt.sl_price)
+    bt['sl_price'] = np.where(bt.signal == 'Sell', bt.R2.shift(1), bt.sl_price)
     bt['sl'] = p.buy_sl & (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | p.sell_sl & (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
         
     # Calculate TP price
