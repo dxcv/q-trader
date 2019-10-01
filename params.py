@@ -254,13 +254,14 @@ def load_config(config):
         reload = True
 #        train = True
 #        test_bars = 272
-        test_pct = 1
+#        test_pct = 1
         model = cfgdir+'/model.top'
         units = 20
         epochs = 20
 #        breakout = True
-        sell_sl = False
+#        sell_sl = True
         limit_fee = 0.0008 # Maker
+#        short = True
     elif conf == 'BTCUSDNN':
 #        execute = True
         breakout = True
@@ -302,7 +303,6 @@ def load_config(config):
         model = cfgdir+'/model.215'
         limit_fee = 0.0006
         market_fee = 0.0016 + 0.005 # Market fee 0.0016 + slippage <0.005> -> Find average slippage !!!
-        hold_signals = [495,511,512,513,514,515,516,517,518]
 
     global file
     file = cfgdir+'/price.pkl'

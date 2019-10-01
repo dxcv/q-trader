@@ -132,12 +132,12 @@ def train_model(X_train, X_test, y_train, y_test, file):
     
 # TODO: Use Long / Short / Cash signals
 def gen_signal(ds, y_pred_val):
-#    print('*** Generating Signals ***')
-    ds['y_pred_val'] = np.NaN
-    ds.iloc[(len(ds) - len(y_pred_val)):,-1:] = y_pred_val
-    ds['y_pred'] = (ds['y_pred_val'] >= p.signal_threshold)
+    td = ds.copy()
+    td = td[-len(y_pred_val):]
+    td['y_pred_val'] = y_pred_val
+    td['y_pred'] = (td['y_pred_val'] >= p.signal_threshold)
+    td = td.dropna()
 
-    td = ds.dropna().copy()
     td['y_pred_id'] = np.trunc(td['y_pred_val'] * 1000)
     td['signal'] = td['y_pred'].map({True: 'Buy', False: 'Sell'})
     if p.ignore_signals is not None:
@@ -191,18 +191,18 @@ def run_pnl(td, file):
     bt['margin'] = 0
     if p.short:
         bt['margin'] = np.where(bt['signal'] == 'Sell',  p.margin, bt.margin)
-        bt['margin'] = np.where(bt.new_trade & (bt['signal'] == 'Sell'),  p.margin + p.margin_open, bt.margin)
+        bt['margin'] = np.where(bt.new_trade & (bt['signal'] == 'Sell'), p.margin + p.margin_open, bt.margin)
     
     bt['summargin'] = bt.groupby('trade_id')['margin'].transform(pd.Series.cumsum)
 
     # Rolling Trade Open and Close Fees
-    bt['fee'] = 2*p.limit_fee
-    bt['fee'] = np.where(bt.sl, p.limit_fee + p.market_fee, bt.fee)
+    bt['fee'] = p.limit_fee + bt.ctr*p.limit_fee
+    bt['fee'] = np.where(bt.sl, p.limit_fee + bt.ctr*p.market_fee, bt.fee)
     if p.short:
-        if p.breakout: bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, 2*p.limit_fee + 2*p.market_fee, bt.fee)
+        if p.breakout: 
+            bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, bt.fee + bt.ctr*(p.market_fee + p.limit_fee), bt.fee)
     else:
-        bt['fee'] = np.where(bt.signal == 'Sell', 0, bt.fee)
-        if p.breakout: bt['fee'] = np.where((bt.signal == 'Sell') & bt.sl, p.market_fee + p.limit_fee, bt.fee)
+        if not p.breakout: bt['fee'] = np.where(bt.signal == 'Sell', 0, bt.fee)
     
     # Rolling Trade Return minus fees and margin
     bt['ctrf'] = bt.ctr - bt.fee - bt.summargin

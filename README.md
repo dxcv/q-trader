@@ -19,6 +19,28 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+# HOLD when trend is weak (MA20 is flat)
+
+# Generic MA trading system
+http://www.newtraderu.com/2019/08/29/the-best-back-tested-trading-strategies-with-moving-averages/
+
+# FRAMA - better than MA
+http://etfhq.com/blog/2010/10/09/frama-is-it-effective/#Best
+
+# The Original Turtle Trading Rules
+# http://www.newtraderu.com/wp-content/uploads/2011/11/turtlerules.pdf
+# Trade multiple coins based on relative strength
+
+# Test model on S&P500 / NASDAQ / Bitcoin
+# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
+# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
+# 50 MA Trading Systems
+https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
+# Top 5 indicators: http://www.newtraderu.com/2019/01/04/the-top-5-effective-technical-indicators/
+# Binary Features from https://coincheckup.com/coins/ethereum/
+# Relative Strength Strategies for Investing
+https://mebfaber.com/white-papers/
+# Statistical Arbitrage
 
 # Use exchange data for model training
 
@@ -53,22 +75,6 @@ Remove Duplicate Data
 # Bitfinex Integration
 
 # Add total Crypto market Cap, Price in BTC
-
-# Generic trading system
-# The Original Turtle Trading Rules
-# http://www.newtraderu.com/wp-content/uploads/2011/11/turtlerules.pdf
-# Trade multiple coins based on relative strength
-
-# Test model on S&P500 / NASDAQ / Bitcoin
-# Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
-# Strategy: Buy when daily SMA 200 is going up and price closes higher 200 SMA. Sell otherwise
-# 50 MA Trading Systems
-https://www.amazon.com/dp/B07JYLCK68/?ref=idea_lv_dp_vv_d&tag=aiponsite-20&linkCode=iil&ascsubtag=amzn1.ideas.S5BXKSCC6S15
-# Top 5 indicators: http://www.newtraderu.com/2019/01/04/the-top-5-effective-technical-indicators/
-# Binary Features from https://coincheckup.com/coins/ethereum/
-# Relative Strength Strategies for Investing
-https://mebfaber.com/white-papers/
-# Statistical Arbitrage
 
 # Self Learning Quant
 https://hackernoon.com/the-self-learning-quant-d3329fcc9915
