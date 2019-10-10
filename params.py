@@ -136,6 +136,8 @@ def load_config(config):
     min_data_size = 100
     global take_profit # Take Profit % Default 1 which is no TP
     take_profit = 1
+    global stop_loss
+    stop_loss = 0
     global buy_sl # Enables SL for Buy
     buy_sl = False # Buy SL is disabled as not profitable
     global sell_sl # Enables SL for Sell
@@ -285,6 +287,7 @@ def load_config(config):
         execute = True
         breakout = True
         sell_sl = True
+        buy_sl = True
         order_pct = 1
         short = True
         leverage = 5

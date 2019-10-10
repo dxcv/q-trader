@@ -153,25 +153,32 @@ def run_pnl(td, file):
     
     # Calculate Pivot Points
     bt['PP'] = (bt.high + bt.low + bt.close)/3
-#    bt['R1'] = 2*bt.PP - bt.low 
-#    bt['S1'] = 2*bt.PP - bt.high
+    bt['R1'] = 2*bt.PP - bt.low 
+    bt['S1'] = 2*bt.PP - bt.high
     bt['R2'] = bt.PP + bt.high - bt.low
-#    bt['S2'] = bt.PP - bt.high + bt.low
-#    bt['R3'] = bt.high + 2*(bt.PP - bt.low)
-#    bt['S3'] = bt.low - 2*(bt.high - bt.PP)
-#    bt['R4'] = bt.high + 3*(bt.PP - bt.low)
-#    bt['S4'] = bt.low - 3*(bt.high - bt.PP)
+    bt['S2'] = bt.PP - bt.high + bt.low
+    bt['R3'] = bt.high + 2*(bt.PP - bt.low)
+    bt['S3'] = bt.low - 2*(bt.high - bt.PP)
+    bt['R4'] = bt.high + 3*(bt.PP - bt.low)
+    bt['S4'] = bt.low - 3*(bt.high - bt.PP)
 
     # Calculate SL price
-    bt['sl_price'] = np.where(bt.signal == 'Buy', (bt.PP - 2*bt.PP.rolling(3).std()).shift(1), 0)
-    bt['sl_price'] = np.where(bt.signal == 'Sell', bt.R2.shift(1), bt.sl_price)
-    bt['sl'] = p.buy_sl & (bt.signal == 'Buy') & (bt.low <= bt.sl_price) | p.sell_sl & (bt.signal == 'Sell') & (bt.high >= bt.sl_price)
-        
+    bt['sl_price'] = np.where(bt.signal=='Buy', bt.close.rolling(50).mean().shift(1), 0)
+    bt['sl_price'] = np.where(bt.signal=='Sell', bt.R2.shift(1), bt.sl_price)
+    bt['sl'] = False
+    if p.buy_sl:   
+        bt['sl'] = np.where((bt.signal=='Buy')&(bt.sl_price<=bt.open)&(bt.sl_price>=bt.low), True, bt.sl)
+    if p.sell_sl:
+        bt['sl'] = np.where((bt.signal=='Sell')&(bt.sl_price>=bt.open)&(bt.sl_price<=bt.high), True, bt.sl)
+    
     # Calculate TP price
     bt['tp_price'] = np.where(bt.signal == 'Buy', bt.open * (1 + p.take_profit), 0)
     bt['tp_price'] = np.where(bt.signal == 'Sell', bt.open * (1 - p.take_profit), bt.tp_price)
-    bt['tp'] = p.buy_tp & (bt.signal == 'Buy') & (bt.high >= bt.tp_price) | p.sell_tp & p.short & (bt.signal == 'Sell') & (bt.low <= bt.tp_price)
-
+    bt['tp'] = False 
+    if p.buy_tp:
+        bt['tp'] = np.where((bt.signal=='Buy')&(bt.tp_price>=bt.open)&(bt.tp_price<=bt.high), True, bt.tp) 
+    if p.sell_tp and p.short:
+        bt['tp'] = np.where((bt.signal=='Sell')&(bt.tp_price<=bt.open)&(bt.tp_price>=bt.low), True, bt.tp)    
     bt['new_trade'] = (bt.signal != bt.signal.shift(1)) | bt.sl.shift(1) | bt.tp.shift(1)
     bt['trade_id'] = np.where(bt.new_trade, bt.index, np.NaN)
     bt['open_price'] = np.where(bt.new_trade, bt.open, np.NaN)
