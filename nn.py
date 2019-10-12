@@ -219,6 +219,10 @@ def run_pnl(td, file):
     bt['DR'] = bt['close']/bt['close'].shift(1)
     bt['CSR'] = np.cumprod(bt.SR)
     bt['CMR'] = np.cumprod(bt.DR)
+#    21.83 : bt.SR.rolling(10).mean().shift(1)
+#    bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
+#    bt['SR'] = np.where(bt.ASR > 0.99, bt.SR, 1)
+#    bt['CSR'] = np.cumprod(bt.SR)
 
     return bt
 

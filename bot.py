@@ -55,12 +55,12 @@ def execute(s):
 
     """ SL/TP can only be set AFTER order is executed if margin is not used """
     if is_open and (action == 'Buy' and p.buy_sl or p.short and action == 'Sell' and p.sell_sl): 
-        x.stop_loss(action, s['sl_price'])
-        send('SL set at '+str(s['sl_price']), True)
+        res = x.stop_loss(action, s['sl_price'])
+        send(res, True)
 
     if is_open and (action == 'Buy' and p.buy_tp or p.short and action == 'Sell' and p.sell_tp):
-        x.take_profit(action, s['tp_price'])
-        send('TP set at '+str(s['tp_price']), True)
+        res = x.take_profit(action, s['tp_price'])
+        send(res, True)
         
     # Breakout Order
     if p.breakout and action == 'Sell':

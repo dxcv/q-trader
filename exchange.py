@@ -73,6 +73,10 @@ def get_price(item='open'):
     ticker = ex.fetch_ticker(p.pair)
     return ticker[item]
 
+def get_ticker():
+    ticker = ex.fetch_ticker(p.pair)
+    return ticker
+
 def get_balance(asset=''):
     if asset == '': asset = p.currency
     balance = ex.fetch_balance()['free']
@@ -182,10 +186,18 @@ def open_position(action, price=0, ordertype='', wait=True):
     return res
         
 def take_profit(action, price):
-    close_position(action, ordertype='take-profit', price=price, wait=False)
+    ticker = get_ticker()
+    if action == 'Buy' and price >= ticker['ask'] or action == 'Sell' and price <= ticker['bid']:        
+        close_position(action, ordertype='take-profit', price=price, wait=False)
+        return 'TP set at %s' % price
+    return 'TP is not set'
 
 def stop_loss(action, price):
-    close_position(action, ordertype='stop-loss', price=price, wait=False)
+    ticker = get_ticker()
+    if action == 'Buy' and price <= ticker['bid'] or action == 'Sell' and price >= ticker['ask']:        
+        close_position(action, ordertype='stop-loss', price=price, wait=False)
+        return 'SL set at %s' % price
+    return 'SL is not set'
 
 def has_orders(types=[]):
     if types == []: types = [p.order_type]
