@@ -30,8 +30,8 @@ register_matplotlib_converters()
 def get_signal_str(s=''):
     if s == '': s = get_signal()
     txt = p.pair + ':'
-    txt += ' NEW' if s['new_trade'] else ' SAME'  
-    txt += ' Trade: '+s['action'] 
+    txt += ' NEW TRADE' if s['new_trade'] else '' 
+    txt += ' Signal: ' + s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
     txt += ' Open: '+str(s['open'])
     txt += ' P/L: '+str(s['pnl'])+'%'
@@ -220,6 +220,7 @@ def run_pnl(td, file):
 
     # Adjust signal based on past performance
     # Best ASR: 0.989: 23.33 vs 18.60 
+    # TODO: Set fee, ctr, ctrf, margin for Cash position
     bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
     bt['signal'] = np.where(bt.ASR < 0.989, 'Cash', bt.signal)
     bt['SR'] = np.where(bt.signal == 'Cash', 1, bt.SR)
