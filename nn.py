@@ -145,12 +145,12 @@ def gen_signal(ds, y_pred_val):
         td['signal'] = td.signal.fillna(method='ffill')
     if p.hold_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.hold_signals), 'Hold', td.signal)
-    
+
     return td
 
 def run_pnl(td, file):
     bt = td[['date','open','high','low','close','volume','signal']].copy()
-    
+
     # Calculate Pivot Points
     bt['PP'] = (bt.high + bt.low + bt.close)/3
     bt['R1'] = 2*bt.PP - bt.low 
@@ -217,12 +217,15 @@ def run_pnl(td, file):
     # Daily Strategy Return
     bt['SR'] = np.where(bt.new_trade, bt.ctrf, bt.ctrf/bt.ctrf.shift(1))
     bt['DR'] = bt['close']/bt['close'].shift(1)
+
+    # Adjust signal based on past performance
+    # Best ASR: 0.989: 23.33 vs 18.60 
+    bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
+    bt['signal'] = np.where(bt.ASR < 0.989, 'Cash', bt.signal)
+    bt['SR'] = np.where(bt.signal == 'Cash', 1, bt.SR)
+
     bt['CSR'] = np.cumprod(bt.SR)
     bt['CMR'] = np.cumprod(bt.DR)
-#    21.83 : bt.SR.rolling(10).mean().shift(1)
-#    bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
-#    bt['SR'] = np.where(bt.ASR > 0.99, bt.SR, 1)
-#    bt['CSR'] = np.cumprod(bt.SR)
 
     return bt
 
