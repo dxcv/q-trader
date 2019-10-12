@@ -42,14 +42,14 @@ def execute(s):
     
     # Close position if new trade
     if is_open and action != position:
-        res = x.close_position(position)
+        res = x.close_position(position, s['open'])
         send_results(res, 'Closed '+position+' Position')
         is_open = False
     
     # TODO: Open position with SL/TP and no wait
     # TODO: Handle partly open position
     if not is_open and (action == 'Buy' or action == 'Sell' and p.short):
-        res = x.open_position(action)
+        res = x.open_position(action, s['open'])
         send_results(res, 'Opened '+action+' Position')
         is_open = True
 

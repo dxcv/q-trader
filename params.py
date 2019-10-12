@@ -294,8 +294,8 @@ def load_config(config):
         min_equity = 0.02
         order_precision = 0
         max_short = 250
-        exchange = 'KRAKEN'
-        datasource = 'kr'
+#        exchange = 'KRAKEN'
+#        datasource = 'kr'
         kraken_pair = 'XETHZUSD'
         reload = True
 #        train = True
