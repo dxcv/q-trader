@@ -37,13 +37,8 @@ def execute(s):
     position = x.get_position()    
     is_open = (position == 'Buy' or position == 'Sell' and p.short)
     
-    if action != position:
-        # New action -> Cancel all open orders
-        x.cancel_orders()
-    else:
-        # Same action -> cancel SL and TP only
-        x.cancel_sl()
-        x.cancel_tp()
+    # Cancel all open orders
+    x.cancel_orders()
     
     # Close position if new trade
     if is_open and action != position:
