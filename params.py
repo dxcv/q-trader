@@ -306,6 +306,7 @@ def load_config(config):
         model = cfgdir+'/model.215'
         limit_fee = 0.0006
         market_fee = 0.0016 + 0.005 # Market fee 0.0016 + slippage <0.005> -> Find average slippage !!!
+        order_type = 'market'
 
     global file
     file = cfgdir+'/price.pkl'

@@ -19,6 +19,9 @@ export AWS_REGION=You AWS  Region
 # Build and deploy Docker image to AWS ECR
 ./deploy.sh
 
+
+Keep SL while position is open
+
 # HOLD when trend is weak (MA20 is flat)
 
 # Generic MA trading system
