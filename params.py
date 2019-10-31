@@ -284,7 +284,7 @@ def load_config(config):
 # !!! Do not tune Active models - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
     elif conf == 'ETHUSDNN':
-        execute = True
+#        execute = True
         breakout = True
         sell_sl = True
         buy_sl = True
@@ -304,8 +304,9 @@ def load_config(config):
         units = 32
         epochs = 20
         model = cfgdir+'/model.215'
-        limit_fee = 0.0006
-        market_fee = 0.0016 + 0.005 # Market fee 0.0016 + slippage <0.005> -> Find average slippage !!!
+#        limit_fee = 0.0006
+        limit_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2% 
+        market_fee = 0.0016 + 0.002
         order_type = 'market'
 
     global file
