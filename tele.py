@@ -10,12 +10,13 @@ Created on Wed Oct 31 14:34:25 2018
 from typing import Any, Callable
 from telegram import Bot, Update
 from telegram.ext import Updater
-#from telegram.ext import CommandHandler
 import logging
 import mysecrets as s
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger()
+updater = None
+
 
 def authorized_only(command_handler: Callable[[Any, Bot, Update], None]) -> Callable[..., Any]:
     """
@@ -46,14 +47,20 @@ def authorized_only(command_handler: Callable[[Any, Bot, Update], None]) -> Call
 
     return wrapper
 
-updater = Updater(token=s.telegram_token, workers=0)
-#updater.dispatcher.add_handler(CommandHandler('status', status))
-updater.start_polling(clean=True, bootstrap_retries=-1, timeout=300, read_latency=60)
+
+def init():
+    global updater
+    updater = Updater(token=s.telegram_token, workers=0)
+    #updater.dispatcher.add_handler(CommandHandler('status', status))
+    updater.start_polling(clean=True, bootstrap_retries=-1, timeout=300, read_latency=60)
+
 
 def send_msg(msg, public=False):
+#    global updater
     updater.bot.send_message(chat_id=s.telegram_chat_id, text=msg)
     # Send message to another user
     if public: updater.bot.send_message(chat_id=s.telegram_chat_id1, text=msg) 
 
 def cleanup():
+#    global updater
     updater.stop()

@@ -20,9 +20,26 @@ export AWS_REGION=You AWS  Region
 ./deploy.sh
 
 
-Keep SL while position is open
+****************************** Improvement Ideas *********************************************
+# Do not trade when no trend (ADX)
 
-# HOLD when trend is weak (MA20 is flat)
+# Bayesian Optimization
+https://github.com/fmfn/BayesianOptimization
+
+# RNN for Stock Prediction
+https://towardsdatascience.com/stock-prediction-using-recurrent-neural-networks-c03637437578
+
+# Use Regression instead of Classification
+
+# Dev Activity as best price predictor
+https://cryptoslate.com/ethereum-developer-activity-is-seeing-parabolic-growth-says-analyst-will-price-follow/amp/?__twitter_impression=true
+
+# Add total Crypto market Cap, ETHBTC price
+
+# Buy/Sell/Cash (when trend is weak (MA20 is flat))
+# Only Trade High Return Signals 
+
+# Keep SL while position is open
 
 # Generic MA trading system
 http://www.newtraderu.com/2019/08/29/the-best-back-tested-trading-strategies-with-moving-averages/
@@ -33,6 +50,8 @@ http://etfhq.com/blog/2010/10/09/frama-is-it-effective/#Best
 # The Original Turtle Trading Rules
 # http://www.newtraderu.com/wp-content/uploads/2011/11/turtlerules.pdf
 # Trade multiple coins based on relative strength
+
+# Migrate to pipenv
 
 # Test model on S&P500 / NASDAQ / Bitcoin
 # Strategy: Buy when price is above weekly PSAR (0.008, 0.2). Sell when price is below
@@ -76,8 +95,6 @@ Ensemble
 Remove Duplicate Data
 
 # Bitfinex Integration
-
-# Add total Crypto market Cap, Price in BTC
 
 # Self Learning Quant
 https://hackernoon.com/the-self-learning-quant-d3329fcc9915

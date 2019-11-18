@@ -73,6 +73,8 @@ def load_config(config):
     std_period = 7
     global wil_period
     wil_period = 7
+    global adx_period
+    adx_period = 6
     global exchange
     exchange = 'CCCAGG' # Average price from all exchanges
 #    exchange = 'KRAKEN'
@@ -158,13 +160,19 @@ def load_config(config):
     global signal_threshold
     signal_threshold = 0.5
     global model_type # Model Type to run: NN, LSTM
-    model_type = 'NN'
+    model_type = 'runNN'
     global price_precision # Number of decimals for price
     price_precision = 2
     global kraken_pair # Name of pair in Kraken. Used for fetching price data from Kraken
     kraken_pair = ''
     global breakout # Use Breakout strategy
     breakout = False
+    global signal_scale # Used for signal grouping by y_pred_id 
+    signal_scale = 1000
+    global adjust_signal
+    adjust_signal = True
+    global batch_size
+    batch_size = 0
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -232,22 +240,6 @@ def load_config(config):
         units = 20
         epochs = 20
         signal_threshold = 1
-    elif conf == 'ETHUSDNN1':
-        exchange = 'KRAKEN'
-        datasource = 'kr'
-        kraken_pair = 'XETHZUSD'
-#        reload = True
-#        train = True
-#        train_pct = 1
-#        test_pct = 1
-        test_bars = 365
-        units = 20
-        epochs = 20
-        model = cfgdir+'/model.486'
-        limit_fee = 0.0008 # Maker
-        breakout = True
-        signal_threshold = 1
-        short = True
     elif conf == 'ETHBTCNN':
         feature_list = ['MA','MA2']
         exchange = 'KRAKEN'
@@ -280,6 +272,37 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.top'
         limit_fee = 0.0008 # Maker
+    elif conf == 'ETHUSDNN1':
+        breakout = True
+        sell_sl = True
+#        buy_sl = True
+        order_pct = 1
+        short = True
+        leverage = 5
+        min_equity = 0.02
+        order_precision = 0
+        max_short = 250
+#        exchange = 'BITFINEX'
+        exchange = 'KRAKEN'
+        datasource = 'kr'
+        kraken_pair = 'XETHZUSD'
+        reload = True
+#        train = True
+        train_pct = 0.75
+#        test_pct = 0.25
+#        test_pct = 1
+        test_bars = 365
+        units = 32
+        epochs = 1000
+        model = cfgdir+'/model.603'
+        limit_fee = 0.0006
+        market_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2%
+        order_type = 'market'
+        signal_threshold = 1
+        signal_scale = 100
+        rsi_period = 14
+        model_type = 'runNN1'
+#
 # ***************************************** Active Models
 # !!! Do not tune Active models - use new conf for tuning !!!
 # !!! Scaler will be updated when tuning is run 
@@ -304,11 +327,13 @@ def load_config(config):
         units = 32
         epochs = 20
         model = cfgdir+'/model.215'
-#        limit_fee = 0.0006
-        limit_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2% 
-        market_fee = 0.0016 + 0.002
+        limit_fee = 0.0006
+        market_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2%
         order_type = 'market'
 
+    if order_type == 'market':
+        limit_fee = market_fee
+    
     global file
     file = cfgdir+'/price.pkl'
     global q

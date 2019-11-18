@@ -6,8 +6,8 @@ Created on Fri Nov  9 20:28:17 2018
 @author: igor
 """
 
-import datetime as dt
 import params as p
+import datetime as dt
 import talib
 import math
 import numpy as np
@@ -15,10 +15,11 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, LSTM, Activation, Dropout
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, QuantileTransformer
 #from keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.regularizers import l1
 import pandas as pd
 import stats as s
 import datalib as dl
@@ -64,6 +65,7 @@ def add_features(ds):
     ds['WR'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
     ds['DMA'] = ds.MA/ds.MA.shift(1)
     ds['MAR'] = ds.MA/ds.MA2
+    ds['ADX'] = talib.ADX(ds['high'].values, ds['low'].values, ds['close'].values, timeperiod = p.adx_period)
     ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
 
     ds = ds.dropna()
@@ -138,7 +140,7 @@ def gen_signal(ds, y_pred_val):
     td['y_pred'] = (td['y_pred_val'] >= p.signal_threshold)
     td = td.dropna()
 
-    td['y_pred_id'] = np.trunc(td['y_pred_val'] * 1000)
+    td['y_pred_id'] = np.trunc(td['y_pred_val'] * p.signal_scale)
     td['signal'] = td['y_pred'].map({True: 'Buy', False: 'Sell'})
     if p.ignore_signals is not None:
         td['signal'] = np.where(np.isin(td.y_pred_id, p.ignore_signals), np.NaN, td.signal)
@@ -149,7 +151,7 @@ def gen_signal(ds, y_pred_val):
     return td
 
 def run_pnl(td, file):
-    bt = td[['date','open','high','low','close','volume','signal']].copy()
+    bt = td[['date','open','high','low','close','volume','signal','ADX']].copy()
 
     # Calculate Pivot Points
     bt['PP'] = (bt.high + bt.low + bt.close)/3
@@ -222,8 +224,10 @@ def run_pnl(td, file):
     # Best ASR: 0.989: 23.33 vs 18.60 
     # TODO: Set fee, ctr, ctrf, margin for Cash position
     bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
-    bt['signal'] = np.where(bt.ASR < 0.989, 'Cash', bt.signal)
-    bt['SR'] = np.where(bt.signal == 'Cash', 1, bt.SR)
+    if p.adjust_signal:
+        bt['signal'] = np.where(bt.ASR < 0.988, 'Cash', bt.signal)
+        bt['signal'] = np.where(bt.ADX < 25, 'Cash', bt.signal)
+        bt['SR'] = np.where(bt.signal == 'Cash', 1, bt.SR)
 
     bt['CSR'] = np.cumprod(bt.SR)
     bt['CMR'] = np.cumprod(bt.DR)
@@ -398,6 +402,107 @@ def runNN():
 
     print(str(get_signal_str()))
 
+
+def runNN1():
+    global td
+    global ds
+    
+    ds = dl.load_data()
+
+    ds['VOL'] = ds['volume']/ds['volume'].rolling(window = p.vol_period).mean()
+    ds['HH'] = ds['high']/ds['high'].rolling(window = p.hh_period).max() 
+    ds['LL'] = ds['low']/ds['low'].rolling(window = p.ll_period).min()
+    ds['DR'] = ds['close']/ds['close'].shift(1)
+    ds['MA'] = ds['close']/ds['close'].rolling(window = p.sma_period).mean()
+    ds['MA2'] = ds['close']/ds['close'].rolling(window = 2*p.sma_period).mean()
+    ds['STD']= ds['close'].rolling(p.std_period).std()/ds['close']
+    ds['RSI'] = talib.RSI(ds['close'].values, timeperiod = p.rsi_period)
+    ds['WR'] = talib.WILLR(ds['high'].values, ds['low'].values, ds['close'].values, p.wil_period)
+    ds['DMA'] = ds.MA/ds.MA.shift(1)
+    ds['MAR'] = ds.MA/ds.MA2
+    ds['ADX'] = talib.ADX(ds['high'].values, ds['low'].values, ds['close'].values, timeperiod = p.adx_period)
+    ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
+    ds = ds.dropna()
+    
+#     feature_list = ['RSI','MA','MA2','STD','WR','MAR','HH','VOL','LL','DMA','DR']
+#    p.feature_list = ['MA','MA2']
+    
+    # Separate input from output. Exclude last row
+    X = ds[p.feature_list][:-1]
+#    y = ds[['Price_Rise']].shift(-1)[:-1]
+    y = ds[['DR']].shift(-1)[:-1]
+
+    # Split Train and Test and scale
+    train_split = int(len(X)*p.train_pct)
+    test_split = p.test_bars if p.test_bars > 0 else int(len(X)*p.test_pct)
+    X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
+    
+    # Feature Scaling
+    # Load scaler from file for test run
+#    from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
+    scaler = p.cfgdir+'/sc.dmp'
+    scaler1 = p.cfgdir+'/sc1.dmp'
+    if p.train:
+#        sc = QuantileTransformer(10)
+#        sc = MinMaxScaler()
+        sc = StandardScaler()
+        X_train = sc.fit_transform(X_train)
+        X_test = sc.transform(X_test)
+        dump(sc, scaler)
+ 
+        sc1 = MinMaxScaler()
+        y_train = sc1.fit_transform(y_train)
+        y_test = sc1.transform(y_test)
+        dump(sc1, scaler1)
+
+    else:
+        sc = load(scaler)
+        X_train = sc.transform(X_train)
+        X_test = sc.transform(X_test)
+
+        sc1 = load(scaler1)
+        y_train = sc1.transform(y_train)
+        y_test = sc1.transform(y_test)
+    
+    K.clear_session() # Required to speed up model load
+    if p.train:
+        file = p.cfgdir+'/model.nn'
+        print('*** Training model with '+str(p.units)+' units per layer ***')
+        nn = Sequential()
+        nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu', input_dim = X_train.shape[1]))
+        nn.add(Dense(units = p.units, kernel_initializer = 'uniform', activation = 'relu'))
+        nn.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'linear'))
+
+        cp = ModelCheckpoint(file, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+        nn.compile(optimizer = 'adam', loss = p.loss, metrics = ['accuracy'])
+        history = nn.fit(X_train, y_train, batch_size = len(X_train) if p.batch_size == 0 else p.batch_size,
+                             epochs = p.epochs, callbacks=[cp], 
+                             validation_data=(X_test, y_test), 
+                             verbose=0)
+
+        # Plot model history
+        plot_fit_history(history)
+
+        # Load Best Model
+        nn = load_model(file) 
+    else:
+        file = p.model
+        nn = load_model(file) 
+#        print('Loaded best model: '+file)
+     
+    # Making prediction
+    y_pred_val = nn.predict(X_test)
+    y_pred_val = sc1.inverse_transform(y_pred_val)
+
+    # Generating Signals
+    td = gen_signal(ds, y_pred_val)
+
+    # Backtesting
+    td = run_backtest(td, file)
+
+    print(str(get_signal_str()))
+
+
 # See: 
 # https://towardsdatascience.com/predicting-ethereum-prices-with-long-short-term-memory-lstm-2a5465d3fd
 def runLSTM():
@@ -407,7 +512,7 @@ def runLSTM():
     ds = dl.load_data()
     ds = add_features(ds)
    
-    lag = 10
+    lag = 3
     n_features = 1
     X = pd.DataFrame()
     for i in range(1, lag+1):
@@ -453,14 +558,12 @@ def runLSTM():
     
     print(str(get_signal_str()))
 
+
 def runModel(conf):
     p.load_config(conf)
+    globals()[p.model_type]()
+        
 
-    if p.model_type == 'NN':
-        runNN()
-    elif p.model_type == 'LSTM':
-        runLSTM()
-    
 def check_retro():
     ret = (td.date >= '2019-03-05') & (td.date <= '2019-03-28')
     ret = ret | (td.date >= '2018-03-23') & (td.date <= '2018-04-15')
@@ -478,10 +581,12 @@ def check_missing_dates(td):
     missing = sorted(date_set - set(td.date))
     print(missing)
 
+
 # Tuning
 #runModel('ETHBTCNN')
+# model.603: 17 Nov SR: 6.11 Kraken: 130440 (epoch 189, batch size 1000) train 0.75, test 0.25, no buy SL
 #runModel('ETHUSDNN1')
 
-# PROD
+# PROD Year SR: 3.61 CCCAGG: 9747, Kraken: 5589
 #runModel('ETHUSDNN')
 #runModel('BTCUSDNN')

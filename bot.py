@@ -18,6 +18,7 @@ def send(msg, public=False):
     print(msg)
     t.send_msg(str(msg), public)
 
+
 def get_signal(conf):
     while True:
         nn.runModel(conf)
@@ -28,9 +29,11 @@ def get_signal(conf):
         else:
             return signal
 
+
 def send_results(res, msg):
     send(msg+' of '+str(res['filled'])+' '+p.pair+' with price '+str(res['average']))
     send('Balance: '+x.get_balance_str())
+
 
 def execute(s):
     action = s['action']
@@ -68,7 +71,7 @@ def execute(s):
         send('Breakout SL set at '+str(s['sl_price']), True)        
 
 
-def run_model(conf):
+def run(conf):
     done = False
     while not done:
         try:
@@ -84,7 +87,7 @@ def run_model(conf):
             send('An error has occured. Please investigate!')
             send(e)
             done = True
-    t.cleanup()
+    
         
 def test_execute():
     conf = 'ETHUSDNN'
@@ -103,8 +106,13 @@ def test_execute():
 
 
 # Signal Only
-#run_model('ETHBTCNN')
-#run_model('BTCUSDNN')
+#run('ETHBTCNN')
+#run('BTCUSDNN')
 
 # Trading
-run_model('ETHUSDNN')
+t.init()
+send('*** Old Model *** ', True)
+run('ETHUSDNN')
+send('*** New Model *** ', True)
+run('ETHUSDNN1')
+t.cleanup()
