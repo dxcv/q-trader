@@ -31,11 +31,11 @@ register_matplotlib_converters()
 def get_signal_str(s=''):
     if s == '': s = get_signal()
     txt = p.pair + ':'
-    txt += ' NEW TRADE' if s['new_trade'] else '' 
+    txt += ' NEW' if s['new_trade'] else ' Same' 
     txt += ' Signal: ' + s['action'] 
     if p.short and s['action'] == 'Sell': txt += ' SHORT'
     txt += ' Open: '+str(s['open'])
-    txt += ' P/L: '+str(s['pnl'])+'%'
+    if s['action'] != 'Cash': txt += ' P/L: '+str(s['pnl'])+'%'
     if s['tp']: txt += ' TAKE PROFIT!'
     if s['sl']: txt += ' STOP LOSS!'
     
