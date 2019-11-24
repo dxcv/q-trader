@@ -146,12 +146,13 @@ def gen_signal(ds, y_pred_val):
         td['signal'] = np.where(np.isin(td.y_pred_id, p.ignore_signals), np.NaN, td.signal)
         td['signal'] = td.signal.fillna(method='ffill')
     if p.hold_signals is not None:
-        td['signal'] = np.where(np.isin(td.y_pred_id, p.hold_signals), 'Hold', td.signal)
+        td['signal'] = np.where(np.isin(td.y_pred_id, p.hold_signals), 'Cash', td.signal)
+    td['signal'] = np.where(td.ADX < 26, 'Cash', td.signal)
 
     return td
 
 def run_pnl(td, file):
-    bt = td[['date','open','high','low','close','volume','signal','ADX']].copy()
+    bt = td[['date','open','high','low','close','volume','signal']].copy()
 
     # Calculate Pivot Points
     bt['PP'] = (bt.high + bt.low + bt.close)/3
@@ -221,12 +222,10 @@ def run_pnl(td, file):
     bt['DR'] = bt['close']/bt['close'].shift(1)
 
     # Adjust signal based on past performance
-    # Best ASR: 0.989: 23.33 vs 18.60 
-    # TODO: Set fee, ctr, ctrf, margin for Cash position
-    bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
     if p.adjust_signal:
+        # Best ASR: 0.988 
+        bt['ASR'] = bt.SR.rolling(10).mean().shift(1)
         bt['signal'] = np.where(bt.ASR < 0.988, 'Cash', bt.signal)
-        bt['signal'] = np.where(bt.ADX < 25, 'Cash', bt.signal)
         bt['SR'] = np.where(bt.signal == 'Cash', 1, bt.SR)
 
     bt['CSR'] = np.cumprod(bt.SR)
@@ -422,14 +421,19 @@ def runNN1():
     ds['MAR'] = ds.MA/ds.MA2
     ds['ADX'] = talib.ADX(ds['high'].values, ds['low'].values, ds['close'].values, timeperiod = p.adx_period)
     ds['Price_Rise'] = np.where(ds['DR'] > 1, 1, 0)
+    
+    if p.btc_data:
+        p.currency = 'BTC'
+        p.kraken_pair = 'XETHXXBT'
+        ds1 = dl.load_data()
+        ds = ds.join(ds1, rsuffix='_btc')
+        ds['RSI_BTC'] = talib.RSI(ds['close_btc'].values, timeperiod = p.rsi_period)
+        p.feature_list += ['RSI_BTC']
+    
     ds = ds.dropna()
-    
-#     feature_list = ['RSI','MA','MA2','STD','WR','MAR','HH','VOL','LL','DMA','DR']
-#    p.feature_list = ['MA','MA2']
-    
+
     # Separate input from output. Exclude last row
     X = ds[p.feature_list][:-1]
-#    y = ds[['Price_Rise']].shift(-1)[:-1]
     y = ds[['DR']].shift(-1)[:-1]
 
     # Split Train and Test and scale
@@ -438,7 +442,6 @@ def runNN1():
     X_train, X_test, y_train, y_test = X[:train_split], X[-test_split:], y[:train_split], y[-test_split:]
     
     # Feature Scaling
-    # Load scaler from file for test run
 #    from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
     scaler = p.cfgdir+'/sc.dmp'
     scaler1 = p.cfgdir+'/sc1.dmp'
@@ -466,6 +469,12 @@ def runNN1():
     
     K.clear_session() # Required to speed up model load
     if p.train:
+#        Custom Loss Function
+#        def stock_loss(t, p):
+#            loss = K.switch(K.less((t-1)*(p-1), 0), K.abs(t-p), 0.1*K.abs(t-p))
+#            return K.mean(loss, axis=-1)
+#        p.loss = stock_loss
+    
         file = p.cfgdir+'/model.nn'
         print('*** Training model with '+str(p.units)+' units per layer ***')
         nn = Sequential()
@@ -484,11 +493,11 @@ def runNN1():
         plot_fit_history(history)
 
         # Load Best Model
+#        nn = load_model(file, custom_objects={'stock_loss': stock_loss}) 
         nn = load_model(file) 
     else:
         file = p.model
         nn = load_model(file) 
-#        print('Loaded best model: '+file)
      
     # Making prediction
     y_pred_val = nn.predict(X_test)
@@ -499,7 +508,6 @@ def runNN1():
 
     # Backtesting
     td = run_backtest(td, file)
-
     print(str(get_signal_str()))
 
 
@@ -583,10 +591,15 @@ def check_missing_dates(td):
 
 
 # Tuning
+#runModel('BTCUSDNN')
 #runModel('ETHBTCNN')
-# model.603: 17 Nov SR: 6.11 Kraken: 130440 (epoch 189, batch size 1000) train 0.75, test 0.25, no buy SL
-#runModel('ETHUSDNN1')
+# Using ETHBTC data
+#runModel('ETHUSDNN3')
+
+# Best SR / Less Sortino / Worse on Kraken Data
+#runModel('ETHUSDNN2')
+
 
 # PROD Year SR: 3.61 CCCAGG: 9747, Kraken: 5589
 #runModel('ETHUSDNN')
-#runModel('BTCUSDNN')
+runModel('ETHUSDNN1')

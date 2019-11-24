@@ -173,6 +173,8 @@ def load_config(config):
     adjust_signal = True
     global batch_size
     batch_size = 0
+    global btc_data # Use asset price in BTC for model
+    btc_data = False
 
     if conf == 'BTCUSD': # R: 180.23 SR: 0.180 QL/BH R: 6.79 QL/BH SR: 1.80
 #        train = True
@@ -272,17 +274,15 @@ def load_config(config):
         epochs = 30
         model = cfgdir+'/model.top'
         limit_fee = 0.0008 # Maker
-    elif conf == 'ETHUSDNN1':
+    elif conf == 'ETHUSDNN2':
+# model.599: 23 Nov SR: 5.99 Kraken: 194186 (epoch ± 600) train 0.75 test 0.25, no buy SL 
         breakout = True
         sell_sl = True
 #        buy_sl = True
-        order_pct = 1
         short = True
         leverage = 5
         min_equity = 0.02
         order_precision = 0
-        max_short = 250
-#        exchange = 'BITFINEX'
         exchange = 'KRAKEN'
         datasource = 'kr'
         kraken_pair = 'XETHZUSD'
@@ -290,11 +290,11 @@ def load_config(config):
 #        train = True
         train_pct = 0.75
 #        test_pct = 0.25
-#        test_pct = 1
-        test_bars = 365
+        test_pct = 1
+#        test_bars = 365
         units = 32
         epochs = 1000
-        model = cfgdir+'/model.603'
+        model = cfgdir+'/model.599'
         limit_fee = 0.0006
         market_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2%
         order_type = 'market'
@@ -302,6 +302,34 @@ def load_config(config):
         signal_scale = 100
         rsi_period = 14
         model_type = 'runNN1'
+    elif conf == 'ETHUSDNN3':
+        breakout = True
+        sell_sl = True
+#        buy_sl = True
+        short = True
+        leverage = 5
+        min_equity = 0.02
+        order_precision = 0
+        exchange = 'KRAKEN'
+#        datasource = 'kr'
+#        kraken_pair = 'XETHZUSD'
+        reload = True
+        train = True
+        train_pct = 0.75
+        test_pct = 0.25
+#        test_pct = 1
+#        test_bars = 365
+        units = 32
+        epochs = 1000
+#        model = cfgdir+'/model.nn'
+        limit_fee = 0.0006
+        market_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2%
+        order_type = 'market'
+        signal_threshold = 1
+        signal_scale = 100
+        rsi_period = 14
+        model_type = 'runNN1'
+        btc_data = True
 #
 # ***************************************** Active Models
 # !!! Do not tune Active models - use new conf for tuning !!!
@@ -311,12 +339,10 @@ def load_config(config):
         breakout = True
         sell_sl = True
         buy_sl = True
-        order_pct = 1
         short = True
         leverage = 5
         min_equity = 0.02
         order_precision = 0
-        max_short = 250
         exchange = 'KRAKEN'
         datasource = 'kr'
         kraken_pair = 'XETHZUSD'
@@ -330,6 +356,34 @@ def load_config(config):
         limit_fee = 0.0006
         market_fee = 0.0016 + 0.002 # Market fee 0.0016 + slippage 0.2%
         order_type = 'market'
+    elif conf == 'ETHUSDNN1':
+# model.603: 17 Nov SR: 5.81 Kraken: 187719 (epoch 189, batch size 1000) train 0.75, test 0.25, no buy SL
+        breakout = True
+        sell_sl = True
+#        buy_sl = True
+        short = True
+        leverage = 5
+        min_equity = 0.02
+        order_precision = 0
+        exchange = 'KRAKEN'
+        datasource = 'kr'
+        kraken_pair = 'XETHZUSD'
+        reload = True
+#        train = True
+        train_pct = 0.75
+#        test_pct = 0.25
+#        test_pct = 1
+        test_bars = 365
+        units = 32
+        epochs = 500
+        model = cfgdir+'/model.603'
+        limit_fee = 0.0006
+        market_fee = 0.0016 + 0.002 # Market fee + slippage%
+        order_type = 'market'
+        signal_threshold = 1
+        signal_scale = 100
+        rsi_period = 14
+        model_type = 'runNN1'
 
     if order_type == 'market':
         limit_fee = market_fee

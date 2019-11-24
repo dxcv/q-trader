@@ -21,15 +21,15 @@ export AWS_REGION=You AWS  Region
 
 
 ****************************** Improvement Ideas *********************************************
-# Do not trade when no trend (ADX)
+Backtrader: https://www.backtrader.com/docu/
+
+# Bitfinex Integration
 
 # Bayesian Optimization
 https://github.com/fmfn/BayesianOptimization
 
 # RNN for Stock Prediction
 https://towardsdatascience.com/stock-prediction-using-recurrent-neural-networks-c03637437578
-
-# Use Regression instead of Classification
 
 # Dev Activity as best price predictor
 https://cryptoslate.com/ethereum-developer-activity-is-seeing-parabolic-growth-says-analyst-will-price-follow/amp/?__twitter_impression=true
@@ -333,6 +333,7 @@ https://www.wallstreetmojo.com/risk-adjusted-returns/
 # ********************** Features ************************************
 Fixed position sizing
 Position sizing based on balance %
+Do not trade when no trend (ADX)
 
 
 # ********************** Lessons Learned *************************************
